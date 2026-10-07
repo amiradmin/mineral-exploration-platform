@@ -1,0 +1,9 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mineral-exploration-frontend
+    ports:
+      - "8085:80"
+    restart: unless-stopped
