@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { BarChart3, CircleDollarSign, Database, Globe2, Layers3, Map, Mountain, Radar, Search, ShieldCheck, Sparkles, Target } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { cashflow, risk, stageGates, targets } from './mockData'
