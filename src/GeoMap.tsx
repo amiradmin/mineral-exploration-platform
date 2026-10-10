@@ -14,7 +14,7 @@ type Props = {
  * These are NOT known mineral occurrences or permitted exploration licenses.
  */
 const demoBounds: L.LatLngBoundsExpression = [[31.92, 53.35], [33.05, 55.18]]
-const targetPosition = (t: Target): L.LatLngExpression => [
+const targetPosition = (t: Target): [number, number] => [
   33.05 - (t.y / 100) * (33.05 - 31.92),
   53.35 + (t.x / 100) * (55.18 - 53.35),
 ]
@@ -77,7 +77,7 @@ export default function GeoMap({ onSelect, layers, selectedId }: Props) {
     }
     if (show('Drillholes')) {
       for (const [i, t] of targets.slice(0, 3).entries()) {
-        L.circleMarker([Number(targetPosition(t)[0]) - 0.025, Number(targetPosition(t)[1]) + 0.024],
+        L.circleMarker([targetPosition(t)[0] - 0.025, targetPosition(t)[1] + 0.024],
           { radius: 5, weight: 2, color: '#e9f0e7', fillColor: '#253c2f', fillOpacity: 1 })
           .bindTooltip('Illustrative drill collar DH-02' + (i + 1)).addTo(group)
       }
