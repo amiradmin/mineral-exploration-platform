@@ -165,3 +165,10 @@ linear-gradient(145deg,#1a3027,#0d1b16 58%,#13221d)}
 .model-view-faults .strata,.model-view-faults .orebody{opacity:.26}
 .model-view-faults:after{content:"Interpreted fault (schematic)";position:absolute;left:40%;top:14%;height:60%;width:3px;transform:rotate(25deg);background:repeating-linear-gradient(to bottom,#eea96b 0 10px,transparent 10px 16px);color:#e5c69b;font-size:11px;white-space:nowrap}
 @media(max-width:700px){.demo-banner{margin:10px 12px;font-size:10px}.search{display:flex;min-width:0;flex:1}.search input{min-width:0;width:100%}header{gap:8px}.live{font-size:8px}.content{padding-top:12px}.model-toolbar{flex-wrap:wrap}}
+
+
+.assistant-input input{flex:1;min-width:0;border:0;background:transparent;outline:0;color:#e7f5ee;font:inherit;font-size:11px}
+.assistant-input input::placeholder{color:#729083}
+.assistant-response{margin:0 12px 8px;max-height:160px;overflow:auto}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid #7bd9ad;outline-offset:3px}
