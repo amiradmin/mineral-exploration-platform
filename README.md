@@ -14,9 +14,15 @@ docker compose up -d --build
 
 Open **http://localhost:8085**. To stop: `docker compose down`.
 
+## Daily operations dashboard (new default landing page)
+
+The front page now demonstrates an exploration supervisor's daily operational workflow. Filter by fictional exploration project to inspect drilled vs planned metres, geological logging completeness, weighted core recovery, sample collection, assay turnaround backlog, open QA/QC issues, and simulated budget utilisation. The daily-shift bar chart provides drilling trend context. Operational registers contain searchable laboratory batches, QA/QC exceptions and action items; each register can be exported as CSV. Daily action completion works in current browser state only and does not persist.
+
+The dashboard was informed by published workflows from Seequent MX Deposit / Target, acQuire GIM Essentials, Madini and KoBold Metals. It does **not** claim their technical models, commercial data, dashboards or functionality are integrated. All dates, counts, budgets and project names in the operations module are illustrative.
+
 ## Interactive demo features
 
-- Eight modules: Overview, GIS Map, Target Intelligence, Drillholes, Subsurface, Geoscience, AI Prospectivity, QA/QC
+- Nine modules: Daily Operations, Overview, GIS Map, Target Intelligence, Drillholes, Subsurface, Geoscience, AI Prospectivity, QA/QC
 - Click target pins or ranked targets to open their evidence and next-action details
 - Search targets by ID, name or commodity from the top search field
 - Use the interactive **OpenStreetMap basemap** (pan and zoom); toggle simulated geology, faults, geochemistry, magnetics, drilling markers and target scores. Satellite-analysis and radiometrics datasets are not connected
@@ -45,6 +51,6 @@ npm run build
 
 ## راهنمای فارسی
 
-این پروژه در وضعیت فعلی یک **دموی قابل ارائه** برای شرکت اکتشاف معدن است. داده‌ها، نمره‌های هوش مصنوعی، اطلاعات حفاری و نقشه‌ها ساختگی هستند. از این خروجی‌ها نباید برای تصمیم واقعی حفاری یا سرمایه‌گذاری استفاده شود.
+صفحه اول اکنون «Daily Operations» است و شاخص‌های تخصصی حفاری روزانه، لاگ زمین‌شناسی، بازیابی مغزه، نمونه‌های آزمایشگاهی معوق، وضعیت QA/QC، روند برنامه در برابر عملکرد و کارهای روزانه را نمایش می‌دهد. فیلتر پروژه، جست‌وجو و خروجی CSV فعال هستند ولی داده‌ها و تغییر وضعیت وظایف فقط نمایشی‌اند.\n\nاین پروژه در وضعیت فعلی یک **دموی قابل ارائه** برای شرکت اکتشاف معدن است. داده‌ها، نمره‌های هوش مصنوعی، اطلاعات حفاری و نقشه‌ها ساختگی هستند. از این خروجی‌ها نباید برای تصمیم واقعی حفاری یا سرمایه‌گذاری استفاده شود.
 
 نقشه تعاملی از کاشی‌های OpenStreetMap استفاده می‌کند و برای نمایش زمینه نقشه به اینترنت نیاز دارد. نقاط معدنی روی نقشه ساختگی هستند و محل معادن واقعی نیستند.\n\nبرای راه‌اندازی، دستور `docker compose up -d --build` را اجرا کنید و آدرس `http://localhost:8085` را باز کنید. جست‌وجوی اهداف، مشاهده اطلاعات آن‌ها، انتخاب چند لایه نمایشی، تغییر نمای مدل شماتیک و دریافت گزارش نمونه فعال هستند.
