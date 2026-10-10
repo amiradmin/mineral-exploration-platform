@@ -24,6 +24,10 @@ export default function App(){
   const [page,setPage]=useState<Page>('overview')
   const [selected,setSelected]=useState(targets[0])
   const [assistantOpen,setAssistantOpen]=useState(false)
+  const [query,setQuery]=useState('')
+  const [notice,setNotice]=useState('')
+  const matches=targets.filter(t=>`${t.id} ${t.name} ${t.commodity} ${t.deposit}`.toLowerCase().includes(query.trim().toLowerCase()))
+  const exportDemo=(brief=false)=>{const body=brief?`# TerraScope demonstration brief\n\nSIMULATED DATA — DO NOT USE FOR EXPLORATION DECISIONS\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}\n\nNo live model or real survey data connected.`:JSON.stringify({demo:true,targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'terrascope-demo-brief.md':'terrascope-demo-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Demo brief downloaded':'Demo snapshot exported')}
 
   return <div className="app">
     <aside className="sidebar">
@@ -38,7 +42,7 @@ export default function App(){
       <div className="sidebar-foot">
         <div className="system-card">
           <div className="system-head"><Activity size={15}/><b>Exploration Engine</b><span>ONLINE</span></div>
-          <small>8 sources synchronized</small>
+          <small>Presentation mode · sample datasets</small>
           <div className="system-line"><i style={{width:'92%'}}/></div>
         </div>
       </div>
@@ -46,14 +50,16 @@ export default function App(){
 
     <main>
       <header>
-        <div className="search"><Search size={16}/><input placeholder="Search projects, targets, drillholes, samples..."/></div>
+        <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No demo targets found</span>}</div>}</div>
         <div className="project-pill"><span>PROJECT</span><b>Central Tethyan Belt</b></div>
-        <div className="live"><i/> Data synchronized</div>
+        <div className="live"><i/> DEMO DATA</div>
         <button className="icon-btn" onClick={()=>setAssistantOpen(!assistantOpen)}><Bot size={17}/></button>
         <div className="avatar">GA</div>
       </header>
 
-      <div className="content">
+      <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
+      {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
+      <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='overview'&&<Overview openTarget={(t)=>{setSelected(t);setPage('targets')}}/>}
         {page==='map'&&<ExplorationMap selected={selected} setSelected={setSelected}/>}
         {page==='targets'&&<TargetIntelligence selected={selected} setSelected={setSelected}/>}
@@ -72,7 +78,7 @@ export default function App(){
 function Title({eyebrow,title,sub,actions=true}:{eyebrow:string,title:string,sub:string,actions?:boolean}){
   return <div className="title">
     <div><small>{eyebrow}</small><h1>{title}</h1><p>{sub}</p></div>
-    {actions&&<div className="title-actions"><button className="secondary"><Database size={15}/> Export Snapshot</button><button className="primary"><Sparkles size={15}/> Generate AI Brief</button></div>}
+    {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> Export Demo Snapshot</button><button className="primary" data-action="brief"><Sparkles size={15}/> Generate Demo Brief</button></div>}
   </div>
 }
 
@@ -136,13 +142,13 @@ function Signal({icon,title,text,tag}:{icon:any,title:string,text:string,tag:str
  return <div className="signal"><div className="signal-icon">{icon}</div><div><b>{title}</b><p>{text}</p></div><span>{tag}</span></div>
 }
 
-function MapPanel({onSelect}:{onSelect?:(t:any)=>void}){
+function MapPanel({onSelect,layers}:{onSelect?:(t:any)=>void,layers?:Record<string,boolean>}){
   return <div className="mapbox">
     <div className="terrain terrain-a"/><div className="terrain terrain-b"/><div className="terrain terrain-c"/>
-    <div className="geo-unit unit-a"/><div className="geo-unit unit-b"/>
-    <div className="fault f1"/><div className="fault f2"/><div className="fault f3"/>
-    <div className="magnetic m1"/><div className="magnetic m2"/>
-    {targets.map(t=><button key={t.id} onClick={()=>onSelect?.(t)} className={'pin '+t.priority.toLowerCase()} style={{left:t.x+'%',top:t.y+'%'}}><span>{t.aiScore}</span><small>{t.id}</small></button>)}
+    {layers?.Geology!==false&&<><div className="geo-unit unit-a"/><div className="geo-unit unit-b"/></>}
+    {layers?.Structures!==false&&<><div className="fault f1"/><div className="fault f2"/><div className="fault f3"/></>}
+    {layers?.Magnetics!==false&&<><div className="magnetic m1"/><div className="magnetic m2"/></>}
+    {layers?.Prospectivity!==false&&targets.map(t=><button key={t.id} onClick={()=>onSelect?.(t)} className={'pin '+t.priority.toLowerCase()} style={{left:t.x+'%',top:t.y+'%'}}><span>{t.aiScore}</span><small>{t.id}</small></button>)}
     <div className="north">N<div>↑</div></div>
     <div className="scale">0 <i/> 10 km</div>
     <div className="legend">
@@ -169,7 +175,7 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
       {layerList.map(([label,Icon])=><label key={label}><input checked={layers[label]} onChange={()=>setLayers({...layers,[label]:!layers[label]})} type="checkbox"/><Icon size={14}/><span>{label}</span></label>)}
       <div className="layer-foot"><Settings2 size={14}/><span>Layer opacity & symbology</span></div>
     </section>
-    <section className="panel map-workspace"><MapPanel onSelect={setSelected}/></section>
+    <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers}/><p className="map-layer-note">Schematic overlays only. Other GIS layers require real geospatial datasets.</p></section>
     <section className="panel inspector">
       <span className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</span>
       <h2>{selected.name}</h2><p>{selected.id} · {selected.commodity} target</p>
@@ -237,11 +243,12 @@ function DrillholeManager(){
 }
 
 function Subsurface(){
+ const [view,setView]=useState('Perspective')
  return <>
   <Title eyebrow="SUBSURFACE INTERPRETATION" title="3D Geological Model" sub="Visualize terrain, interpreted lithologies, structures, target volumes and drillhole traces."/>
   <section className="panel model-panel">
-    <div className="model-toolbar"><button className="active">Perspective</button><button>Sections</button><button>Ore Shells</button><button>Drillholes</button><button>Faults</button></div>
-    <div className="model-3d">
+    <div className="model-toolbar">{["Perspective","Sections","Ore Shells","Drillholes","Faults"].map(x=><button key={x} onClick={()=>setView(x)} className={view===x?"active":""}>{x}</button>)}</div>
+    <div className={"model-3d model-view-"+view.toLowerCase().replace(" ","-")}>
       <div className="strata s1"/><div className="strata s2"/><div className="strata s3"/>
       <div className="orebody o1"/><div className="orebody o2"/>
       {[18,31,45,57,69,81].map((x,i)=><div className="drill-line" key={x} style={{left:x+'%',height:(46+i%3*10)+'%',transform:`rotate(${-12+i*3}deg)`}}><i/></div>)}
@@ -253,18 +260,20 @@ function Subsurface(){
 }
 
 function Geoscience(){
+ const [element,setElement]=useState('Cu')
+ const activeElement=elements.find(e=>e.symbol===element) || elements[0]
  const chart=useMemo(()=>elements.map(e=>({name:e.symbol,value:e.anomalies})),[])
  return <>
   <Title eyebrow="MULTI-DOMAIN GEOSCIENCE" title="Geochemistry & Geophysics" sub="Identify anomalous populations and spatial coincidence across exploration datasets."/>
-  <div className="element-tabs">{elements.map(e=><button key={e.symbol} className={e.symbol==='Cu'?'active':''}><b>{e.symbol}</b><span>{e.name}</span></button>)}</div>
+  <div className="element-tabs">{elements.map(e=><button key={e.symbol} className={e.symbol===element?'active':''} onClick={()=>setElement(e.symbol)}><b>{e.symbol}</b><span>{e.name}</span></button>)}</div>
   <div className="grid geo-grid">
     <section className="panel chart"><PanelTitle title="Anomaly Counts by Element" sub="Samples above project P95"/>
       <ResponsiveContainer width="100%" height={290}><BarChart data={chart}><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name"/><YAxis/><Tooltip/><Bar dataKey="value" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>
     </section>
-    <section className="panel"><PanelTitle title="Copper Distribution" sub="4,820 surface samples"/>
+    <section className="panel"><PanelTitle title={`${activeElement.name} (illustrative distribution)`} sub="Synthetic histogram · not actual laboratory assays"/>
       <div className="stats-grid"><div><span>P50</span><b>86 ppm</b></div><div><span>P90</span><b>241 ppm</b></div><div><span>P95</span><b>418 ppm</b></div><div><span>Max</span><b>2,940 ppm</b></div></div>
       <div className="histogram">{[22,28,31,38,45,65,88,70,48,29,18,11].map((v,i)=><i key={i} style={{height:v+'%'}}/>)}</div>
-      <small className="chart-note">Threshold: 418 ppm · 27 anomalous samples</small>
+      <small className="chart-note">{activeElement.symbol}: {activeElement.anomalies} simulated anomalies. Percentiles are illustrative copper placeholders.</small>
     </section>
     <section className="panel geophys-card"><PanelTitle title="Geophysical Coverage" sub="Processed survey products"/>
       {['Total Magnetic Intensity','Residual Magnetics','Analytic Signal','Gravity Bouguer','Radiometric K/Th/U'].map((x,i)=><div className="survey-row" key={x}><span>{x}</span><div><i style={{width:(96-i*5)+'%'}}/></div><b>{96-i*5}%</b></div>)}
@@ -277,7 +286,7 @@ function AIProspectivity({selected}:{selected:any}){
  return <>
   <Title eyebrow="EXPLAINABLE GEOAI" title="AI Prospectivity" sub="Transparent evidence fusion for target ranking, anomaly detection and next-action recommendation."/>
   <div className="grid ai-grid">
-    <section className="panel ai-hero"><div><span>MODEL</span><b>Prospectivity Fusion v2.4</b><p>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</p></div><div className="model-ready"><i/>READY</div></section>
+    <section className="panel ai-hero"><div><span>MODEL</span><b>Prospectivity Fusion v2.4</b><p>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</p></div><div className="model-ready"><i/>DEMO ONLY</div></section>
     <section className="panel"><PanelTitle title="Selected Target" sub={selected.id}/><h2>{selected.name}</h2><div className="huge-score">{selected.aiScore}</div><p className="muted">Prospectivity score</p></section>
   </div>
   <div className="grid two lower">
