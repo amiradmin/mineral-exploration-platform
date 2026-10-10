@@ -14,7 +14,13 @@ docker compose up -d --build
 
 Open **http://localhost:8085**. To stop: `docker compose down`.
 
-## Daily operations dashboard (new default landing page)
+## Three functional role views
+
+The demo starts on **Geologist Workbench**. Switch views using the sidebar: **Geologist Workbench** (interactive geographic map, target scoring filters, geological logging queue and laboratory sample follow-up), **Daily Operations** (metres drilled, logging, core recovery, QA/QC, operational registers), and **Executive Portfolio** (drilling delivery, fictional budget usage, program comparison and risk exposure). Each view links to detailed domain pages such as GIS Map, Target Intelligence and Drillholes.
+
+The role selector changes presentation screens; it is **not authentication or role-based permission enforcement**. All records and budgets are explicitly simulated. CSV exports contain demo records only. Real user accounts, secured RBAC, data ingestion and persistence require a backend.
+
+## Daily operations dashboard
 
 The front page now demonstrates an exploration supervisor's daily operational workflow. Filter by fictional exploration project to inspect drilled vs planned metres, geological logging completeness, weighted core recovery, sample collection, assay turnaround backlog, open QA/QC issues, and simulated budget utilisation. The daily-shift bar chart provides drilling trend context. Operational registers contain searchable laboratory batches, QA/QC exceptions and action items; each register can be exported as CSV. Daily action completion works in current browser state only and does not persist.
 
@@ -51,6 +57,6 @@ npm run build
 
 ## راهنمای فارسی
 
-صفحه اول اکنون «Daily Operations» است و شاخص‌های تخصصی حفاری روزانه، لاگ زمین‌شناسی، بازیابی مغزه، نمونه‌های آزمایشگاهی معوق، وضعیت QA/QC، روند برنامه در برابر عملکرد و کارهای روزانه را نمایش می‌دهد. فیلتر پروژه، جست‌وجو و خروجی CSV فعال هستند ولی داده‌ها و تغییر وضعیت وظایف فقط نمایشی‌اند.\n\nاین پروژه در وضعیت فعلی یک **دموی قابل ارائه** برای شرکت اکتشاف معدن است. داده‌ها، نمره‌های هوش مصنوعی، اطلاعات حفاری و نقشه‌ها ساختگی هستند. از این خروجی‌ها نباید برای تصمیم واقعی حفاری یا سرمایه‌گذاری استفاده شود.
+سه صفحه تخصصی برای زمین‌شناس (Geologist Workbench)، مدیر عملیات (Daily Operations) و مدیرعامل (Executive Portfolio) افزوده شده‌اند. می‌توان از منوی سمت چپ بین نقش‌ها جابه‌جا شد. این تفکیک برای نمایش است و هنوز کنترل دسترسی واقعی ندارد. همه اطلاعات و بودجه‌ها نمونه هستند.\n\nصفحه عملیاتی «Daily Operations» و شاخص‌های تخصصی حفاری روزانه، لاگ زمین‌شناسی، بازیابی مغزه، نمونه‌های آزمایشگاهی معوق، وضعیت QA/QC، روند برنامه در برابر عملکرد و کارهای روزانه را نمایش می‌دهد. فیلتر پروژه، جست‌وجو و خروجی CSV فعال هستند ولی داده‌ها و تغییر وضعیت وظایف فقط نمایشی‌اند.\n\nاین پروژه در وضعیت فعلی یک **دموی قابل ارائه** برای شرکت اکتشاف معدن است. داده‌ها، نمره‌های هوش مصنوعی، اطلاعات حفاری و نقشه‌ها ساختگی هستند. از این خروجی‌ها نباید برای تصمیم واقعی حفاری یا سرمایه‌گذاری استفاده شود.
 
 نقشه تعاملی از کاشی‌های OpenStreetMap استفاده می‌کند و برای نمایش زمینه نقشه به اینترنت نیاز دارد. نقاط معدنی روی نقشه ساختگی هستند و محل معادن واقعی نیستند.\n\nبرای راه‌اندازی، دستور `docker compose up -d --build` را اجرا کنید و آدرس `http://localhost:8085` را باز کنید. جست‌وجوی اهداف، مشاهده اطلاعات آن‌ها، انتخاب چند لایه نمایشی، تغییر نمای مدل شماتیک و دریافت گزارش نمونه فعال هستند.
