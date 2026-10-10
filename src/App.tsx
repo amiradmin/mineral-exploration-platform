@@ -319,12 +319,16 @@ function QAQC(){
 function Donut({value}:{value:number}){return <div className="donut" style={{background:`conic-gradient(var(--accent) ${value*3.6}deg,#173028 0)`}}><div><b>{value}%</b><span>complete</span></div></div>}
 
 function AssistantPanel({close}:{close:()=>void}){
+ const [question,setQuestion]=useState('')
+ const [response,setResponse]=useState('')
+ const ask=()=>{const q=question.trim().toLowerCase();if(!q)return;const t=targets.find(t=>q.includes(t.id.toLowerCase())||q.includes(t.name.toLowerCase()))||targets[0];setResponse(`${t.name} (${t.id}): ${t.rationale} Recommended demo action: ${t.action}. This is a mock-data lookup, not live AI inference.`)}
  return <aside className="assistant">
   <div className="assistant-head"><div><Sparkles/><span><b>GeoAI Copilot</b><small>Exploration assistant</small></span></div><button onClick={close}>×</button></div>
   <div className="assistant-body">
     <div className="user-msg">Why is North Ridge ranked high?</div>
     <div className="ai-msg"><b>North Ridge is supported by four coincident evidence groups.</b><p>The strongest contributors are the structural intersection, Cu-Mo geochemical anomaly and residual magnetic response. Hydrothermal alteration and favorable intrusive lithology add secondary support.</p><div className="ai-list"><span>34% Structural control</span><span>27% Geochemistry</span><span>21% Magnetics</span><span>18% Other evidence</span></div></div>
   </div>
-  <div className="assistant-input">Ask about targets, datasets or drilling...<button><Sparkles size={14}/></button></div>
+  {response&&<div className="ai-msg assistant-response"><b>Illustrative demo response</b><p>{response}</p></div>}
+  <div className="assistant-input"><input value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ask()}} placeholder="Ask about T-001 or North Ridge..." aria-label="Ask about demo target"/><button onClick={ask} aria-label="Look up demo target"><Sparkles size={14}/></button></div>
  </aside>
 }
