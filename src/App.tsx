@@ -8,11 +8,14 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
 import Operations from './Operations'
+import RoleDashboard from './RoleDashboard'
 
-type Page='operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
+type Page='geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
 const nav=[
+  {id:'geologist',label:'Geologist Workbench',icon:Layers3},
   {id:'operations',label:'Daily Operations',icon:Activity},
+  {id:'executive',label:'Executive Portfolio',icon:BarChart3},
   {id:'overview',label:'Exploration Overview',icon:BarChart3},
   {id:'map',label:'GIS Exploration Map',icon:Map},
   {id:'targets',label:'Target Intelligence',icon:Target},
@@ -24,7 +27,7 @@ const nav=[
 ] as const
 
 export default function App(){
-  const [page,setPage]=useState<Page>('operations')
+  const [page,setPage]=useState<Page>('geologist')
   const [selected,setSelected]=useState(targets[0])
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [query,setQuery]=useState('')
@@ -63,7 +66,9 @@ export default function App(){
       <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
+        {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
         {page==='operations'&&<Operations/>}
+        {page==='executive'&&<RoleDashboard role="executive" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
         {page==='overview'&&<Overview openTarget={(t)=>{setSelected(t);setPage('targets')}}/>}
         {page==='map'&&<ExplorationMap selected={selected} setSelected={setSelected}/>}
         {page==='targets'&&<TargetIntelligence selected={selected} setSelected={setSelected}/>}
