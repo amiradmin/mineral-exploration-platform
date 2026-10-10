@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
+import GeoMap from './GeoMap'
 
 type Page='overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
@@ -142,24 +143,8 @@ function Signal({icon,title,text,tag}:{icon:any,title:string,text:string,tag:str
  return <div className="signal"><div className="signal-icon">{icon}</div><div><b>{title}</b><p>{text}</p></div><span>{tag}</span></div>
 }
 
-function MapPanel({onSelect,layers}:{onSelect?:(t:any)=>void,layers?:Record<string,boolean>}){
-  return <div className="mapbox">
-    <div className="terrain terrain-a"/><div className="terrain terrain-b"/><div className="terrain terrain-c"/>
-    {layers?.Geology!==false&&<><div className="geo-unit unit-a"/><div className="geo-unit unit-b"/></>}
-    {layers?.Structures!==false&&<><div className="fault f1"/><div className="fault f2"/><div className="fault f3"/></>}
-    {layers?.Magnetics!==false&&<><div className="magnetic m1"/><div className="magnetic m2"/></>}
-    {layers?.Prospectivity!==false&&targets.map(t=><button key={t.id} onClick={()=>onSelect?.(t)} className={'pin '+t.priority.toLowerCase()} style={{left:t.x+'%',top:t.y+'%'}}><span>{t.aiScore}</span><small>{t.id}</small></button>)}
-    <div className="north">N<div>↑</div></div>
-    <div className="scale">0 <i/> 10 km</div>
-    <div className="legend">
-      <b>AI Prospectivity</b>
-      <div className="heat"/>
-      <span>Low <em>Moderate</em><strong>Very high</strong></span>
-      <small><i className="fault-key"/> interpreted fault &nbsp; <i className="sample-key"/> anomaly</small>
-    </div>
-    <span className="region r1">Northern Structural Corridor</span>
-    <span className="region r2">Central Intrusive Complex</span>
-  </div>
+function MapPanel({onSelect,layers,selectedId}:{onSelect?:(t:any)=>void,layers?:Record<string,boolean>,selectedId?:string}){
+ return <GeoMap onSelect={onSelect} layers={layers} selectedId={selectedId}/>
 }
 
 function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)=>void}){
@@ -175,7 +160,7 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
       {layerList.map(([label,Icon])=><label key={label}><input checked={layers[label]} onChange={()=>setLayers({...layers,[label]:!layers[label]})} type="checkbox"/><Icon size={14}/><span>{label}</span></label>)}
       <div className="layer-foot"><Settings2 size={14}/><span>Layer opacity & symbology</span></div>
     </section>
-    <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers}/><p className="map-layer-note">Schematic overlays only. Other GIS layers require real geospatial datasets.</p></section>
+    <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers} selectedId={selected.id}/><p className="map-layer-note">Real OpenStreetMap basemap; prospectivity, geological units, faults, anomalies and target points are synthetic. Radiometrics and satellite-analysis datasets are not connected.</p></section>
     <section className="panel inspector">
       <span className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</span>
       <h2>{selected.name}</h2><p>{selected.id} · {selected.commodity} target</p>
