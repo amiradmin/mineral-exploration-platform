@@ -194,3 +194,36 @@ button:focus-visible,input:focus-visible{outline:2px solid #7bd9ad;outline-offse
 .mineral-map-pin span{font-size:10px;color:#f2fff8;background:#0b251be8;border:1px solid #3b6d53;border-radius:5px;padding:3px 5px;font-weight:700}
 .map-workspace .map-layer-note{margin-top:10px}
 @media(max-width:700px){.geo-map-shell,.explore .geo-map-shell{height:430px}.geo-map-label{right:8px;top:8px;padding:8px}.geo-map-legend{left:8px;bottom:22px;font-size:9px}}
+
+
+/* Exploration operations — actionable presentation dashboard */
+.ops{color:#e9f4ee}.ops-topline{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:17px}
+.ops-eyebrow{font-size:10px;color:#73dcb0;letter-spacing:.13em;font-weight:800}
+.ops-topline h1{font-size:27px;margin:7px 0;letter-spacing:-.025em}
+.ops-topline p{color:#95afa3;margin:0;font-size:12px;line-height:1.6}
+.ops-tools{display:flex;flex-direction:column;gap:6px;min-width:200px}.ops-tools label{font-size:10px;color:#93b3a5}.ops-tools select{background:#13271e;border:1px solid #3c5e4d;border-radius:10px;padding:10px 11px;color:#ecfff5;font-size:12px;max-width:100%}
+.ops-demo-note{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 14px;border:1px solid #685333;border-radius:11px;background:#32291b;color:#d6bd91;font-size:11px;margin-bottom:16px;line-height:1.6}.ops-demo-note b{color:#f4c878}
+.ops-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:13px}
+.ops-metric{position:relative;min-width:0;background:linear-gradient(135deg,#13271f,#0b1914);border:1px solid #2c483a;border-radius:14px;padding:16px 17px}
+.ops-metric-icon{width:33px;height:33px;display:grid;place-items:center;border-radius:9px;background:#173f2f;color:#77e2b2;margin-bottom:12px}
+.ops-metric-icon.amber{background:#44351d;color:#f5cc7a}.ops-metric-icon.red{background:#472828;color:#f6a09b}.ops-metric-icon.blue{background:#1c3440;color:#82c8ed}.ops-metric-icon.purple{background:#302944;color:#c5b0fa}
+.ops-metric-label{font-size:11px;color:#afc6b9}.ops-metric-number{font-size:27px;font-weight:800;margin-top:5px;line-height:1.2;letter-spacing:-.03em}.ops-metric-number small{font-size:13px;color:#a4cdb8;margin-left:5px}.ops-metric-sub{color:#80a492;font-size:10px;margin-top:8px;line-height:1.5}
+.ops-row{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:13px}.ops-lower{grid-template-columns:minmax(0,1.5fr) minmax(285px,.65fr);margin-top:13px}
+.ops-section-head{display:flex;align-items:start;justify-content:space-between;gap:15px;margin-bottom:16px}.ops-section-head h2{font-size:14px;margin:0 0 5px}.ops-section-head p{font-size:10px;color:#8ca99a;margin:0;line-height:1.4}
+.ops-chart{height:270px;min-width:0}.ops-program{margin-top:17px}.ops-program-line{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px}.ops-program-line span{color:#9bb5a6;font-size:10px}
+.ops-progress{height:8px;background:#20392d;border-radius:12px;overflow:hidden;margin:11px 0 8px}.ops-progress i{height:100%;display:block;background:linear-gradient(90deg,#409e79,#8ee4b1);border-radius:12px}
+.ops-progress-meta{display:flex;justify-content:space-between;color:#8fae9d;font-size:10px;gap:10px}.ops-footnote{font-size:10px;color:#718f80;margin-top:18px;line-height:1.7}
+.ops-chip{display:inline-flex;white-space:nowrap;align-items:center;font-size:10px;font-weight:700;line-height:1.3;padding:5px 8px;border-radius:100px;background:#183f2f;color:#83e6b4;border:1px solid #326748}
+.ops-chip.danger{background:#452a29;color:#ffa6a1;border-color:#754441}.ops-chip.warn{background:#41341d;color:#f1ca81;border-color:#715a30}.ops-chip.ok{background:#1a3b2b;color:#8bdcb0}
+.ops-tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}.ops-tabs button{background:#10251b;color:#a1bdb0;border:1px solid #30513f;border-radius:8px;padding:8px 11px;font-size:11px}.ops-tabs button.selected{background:#235b42;border-color:#60b789;color:#f3fff9;font-weight:700}
+.ops-search{width:100%;height:36px;background:#0a1b14;border:1px solid #2e4c3d;border-radius:9px;margin-bottom:10px;padding:0 12px;color:#edfff3;font-size:11px}
+.ops-export{display:flex;align-items:center;gap:6px;white-space:nowrap;background:#194b34;border:1px solid #39795a;border-radius:8px;padding:8px 11px;color:#b7f6d3;font-size:10px}
+.ops-table-scroll{overflow-x:auto}.ops-table{border-collapse:collapse;min-width:650px;width:100%;text-align:left}
+.ops-table th{background:#14291f;color:#97b6a5;font-size:10px;text-transform:uppercase;letter-spacing:.02em;font-weight:600;padding:12px 10px;border-bottom:1px solid #31513f;white-space:nowrap}
+.ops-table td{padding:12px 10px;border-bottom:1px solid #1c372a;color:#cadfd2;font-size:10px;vertical-align:middle;line-height:1.6}
+.ops-table td b,.ops-table td small{display:block}.ops-table td small{color:#769385;margin-top:2px}.ops-empty{padding:20px;color:#8da899;text-align:center;font-size:12px}
+.ops-checkbox{display:flex;align-items:center;gap:6px;font-size:10px;white-space:nowrap;color:#a4d7ba}.ops-checkbox input{accent-color:#65d7a6}
+.ops-task{border-bottom:1px solid #234233;padding:12px 0;display:flex;flex-direction:column;align-items:start;gap:6px}.ops-task strong{font-size:11px;font-weight:600;line-height:1.6}.ops-task small{font-size:10px;color:#87a798}.ops-task button{display:flex;align-items:center;gap:5px;background:transparent;border:0;padding:4px 0;color:#77dba8;font-size:10px}.ops-hand-off{display:flex;gap:11px;align-items:start;background:#173226;border:1px solid #315743;padding:13px;border-radius:11px;margin-top:16px;color:#a8e9c7}.ops-hand-off b{font-size:11px;color:#e5f7ec}.ops-hand-off p{font-size:10px;color:#97b9a7;line-height:1.6;margin:5px 0 0}
+@media(max-width:1280px){.ops-row,.ops-lower{grid-template-columns:1fr}}
+@media(max-width:800px){.ops-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-topline{align-items:stretch;flex-direction:column}.ops-tools{max-width:360px}}
+@media(max-width:480px){.ops-metrics{grid-template-columns:1fr}.ops-chart{height:230px}.ops-topline h1{font-size:23px}.ops-section-head{flex-wrap:wrap}.ops-metric-number{font-size:24px}}
