@@ -7,10 +7,12 @@ import {
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
+import Operations from './Operations'
 
-type Page='overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
+type Page='operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
 const nav=[
+  {id:'operations',label:'Daily Operations',icon:Activity},
   {id:'overview',label:'Exploration Overview',icon:BarChart3},
   {id:'map',label:'GIS Exploration Map',icon:Map},
   {id:'targets',label:'Target Intelligence',icon:Target},
@@ -22,7 +24,7 @@ const nav=[
 ] as const
 
 export default function App(){
-  const [page,setPage]=useState<Page>('overview')
+  const [page,setPage]=useState<Page>('operations')
   const [selected,setSelected]=useState(targets[0])
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [query,setQuery]=useState('')
@@ -42,7 +44,7 @@ export default function App(){
 
       <div className="sidebar-foot">
         <div className="system-card">
-          <div className="system-head"><Activity size={15}/><b>Exploration Engine</b><span>ONLINE</span></div>
+          <div className="system-head"><Activity size={15}/><b>Exploration Engine</b><span>DEMO</span></div>
           <small>Presentation mode · sample datasets</small>
           <div className="system-line"><i style={{width:'92%'}}/></div>
         </div>
@@ -61,6 +63,7 @@ export default function App(){
       <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
+        {page==='operations'&&<Operations/>}
         {page==='overview'&&<Overview openTarget={(t)=>{setSelected(t);setPage('targets')}}/>}
         {page==='map'&&<ExplorationMap selected={selected} setSelected={setSelected}/>}
         {page==='targets'&&<TargetIntelligence selected={selected} setSelected={setSelected}/>}
