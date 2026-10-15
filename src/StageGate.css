@@ -21,3 +21,7 @@
 @media(max-width:1130px){.sg-architecture{padding:20px 14px}.sg-art-top,.sg-art-bottom{gap:9px}.sg-art-card{padding:9px;gap:6px}.sg-art-icon{flex-basis:52px;width:52px;height:52px}.sg-art-flow{height:275px}.sg-art-bar small{font-size:10px}}
 @media(max-width:760px){.sg-art-top,.sg-art-bottom{grid-template-columns:1fr;gap:10px}.sg-art-card{min-height:78px}.sg-art-icon{width:62px;height:58px;flex-basis:62px}.sg-art-copy strong{font-size:19px}.sg-art-copy small{font-size:13px}.sg-art-flow{height:250px;grid-template-columns:17% 1fr 18%}.sg-art-bar{width:8px}.sg-art-bar small{font-size:9px;max-width:70px;white-space:normal}.sg-art-result{font-size:12px}.sg-art-raw{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.sg-art-card{transition:none}}
+
+/* Keep gate labels outside the glowing funnel without clipping. */
+.sg-art-tunnel{clip-path:none;background:linear-gradient(90deg,#5182a41a,#58a9d825 45%,#62c8fa1c 70%,#2b85b620);border-radius:50% / 18%}
+.sg-art-bar span,.sg-art-bar small{z-index:5}
