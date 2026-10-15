@@ -25,3 +25,5 @@
 /* Keep gate labels outside the glowing funnel without clipping. */
 .sg-art-tunnel{clip-path:none;background:linear-gradient(90deg,#5182a41a,#58a9d825 45%,#62c8fa1c 70%,#2b85b620);border-radius:50% / 18%}
 .sg-art-bar span,.sg-art-bar small{z-index:5}
+
+.sg-context{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:15px 18px;background:linear-gradient(110deg,#183344,#1c2932);border:1px solid #47667c;border-radius:13px;color:#d6e5ef}.sg-context label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#a4c3d7;font-weight:700}.sg-context select{background:#0f2635;color:#f5f9fd;border:1px solid #5a829b;border-radius:8px;padding:9px;min-width:190px;font:inherit;font-size:13px}.sg-context span{font-size:12px;color:#c2d0d9}.sg-context strong{color:#e9bb88}.sg-summary small{line-height:1.5;overflow-wrap:anywhere}.sg-summary strong{overflow-wrap:anywhere}
