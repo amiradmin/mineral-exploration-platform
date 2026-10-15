@@ -1,6 +1,8 @@
 import React from 'react'
 import { Activity, ArrowRight, BarChart3, CircleDollarSign, Compass, FlaskConical, Globe2, ShieldAlert, TrendingUp, Pickaxe, Layers, CheckCircle2 } from 'lucide-react'
 import './StageGate.css'
+import { createDecisionSnapshot, type DecisionContext, type Scenario } from './decisionPipeline'
+import { targets } from './mockData'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -24,7 +26,8 @@ function ModuleArtwork({id}:{id:DecisionModuleId}){
   {id==='esg-governance'&&<g {...shared}><circle cx="40" cy="37" r="30" stroke="url(#sg-copper)" strokeWidth="4"/><ellipse cx="40" cy="37" rx="14" ry="30" stroke="url(#sg-copper)" strokeWidth="3"/><path d="M10 37h60M17 19h46M17 55h46M40 7v60" stroke="url(#sg-copper)" strokeWidth="2"/><path d="M46 65Q46 42 82 35Q83 69 58 70Q51 70 46 65Z" fill="#bc9c6c" stroke="#604c35" strokeWidth="2"/><path d="M50 68l24-25M61 56l-1-12M61 56l12 3" stroke="#3b624f" strokeWidth="2"/></g>}
  </svg>
 }
-export function StageGateDashboard({onOpen}:{onOpen:(id:DecisionModuleId)=>void}){
+export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:DecisionModuleId)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
+ const snapshot=createDecisionSnapshot(context)
  const upper=decisionModules.slice(0,3)
  const lower=decisionModules.slice(3)
  const card=(m:typeof decisionModules[number])=>{const Icon=m.icon;return <button type="button" key={m.id} className={'sg-art-card sg-art-'+m.id} onClick={()=>onOpen(m.id)} aria-label={'Open '+m.name}>
@@ -52,6 +55,7 @@ export function StageGateDashboard({onOpen}:{onOpen:(id:DecisionModuleId)=>void}
     <div className="sg-art-bottom">{lower.map(card)}</div>
     <p className="sg-art-hint">Select a module to open its decision workspace. ESG and governance span all four gates.</p>
    </section>
+   <div className="sg-context"><label>Demo target <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><span>Shared inputs across all six modules · demonstration only</span></div>
    <div className="sg-summary">
       <div><span>Decision modules</span><strong>06</strong><small>Connected workspaces</small></div>
       <div><span>Stage gates</span><strong>04</strong><small>Screening to feasibility</small></div>
@@ -59,16 +63,19 @@ export function StageGateDashboard({onOpen}:{onOpen:(id:DecisionModuleId)=>void}
       <div><span>Governance scope</span><strong>All gates</strong><small>Continuous oversight</small></div>
    </div>
    <div className="sg-section-title sg-modules-heading"><h2>Module quick access</h2><p>Detailed simulated indicators and links to existing geoscience workspaces.</p></div>
-   <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{m.gate}</span></div><h3>{m.name}</h3><p>{m.summary}</p><div className="sg-mini-stats">{m.kpis.slice(0,2).map(([label,value])=><span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div><span className="sg-open">Open decision workspace <ArrowRight size={15}/></span></button>})}</div>
+   <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{m.gate}</span></div><h3>{m.name}</h3><p>{m.summary}</p><div className="sg-mini-stats">{<><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.value}</strong><small>{snapshot.records.find(r=>r.stage===m.id)?.label}</small></span><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.verdict}</strong><small>Demo gate signal</small></span></>}</div><span className="sg-open">Open decision workspace <ArrowRight size={15}/></span></button>})}</div>
    <p className="sg-disclaimer">Presentation only. All stage statuses, quantities and financial returns are synthetic examples, not validated reserves or a bankable feasibility study.</p>
  </div>
 }
-export function DecisionModulePage({id,onBack,onNavigate}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void}){
+export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
+ const snapshot=createDecisionSnapshot(context)
+ const current=snapshot.records.find(r=>r.stage===id)!
  const m=decisionModules.find(x=>x.id===id)!
  const Icon=m.icon
  const linked:Record<string,string>={'Geologist Workbench':'geologist','Exploration Overview':'overview','Daily Operations':'operations','Executive Portfolio':'executive','Geochemistry & Geophysics':'geoscience','GIS Exploration Map':'map','Target Intelligence':'targets','AI Prospectivity':'ai','Drillhole Manager':'drillholes','3D Subsurface':'subsurface','Data QA / QC':'qaqc'}
  return <div className="sg-wrap"><button className="sg-back" onClick={onBack}>← Decision Center</button><div className="sg-heading"><div><span className="sg-eyebrow">{m.gate.toUpperCase()} · {m.phase.toUpperCase()}</span><h1><Icon size={29}/> {m.name}</h1><p>{m.summary}</p></div><span className="sg-demo">ILLUSTRATIVE WORKSPACE</span></div>
-  <div className="sg-summary sg-three">{m.kpis.map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong><small>Scenario / mock data</small></div>)}</div>
+  <div className="sg-context"><label>Target <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><strong>{snapshot.targetName}</strong></div>
+  <div className="sg-summary sg-three"><div><span>{current.label}</span><strong>{current.value}</strong><small>{current.note}</small></div><div><span>Demo gate indication</span><strong>{current.verdict}</strong><small>Heuristic, not an approval</small></div><div><span>Shared scenario</span><strong>{context.scenario}</strong><small>Inputs are linked across all six modules</small></div></div>
   <div className="sg-detail-grid"><section className="sg-panel"><div className="sg-section-title"><h2>Decision outputs</h2><p>Information this module must produce before its gate review</p></div>{m.signals.map((s,i)=><div className="sg-output" key={s}><CheckCircle2 size={19}/><div><strong>{String(i+1).padStart(2,'0')}</strong><span>{s}</span></div></div>)}</section><section className="sg-panel"><div className="sg-section-title"><h2>Supporting workspaces</h2><p>Existing exploration screens and planned dependencies</p></div>{m.dependencies.map(d=><div className="sg-dependency" key={d}><span>{d}</span>{linked[d]?<button onClick={()=>onNavigate(linked[d])}>Open <ArrowRight size={14}/></button>:<small>Planned integration</small>}</div>)}</section></div>
   <div className="sg-notice"><ShieldAlert size={19}/><span>Module design preview only. These KPIs are synthetic placeholders, not outputs of reserve estimation, economic simulation, investment analysis or compliance audits.</span></div>
  </div>
