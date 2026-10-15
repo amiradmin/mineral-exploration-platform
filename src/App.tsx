@@ -10,6 +10,7 @@ import GeoMap from './GeoMap'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
+import type { DecisionContext } from './decisionPipeline'
 
 type Page=DecisionModuleId|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
@@ -22,6 +23,7 @@ const nav=[
 
 export default function App(){
   const [page,setPage]=useState<Page>('decision-center')
+  const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [query,setQuery]=useState('')
@@ -61,8 +63,8 @@ export default function App(){
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>← Back to Dashboard</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
-        {page==='decision-center'&&<StageGateDashboard onOpen={setPage}/>}
-        {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)}/>}
+        {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
+        {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)} context={decisionContext} onContext={setDecisionContext}/>}
         {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
         {page==='operations'&&<Operations/>}
         {page==='executive'&&<RoleDashboard role="executive" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
