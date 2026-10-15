@@ -13,21 +13,42 @@ export const decisionModules = [
 ] as const
 
 export function StageGateDashboard({onOpen}:{onOpen:(id:DecisionModuleId)=>void}){
- return <div className="sg-wrap">
-   <div className="sg-heading"><div><span className="sg-eyebrow">EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</span><h1>Stage-Gate Decision Center</h1><p>Six coordinated modules connect geological evidence to feasibility and financial decisions.</p></div><span className="sg-demo">SIMULATED DEMO DATA</span></div>
-   <div className="sg-summary">
-      <div><span>Decision modules</span><strong>06</strong><small>Integrated workspaces</small></div>
-      <div><span>Stage gates</span><strong>04</strong><small>Screening → Feasibility</small></div>
-      <div><span>Portfolio targets</span><strong>24</strong><small>Synthetic target records</small></div>
-      <div><span>Audit coverage</span><strong>All gates</strong><small>Continuous ESG tracking</small></div>
-   </div>
-   <section className="sg-panel"><div className="sg-section-title"><h2>Decision pipeline</h2><p>Review the evidence required before progressing to the next gate.</p></div>
-    <div className="sg-pipeline">{[['01','Screening & Targets'],['02','Advanced Drilling'],['03','Pre-Feasibility'],['04','Bankable Feasibility']].map(([gate,label],i)=><div className="sg-gate" key={gate}><span>GATE {gate}</span><strong>{label}</strong><small>{i===0?'Exploration':i===1?'Resource potential':i===2?'Economic viability':'Investment case'}</small>{i<3&&<ArrowRight className="sg-arrow" size={18}/>}</div>)}</div>
+ const upper=decisionModules.slice(0,3)
+ const lower=decisionModules.slice(3)
+ const card=(m:typeof decisionModules[number])=>{const Icon=m.icon;return <button type="button" key={m.id} className={'sg-art-card sg-art-'+m.id} onClick={()=>onOpen(m.id)} aria-label={'Open '+m.name}>
+  <span className="sg-art-icon"><Icon size={38} strokeWidth={1.8}/></span>
+  <span className="sg-art-copy"><strong>{m.name}</strong><small>{m.gate === 'Continuous' ? 'Continuous audit across all gates' : m.gate + ': ' + m.phase}</small></span>
+  <ArrowRight className="sg-art-card-arrow" size={18}/>
+ </button>}
+ return <div className="sg-wrap sg-reference">
+   <div className="sg-heading"><div><span className="sg-eyebrow">EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</span><h1>Stage-Gate Decision Center</h1><p>From raw geological evidence to boardroom-ready financial scenarios.</p></div><span className="sg-demo">SIMULATED DEMO DATA</span></div>
+   <section className="sg-architecture" aria-label="Six module stage-gate decision architecture">
+    <div className="sg-art-title"><h2>The 6-Module Stage-Gate Decision Architecture</h2><p>Transforming raw geological inputs into boardroom computational outputs.</p></div>
+    <div className="sg-art-top">{upper.map(card)}</div>
+    <div className="sg-art-flow">
+      <div className="sg-art-raw"><span>Raw<br/>Geological<br/>Inputs</span></div>
+      <div className="sg-art-tunnel">
+       <div className="sg-art-rays" aria-hidden="true">{Array.from({length:9},(_,i)=><span key={i} style={{top:(12+i*9.5)+'%'}}/>)}</div>
+       <div className="sg-art-particles" aria-hidden="true">{Array.from({length:52},(_,i)=><i key={i} style={{left:((i*37)%97)+'%',top:((i*61+11)%90+4)+'%',opacity:.25+(i%5)*.14,transform:'scale('+(.65+(i%4)*.2)+')'}}/>)}</div>
+       <div className="sg-art-bar sg-bar-1"><span>Gate 1</span><small>Screening &amp; Targets</small></div>
+       <div className="sg-art-bar sg-bar-2"><span>Gate 2</span><small>Advanced Drilling</small></div>
+       <div className="sg-art-bar sg-bar-3"><span>Gate 3</span><small>Pre-Feasibility</small></div>
+       <div className="sg-art-bar sg-bar-4"><span>Gate 4</span><small>Bankable FS</small></div>
+      </div>
+      <div className="sg-art-result"><span>Financial<br/>Value</span></div>
+    </div>
+    <div className="sg-art-bottom">{lower.map(card)}</div>
+    <p className="sg-art-hint">Select a module to open its decision workspace. ESG and governance span all four gates.</p>
    </section>
-   <div className="sg-section-title sg-modules-heading"><h2>Six decision-making modules</h2><p>Select any module to review its KPIs, outputs and supporting workspaces.</p></div>
+   <div className="sg-summary">
+      <div><span>Decision modules</span><strong>06</strong><small>Connected workspaces</small></div>
+      <div><span>Stage gates</span><strong>04</strong><small>Screening to feasibility</small></div>
+      <div><span>Portfolio targets</span><strong>24</strong><small>Simulated records</small></div>
+      <div><span>Governance scope</span><strong>All gates</strong><small>Continuous oversight</small></div>
+   </div>
+   <div className="sg-section-title sg-modules-heading"><h2>Module quick access</h2><p>Detailed simulated indicators and links to existing geoscience workspaces.</p></div>
    <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{m.gate}</span></div><h3>{m.name}</h3><p>{m.summary}</p><div className="sg-mini-stats">{m.kpis.slice(0,2).map(([label,value])=><span key={label}><strong>{value}</strong><small>{label}</small></span>)}</div><span className="sg-open">Open decision workspace <ArrowRight size={15}/></span></button>})}</div>
-   <div className="sg-continuous"><Globe2 size={19}/><div><strong>Continuous ESG & Governance</strong><p>Risk, permits, community impact and audit evidence remain visible at every stage.</p></div><button onClick={()=>onOpen('esg-governance')}>Review ESG <ArrowRight size={15}/></button></div>
-   <p className="sg-disclaimer">Presentation only. Values, estimates, financial returns, stage status and risk measures are fictional; no reserve classification, mine plan, feasibility study or live valuation engine is implemented.</p>
+   <p className="sg-disclaimer">Presentation only. All stage statuses, quantities and financial returns are synthetic examples, not validated reserves or a bankable feasibility study.</p>
  </div>
 }
 export function DecisionModulePage({id,onBack,onNavigate}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void}){
