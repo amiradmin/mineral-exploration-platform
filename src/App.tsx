@@ -9,10 +9,13 @@ import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
+import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
 
-type Page='geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
+type Page=DecisionModuleId|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
 const nav=[
+  {id:'decision-center',label:'Decision Center · 6 Modules',icon:Layers3},
+  ...decisionModules.map(m=>({id:m.id,label:m.name,icon:m.icon})),
   {id:'geologist',label:'Geologist Workbench',icon:Layers3},
   {id:'operations',label:'Daily Operations',icon:Activity},
   {id:'executive',label:'Executive Portfolio',icon:BarChart3},
@@ -27,7 +30,7 @@ const nav=[
 ] as const
 
 export default function App(){
-  const [page,setPage]=useState<Page>('geologist')
+  const [page,setPage]=useState<Page>('decision-center')
   const [selected,setSelected]=useState(targets[0])
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [query,setQuery]=useState('')
@@ -66,6 +69,8 @@ export default function App(){
       <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
+        {page==='decision-center'&&<StageGateDashboard onOpen={setPage}/>}
+        {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)}/>}
         {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
         {page==='operations'&&<Operations/>}
         {page==='executive'&&<RoleDashboard role="executive" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
