@@ -13,20 +13,11 @@ import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionM
 
 type Page=DecisionModuleId|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
+// Keep the primary navigation focused: one dashboard and the six decision modules.
+// Existing specialist screens remain accessible from their module workspaces.
 const nav=[
-  {id:'decision-center',label:'Decision Center · 6 Modules',icon:Layers3},
+  {id:'decision-center',label:'Dashboard',icon:Layers3},
   ...decisionModules.map(m=>({id:m.id,label:m.name,icon:m.icon})),
-  {id:'geologist',label:'Geologist Workbench',icon:Layers3},
-  {id:'operations',label:'Daily Operations',icon:Activity},
-  {id:'executive',label:'Executive Portfolio',icon:BarChart3},
-  {id:'overview',label:'Exploration Overview',icon:BarChart3},
-  {id:'map',label:'GIS Exploration Map',icon:Map},
-  {id:'targets',label:'Target Intelligence',icon:Target},
-  {id:'drillholes',label:'Drillhole Manager',icon:CircleDot},
-  {id:'subsurface',label:'3D Subsurface',icon:Boxes},
-  {id:'geoscience',label:'Geochem & Geophysics',icon:Waves},
-  {id:'ai',label:'AI Prospectivity',icon:Sparkles},
-  {id:'qaqc',label:'Data QA / QC',icon:ShieldCheck},
 ] as const
 
 export default function App(){
@@ -68,6 +59,7 @@ export default function App(){
 
       <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
+      {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>← Back to Dashboard</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage}/>}
         {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)}/>}
