@@ -3,6 +3,7 @@ import { Activity, ArrowRight, BarChart3, CircleDollarSign, Compass, FlaskConica
 import './StageGate.css'
 import { createDecisionSnapshot, type DecisionContext, type Scenario } from './decisionPipeline'
 import { targets } from './mockData'
+import ExplorationEvaluator from './ExplorationEvaluator'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -68,6 +69,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  </div>
 }
 export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
+ if(id==='exploration-evaluator')return <ExplorationEvaluator context={context} onContext={onContext} onNavigate={onNavigate}/>
  const snapshot=createDecisionSnapshot(context)
  const current=snapshot.records.find(r=>r.stage===id)!
  const m=decisionModules.find(x=>x.id===id)!
