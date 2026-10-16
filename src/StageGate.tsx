@@ -8,6 +8,7 @@ import ReserveSimulator from './ReserveSimulator'
 import MiningEconomics from './MiningEconomics'
 import RiskScenario from './RiskScenario'
 import FinancialValuator from './FinancialValuator'
+import ESGGovernance from './ESGGovernance'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -78,6 +79,7 @@ export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:
  if(id==='economics-engine')return <MiningEconomics context={context} onContext={onContext} onNavigate={onNavigate}/>
  if(id==='risk-scenarios')return <RiskScenario context={context} onContext={onContext} onNavigate={onNavigate}/>
  if(id==='financial-valuator')return <FinancialValuator context={context} onContext={onContext} onNavigate={onNavigate}/>
+ if(id==='esg-governance')return <ESGGovernance context={context} onContext={onContext} onNavigate={onNavigate}/>
  const snapshot=createDecisionSnapshot(context)
  const current=snapshot.records.find(r=>r.stage===id)!
  const m=decisionModules.find(x=>x.id===id)!
