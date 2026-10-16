@@ -5,6 +5,7 @@ import { createDecisionSnapshot, type DecisionContext, type Scenario } from './d
 import { targets } from './mockData'
 import ExplorationEvaluator from './ExplorationEvaluator'
 import ReserveSimulator from './ReserveSimulator'
+import MiningEconomics from './MiningEconomics'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -72,6 +73,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
 export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
  if(id==='exploration-evaluator')return <ExplorationEvaluator context={context} onContext={onContext} onNavigate={onNavigate}/>
  if(id==='reserve-simulator')return <ReserveSimulator context={context} onContext={onContext} onNavigate={onNavigate}/>
+ if(id==='economics-engine')return <MiningEconomics context={context} onContext={onContext} onNavigate={onNavigate}/>
  const snapshot=createDecisionSnapshot(context)
  const current=snapshot.records.find(r=>r.stage===id)!
  const m=decisionModules.find(x=>x.id===id)!
