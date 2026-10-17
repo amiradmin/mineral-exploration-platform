@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react'
-import {CheckCircle2, Database, ExternalLink, GitBranch, Settings2, ShieldCheck, SlidersHorizontal, ThumbsDown, ThumbsUp, TrendingUp} from 'lucide-react'
+import {CheckCircle2, Database, ExternalLink, SlidersHorizontal, ThumbsDown, ThumbsUp, TrendingUp} from 'lucide-react'
 import {targets} from './mockData'
 import type {DecisionContext, Scenario} from './decisionPipeline'
 import './ExplorationEvaluator.css'
@@ -11,17 +11,33 @@ const scenarios:Record<Scenario,number>={conservative:.85,base:1,optimistic:1.1}
 const clamp=(v:number)=>Math.max(0,Math.min(100,v))
 const currency=(v:number)=>`${v<0?'-':'+'}$${Math.abs(v).toFixed(2)}M`
 
-function Scatter({index,title}:{index:number,title:string}){
+const anomalyMetrics=['Geochemical Anomaly','Geophysical Anomaly','Structural Anomaly','Mineralization Potential'] as const
+type AnomalyMetric=typeof anomalyMetrics[number]
+const metricValue=(m:AnomalyMetric,f:Factors,seed:number)=>{
+ const source=f[0]/100,pathway=f[1]/100,trap=f[2]/100,timing=f[3]/100
+ if(m==='Geochemical Anomaly')return Math.min(1,seed*.55+source*.32+timing*.13)
+ if(m==='Geophysical Anomaly')return Math.min(1,seed*.6+pathway*.28+source*.12)
+ if(m==='Structural Anomaly')return Math.min(1,seed*.55+trap*.3+pathway*.15)
+ return Math.min(1,seed*.48+source*.2+trap*.2+timing*.12)
+}
+function Scatter({index,title,factors,scenario,targetId,xMetric,yMetric,threshold}:{index:number,title:string,factors:Factors,scenario:Scenario,targetId:string,xMetric:AnomalyMetric,yMetric:AnomalyMetric,threshold:number}){
+ const scenarioScale=scenarios[scenario]
+ const targetSeed=Array.from(targetId).reduce((sum,ch)=>sum+ch.charCodeAt(0),0)
  const points=Array.from({length:125},(_,i)=>{
-  const a=((i*73+index*41)%101)/101, b=((i*47+index*29)%97)/97
-  return {x:12+a*90,y:83-(index%3===2?.65*a+.35*b:.56*a+.44*b)*67,high:a>.71&&b>.38,low:a<.3}
+  const a=((i*73+index*41+targetSeed)%101)/101,b=((i*47+index*29+targetSeed)%97)/97
+  const xValue=Math.min(1,metricValue(xMetric,factors,a)*scenarioScale)
+  const yValue=Math.min(1,metricValue(yMetric,factors,b)*scenarioScale)
+  const score=(xValue+yValue)/2
+  return {x:8+xValue*100,y:89-yValue*81,score,high:score>=threshold,low:score<threshold*.62}
  })
- return <svg viewBox="0 0 115 100" role="img" aria-label={title+' sample anomaly scatter plot'}>
+ const active=points.filter(p=>p.high).length
+ const cut=89-threshold*81
+ return <svg viewBox="0 0 115 100" role="img" aria-label={title+' synthetic scatter plot: '+active+' of 125 high potential points'}>
   <defs><linearGradient id={'zone-'+index} x1="0" y1="1" x2="1" y2="0"><stop stopColor="#14d8e0" stopOpacity=".04"/><stop offset=".6" stopColor="#22bcbd" stopOpacity=".16"/><stop offset="1" stopColor="#ffcb4b" stopOpacity=".32"/></linearGradient></defs>
   {[20,40,60,80].map(v=><path key={v} d={`M${v} 8V89 M8 ${v}H108`} stroke="#3c5566" strokeWidth=".5"/>)}
-  <path d={`M8 ${77-index%3*7} Q40 ${23+index*2} 108 12 V89 H8Z`} fill={`url(#zone-${index})`}/>
-  <path d={`M8 ${77-index%3*7} Q40 ${23+index*2} 108 12`} stroke="#4ce7d4" strokeWidth=".8" fill="none"/>
-  {points.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.high?1.15:.8} fill={p.high?'#ffcc4e':p.low?'#19dbed':'#70e8dc'} opacity={.45+(i%4)*.14}/>)}
+  <path d={`M8 ${cut} L108 ${cut} V8 H8Z`} fill={`url(#zone-${index})`}/>
+  <path d={`M8 ${cut} H108`} stroke="#ffcc49" strokeDasharray="3 2" strokeWidth=".8" fill="none"/>
+  {points.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.high?1.3:.8} fill={p.high?'#ffcc4e':p.low?'#19dbed':'#70e8dc'} opacity={.45+(i%4)*.14}/>)}
   <path d="M8 8V89H108" stroke="#71899b" strokeWidth=".7" fill="none"/>
  </svg>
 }
@@ -45,7 +61,10 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
  const [checksByTarget,setChecksByTarget]=useState<Record<string,boolean[]>>({})
  const [budget,setBudget]=useState(1.3)
  const [successValue,setSuccessValue]=useState(45.75)
- const [filterValues,setFilterValues]=useState(['Geochemical Anomaly','Geophysical Anomaly','Geophysical Anomaly','Low (Typical Anomaly)'])
+ const [xMetric,setXMetric]=useState<AnomalyMetric>('Geochemical Anomaly')
+ const [yMetric,setYMetric]=useState<AnomalyMetric>('Geophysical Anomaly')
+ const [compareMetric,setCompareMetric]=useState<AnomalyMetric>('Structural Anomaly')
+ const [threshold,setThreshold]=useState(65)
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
  const factors=factorByTarget[target.id]??defaults
  const verified=checksByTarget[target.id]??[true,true,true,true]
@@ -76,7 +95,11 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
     <div className="ee-summary"><small>QA/QC SUMMARY</small><div>All Factors Verified ({passed}/4) <CheckCircle2 size={16}/></div><div className="ee-progress"><i style={{width:(passed*25)+'%'}}/></div></div>
    </section>
    <section className="ee-panel ee-probability"><div className="ee-tab">Module 1: Exploration Evaluator (Gate 1)</div><div className="ee-panel-title">PROBABILITY TREE DIAGRAM</div><div className="ee-tags"><span><ThumbsUp size={13}/> Exploration</span><span><ThumbsDown size={13}/> Failure</span></div><Tree success={result.pos} emv={result.emv} budget={budget}/><div className="ee-assumptions"><label>Budget ($M)<input type="number" value={budget} min="0" step=".1" onChange={e=>setBudget(Math.max(0,Number(e.target.value)||0))}/></label><label>Success value ($M)<input type="number" value={successValue} min="0" step=".25" onChange={e=>setSuccessValue(Math.max(0,Number(e.target.value)||0))}/></label></div></section>
-   <section className="ee-panel ee-anomalies"><div className="ee-panel-title">MULTI-ANOMALY SCATTER PLOT COMPARISON MATRIX</div><div className="ee-legend"><span><i className="gold"/> High Potential</span><span><i className="cyan"/> Medium Potential</span><span><i className="teal"/> Low Potential</span><span>◇ Risk Areas</span></div><div className="ee-scatter-grid">{['Geochemical Anomaly (ppm)','Geophysical Anomaly (mGal)','Structural Anomaly (Confidence)','Geochemical Anomaly (ppm)','Structural Anomaly (Confidence)','Mineralization Potential (Grade)'].map((title,i)=><div className="ee-scatter" key={i}><Scatter index={i} title={title}/><small>{title}</small></div>)}</div><div className="ee-filters">{['Filters Type','Geophysical Anomaly','Compare Threshold','Threshold'].map((title,i)=><label key={i}>{title}<select value={filterValues[i]} onChange={e=>setFilterValues(v=>v.map((x,j)=>i===j?e.target.value:x))}>{['Geochemical Anomaly','Geophysical Anomaly','Structural Anomaly','Mineralization Potential','Low (Typical Anomaly)','High (Potential Anomaly)'].map(v=><option key={v}>{v}</option>)}</select></label>)}</div></section>
+   <section className="ee-panel ee-anomalies"><div className="ee-panel-title">MULTI-ANOMALY SCATTER PLOT COMPARISON MATRIX</div><div className="ee-legend"><span><i className="gold"/> High Potential</span><span><i className="cyan"/> Medium Potential</span><span><i className="teal"/> Low Potential</span><span>◇ Risk Areas</span></div><div className="ee-scatter-grid">{[
+    [xMetric,yMetric],[yMetric,compareMetric],[compareMetric,xMetric],
+    [xMetric,compareMetric],[compareMetric,yMetric],[yMetric,xMetric]
+   ].map(([x,y],i)=><div className="ee-scatter" key={i}><Scatter index={i} title={x+' vs '+y} factors={factors} scenario={context.scenario} targetId={target.id} xMetric={x} yMetric={y} threshold={threshold/100}/><small>{x} / {y}</small></div>)}</div>
+   <div className="ee-filters"><label>X axis<select aria-label="X axis metric" value={xMetric} onChange={e=>setXMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Y axis<select aria-label="Y axis metric" value={yMetric} onChange={e=>setYMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Compare<select aria-label="Comparison metric" value={compareMetric} onChange={e=>setCompareMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>High threshold <input aria-label="High potential threshold" type="range" min="20" max="95" step="5" value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/><b>{threshold}%</b></label></div><p className="ee-matrix-note">Live synthetic preview · sliders, scenario, target, axis selectors and threshold update all six plots. Not observed geoscience measurements.</p></section>
   </div>
   <footer className="ee-footer"><span>DEMO DATA · NOT LIVE &nbsp; | &nbsp; SYSTEM STATUS: <b>ONLINE (PRESENTATION)</b></span><span><button onClick={exportData}><Database size={12}/> Export Gate 1</button> · Synthetic, uncalibrated values; not suitable for real decisions</span></footer>
  </div>
