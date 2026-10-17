@@ -42,7 +42,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
   <ArrowRight className="sg-art-card-arrow" size={18}/>
  </button>}
  return <div className="sg-wrap sg-reference">
-   <div className="sg-heading"><div><span className="sg-eyebrow">EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</span><h1>Stage-Gate Decision Center</h1><p>From raw geological evidence to boardroom-ready financial scenarios.</p></div><span className="sg-demo">SIMULATED DEMO DATA</span></div>
+   <div className="sg-heading"><div><span className="sg-eyebrow">EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</span><h1>Stage-Gate Decision Center</h1><p>From raw geological evidence to boardroom-ready financial scenarios.</p></div></div>
    <section className="sg-architecture" aria-label="Six module stage-gate decision architecture">
     <div className="sg-art-title"><h2>The 6-Module Stage-Gate Decision Architecture</h2><p>Transforming raw geological inputs into boardroom computational outputs.</p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
