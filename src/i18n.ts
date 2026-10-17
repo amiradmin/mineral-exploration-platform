@@ -247,10 +247,11 @@ function translate(source: string): string {
   return source.replace(trimmed,result)
 }
 
+const originals = new WeakMap<Text,string>()
+const placeholders = new WeakMap<Element,string>()
+
 export function localizeApp(root: HTMLElement, language: Language): () => void {
-  const originals = new WeakMap<Text,string>()
-  const placeholders = new WeakMap<Element,string>()
-  const ignored = 'script,style,code,pre,svg,option,textarea,[data-no-translate]'
+  const ignored = 'script,style,code,pre,svg,textarea,[data-no-translate]'
   const visit = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const parent = node.parentElement
@@ -258,7 +259,7 @@ export function localizeApp(root: HTMLElement, language: Language): () => void {
       const text = node as Text
       const prev = originals.get(text)
       if (prev === undefined) originals.set(text,text.data)
-      else if (text.data !== translate(prev)) originals.set(text,text.data)
+      else if (text.data !== prev && text.data !== translate(prev)) originals.set(text,text.data)
       const original = originals.get(text) ?? text.data
       const desired = language === 'fa' ? translate(original) : original
       if (text.data !== desired) text.data = desired
