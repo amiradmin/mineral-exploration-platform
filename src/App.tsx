@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { localizeApp, type Language } from './i18n'
+import React, { useMemo, useState } from 'react'
 import {
   Activity, BarChart3, Beaker, Bot, Boxes, CircleDot, Database, FlaskConical,
   Layers3, Map, Mountain, Orbit, Radar, Search, Settings2, ShieldCheck, Sparkles,
@@ -23,15 +22,6 @@ const nav=[
 ] as const
 
 export default function App(){
-  const [language, setLanguage] = useState<Language>(() => localStorage.getItem('terrascope-language') === 'en' ? 'en' : 'fa')
-  useEffect(() => {
-    document.documentElement.lang = language
-    document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr'
-    document.title = language === 'fa' ? 'تراسکوپ | پلتفرم اکتشاف معدن' : 'TerraScope | Mineral Exploration Platform'
-    localStorage.setItem('terrascope-language',language)
-    const root = document.querySelector<HTMLElement>('.app')
-    return root ? localizeApp(root,language) : undefined
-  }, [language])
   const [page,setPage]=useState<Page>('decision-center')
   const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
@@ -41,7 +31,7 @@ export default function App(){
   const matches=targets.filter(t=>`${t.id} ${t.name} ${t.commodity} ${t.deposit}`.toLowerCase().includes(query.trim().toLowerCase()))
   const exportDemo=(brief=false)=>{const body=brief?`# TerraScope demonstration brief\n\nSIMULATED DATA — DO NOT USE FOR EXPLORATION DECISIONS\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}\n\nNo live model or real survey data connected.`:JSON.stringify({demo:true,targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'terrascope-demo-brief.md':'terrascope-demo-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Demo brief downloaded':'Demo snapshot exported')}
 
-  return <div className="app" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+  return <div className="app">
     <aside className="sidebar">
       <div className="brand">
         <div className="logo"><Mountain size={24}/></div>
@@ -65,7 +55,6 @@ export default function App(){
         <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No demo targets found</span>}</div>}</div>
         <div className="project-pill"><span>PROJECT</span><b>Central Tethyan Belt</b></div>
         <div className="live"><i/> DEMO DATA</div>
-        <div className="language-switch" role="group" aria-label="Language / زبان"><button type="button" data-no-translate aria-pressed={language==='fa'} className={language==='fa'?'selected':''} onClick={()=>setLanguage('fa')}>فارسی</button><button type="button" data-no-translate aria-pressed={language==='en'} className={language==='en'?'selected':''} onClick={()=>setLanguage('en')}>English</button></div>
         <button className="icon-btn" onClick={()=>setAssistantOpen(!assistantOpen)}><Bot size={17}/></button>
         <div className="avatar">GA</div>
       </header>
