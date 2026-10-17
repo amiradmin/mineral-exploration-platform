@@ -59,7 +59,6 @@ export default function App(){
         <div className="avatar">GA</div>
       </header>
 
-      <div className="demo-banner"><b>DEMONSTRATION DATA</b> All maps, drillhole results, model scores and recommendations are illustrative. No live GIS, backend or trained AI model is connected.</div>
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>← Back to Dashboard</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
