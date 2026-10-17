@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root{
@@ -275,7 +276,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #7bd9ad;outline-offse
 @media(max-width:480px){.role-kpi-grid{grid-template-columns:1fr 1fr}.role-kpi{padding:11px}.role-kpi strong{font-size:20px}.role-filter-row{grid-template-columns:1fr}.role-intro h1{font-size:23px}}
 
 /* Persian-first bilingual interface */
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
+
 .app[dir="rtl"]{font-family:Vazirmatn,Tahoma,system-ui,sans-serif}
 .app[dir="rtl"] .sidebar{left:auto;right:0;border-right:0;border-left:1px solid var(--line)}
 .app[dir="rtl"] main{margin-left:0;margin-right:272px}
