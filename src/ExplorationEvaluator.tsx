@@ -1,73 +1,83 @@
 import React, {useMemo, useState} from 'react'
-import { Activity, ArrowRight, Database, GitBranch, Layers, Map, ShieldAlert, Target, Wallet } from 'lucide-react'
+import {CheckCircle2, Database, ExternalLink, GitBranch, Settings2, ShieldCheck, SlidersHorizontal, ThumbsDown, ThumbsUp, TrendingUp} from 'lucide-react'
 import {targets} from './mockData'
-import type { DecisionContext, Scenario } from './decisionPipeline'
+import type {DecisionContext, Scenario} from './decisionPipeline'
 import './ExplorationEvaluator.css'
 
-const factorLabels=[
- ['Mineralizing source','Evidence for a viable source of metals and heat'],
- ['Fluid pathways','Structures and permeability transporting mineralizing fluids'],
- ['Deposition conditions','Traps and chemical/physical conditions for ore deposition'],
- ['Timing & preservation','Relative timing of mineralization and later preservation'],
-] as const
-const scenarioValues:Record<Scenario,number>={conservative:.85,base:1,optimistic:1.1}
-const money=(v:number)=> (v<0?'−':'')+'$'+Math.abs(v).toFixed(1)+'M'
-const bound=(v:number,min:number,max:number)=>Math.min(max,Math.max(min,v))
-type FactorValues=[number,number,number,number]
+type Factors = [number,number,number,number]
+const defaults:Factors=[75,82,68,90]
+const labels=[['SOURCE','Source Rock Potential'],['PATHWAY','Migration Pathway Integrity'],['TRAP','Trap Seal Capacity'],['TIMING','Accumulation Timing']] as const
+const scenarios:Record<Scenario,number>={conservative:.85,base:1,optimistic:1.1}
+const clamp=(v:number)=>Math.max(0,Math.min(100,v))
+const currency=(v:number)=>`${v<0?'-':'+'}$${Math.abs(v).toFixed(2)}M`
+
+function Scatter({index,title}:{index:number,title:string}){
+ const points=Array.from({length:125},(_,i)=>{
+  const a=((i*73+index*41)%101)/101, b=((i*47+index*29)%97)/97
+  return {x:12+a*90,y:83-(index%3===2?.65*a+.35*b:.56*a+.44*b)*67,high:a>.71&&b>.38,low:a<.3}
+ })
+ return <svg viewBox="0 0 115 100" role="img" aria-label={title+' sample anomaly scatter plot'}>
+  <defs><linearGradient id={'zone-'+index} x1="0" y1="1" x2="1" y2="0"><stop stopColor="#14d8e0" stopOpacity=".04"/><stop offset=".6" stopColor="#22bcbd" stopOpacity=".16"/><stop offset="1" stopColor="#ffcb4b" stopOpacity=".32"/></linearGradient></defs>
+  {[20,40,60,80].map(v=><path key={v} d={`M${v} 8V89 M8 ${v}H108`} stroke="#3c5566" strokeWidth=".5"/>)}
+  <path d={`M8 ${77-index%3*7} Q40 ${23+index*2} 108 12 V89 H8Z`} fill={`url(#zone-${index})`}/>
+  <path d={`M8 ${77-index%3*7} Q40 ${23+index*2} 108 12`} stroke="#4ce7d4" strokeWidth=".8" fill="none"/>
+  {points.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.high?1.15:.8} fill={p.high?'#ffcc4e':p.low?'#19dbed':'#70e8dc'} opacity={.45+(i%4)*.14}/>)}
+  <path d="M8 8V89H108" stroke="#71899b" strokeWidth=".7" fill="none"/>
+ </svg>
+}
+function Tree({success,emv,budget}:{success:number,emv:number,budget:number}){
+ const pct=(success*100).toFixed(2)+'%'
+ const nodes=[{y:46,title:'TECHNICAL SUCCESS',amount:currency(emv),color:'#2bebac',mark:'↗'},{y:138,title:'ECONOMIC VIABILITY',amount:currency(emv),color:'#2bebac',mark:'$'},{y:226,title:'GEOLOGICAL RISK',amount:'-$'+budget.toFixed(2)+'M',color:'#ff827b',mark:'!'},{y:313,title:'EXECUTION RISK',amount:'-$'+budget.toFixed(2)+'M',color:'#ff827b',mark:'×'}]
+ return <svg className="ee-tree-svg" viewBox="0 0 535 350" role="img" aria-label={`Illustrative probability tree, success ${pct}`}>
+  <defs><filter id="gate-glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <path d="M45 176 C103 176 114 91 179 91 M45 176 C103 176 114 264 179 264" stroke="#5bdab9" strokeWidth="1.8" fill="none"/>
+  <path d="M194 91 C265 91 265 46 334 46 M194 91 C265 91 265 138 334 138" stroke="#32e8ae" strokeWidth="1.5" fill="none"/>
+  <path d="M194 264 C265 264 265 226 334 226 M194 264 C265 264 265 313 334 313" stroke="#ef786f" strokeWidth="1.5" fill="none"/>
+  <circle cx="45" cy="176" r="21" fill="#253c4a" stroke="#bfd7db"/><text x="45" y="183" fontSize="22" textAnchor="middle" fill="#fff">◎</text>
+  <text x="45" y="216" textAnchor="middle" fill="#e5f7fb" fontSize="10" fontWeight="bold">EXPLORATION</text><text x="45" y="228" textAnchor="middle" fill="#e5f7fb" fontSize="10">GATE 1</text>
+  {[{y:91,color:'#1eeaa9',title:'SUCCESS',value:pct,mark:'+'},{y:264,color:'#fa786d',title:'FAILURE',value:(100-success*100).toFixed(2)+'%',mark:'−'}].map(n=><g key={n.title} textAnchor="middle"><circle cx="181" cy={n.y} r="22" fill="#13333c" stroke={n.color} strokeWidth="2" filter="url(#gate-glow)"/><text x="181" y={n.y+9} fill={n.color} fontSize="30" fontWeight="bold">{n.mark}</text><text x="181" y={n.y+43} fill="#f1fbff" fontSize="13" fontWeight="bold">{n.title}</text><text x="181" y={n.y+58} fill={n.color} fontSize="12">{n.value}</text></g>)}
+  {nodes.map(n=><g key={n.title}><circle cx="350" cy={n.y} r="18" fill="#193340" stroke={n.color}/><text x="350" y={n.y+6} textAnchor="middle" fill={n.color} fontSize="21">{n.mark}</text><text x="377" y={n.y-8} fill="#eaf5fa" fontSize="11" fontWeight="bold">{n.title}</text><text x="377" y={n.y+8} fill={n.color} fontSize="12" fontWeight="bold">{n.amount}</text><path d={`M377 ${n.y+15}H513`} stroke={n.color} opacity=".7"/><circle cx="513" cy={n.y+15} r="6" fill={n.color} filter="url(#gate-glow)"/></g>)}
+ </svg>
+}
+
 export default function ExplorationEvaluator({context,onContext,onNavigate}:{context:DecisionContext;onContext:(c:DecisionContext)=>void;onNavigate:(page:string)=>void}){
+ const [factorByTarget,setFactorByTarget]=useState<Record<string,Factors>>({})
+ const [checksByTarget,setChecksByTarget]=useState<Record<string,boolean[]>>({})
+ const [budget,setBudget]=useState(1.3)
+ const [successValue,setSuccessValue]=useState(45.75)
+ const [filterValues,setFilterValues]=useState(['Geochemical Anomaly','Geophysical Anomaly','Geophysical Anomaly','Low (Typical Anomaly)'])
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
- const [factorOverrides,setFactorOverrides]=useState<Record<string,FactorValues>>({})
- const [budgets,setBudgets]=useState<Record<string,number>>({})
- const [values,setValues]=useState<Record<string,number>>({})
- const [months,setMonths]=useState<Record<string,number>>({})
- const factors=factorOverrides[target.id]??[.78,.72,.68,.81]
- const budget=budgets[target.id]??2.4
- const upside=values[target.id]??18
- const timeline=months[target.id]??18
+ const factors=factorByTarget[target.id]??defaults
+ const verified=checksByTarget[target.id]??[true,true,true,true]
+ const passed=verified.filter(Boolean).length
  const result=useMemo(()=>{
-  // Independent multiplication is an illustrative elicitation framework only.
-  // These are user-assigned hypothetical factor weights, NOT calibrated geological probabilities.
-  const nominal=factors.reduce((a,b)=>a*b,1)
-  const score=bound(nominal*scenarioValues[context.scenario],0,1)
-  const discount=1/Math.pow(1.1,timeline/12)
-  const successValue=upside*discount
-  const emv=score*successValue-budget
-  const risk=1-score
-  const isHighValue=emv>=2
-  const isHighRisk=risk>=.70
-  const quadrant=isHighRisk?(isHighValue?'Strategic Bet':'Deprioritize'):(isHighValue?'Transformational':'Quick Win')
-  const verdict=emv<0?'HOLD':isHighRisk?'REVIEW':'GO'
-  return {score,emv,risk,quadrant,verdict,successValue,discount}
- },[factors,budget,upside,timeline,context.scenario])
- const updateFactor=(idx:number,v:number)=>{
-  const next=[...factors] as FactorValues
-  next[idx]=v/100
-  setFactorOverrides(x=>({...x,[target.id]:next}))
- }
- const exportReport=()=>{
-  const report={disclaimer:'FICTIONAL demonstration, uncalibrated subjective factor inputs, not investment guidance or geological probability',target:target.id,scenario:context.scenario,factors:Object.fromEntries(factorLabels.map(([label],i)=>[label,factors[i]])),budgetMillionsUSD:budget,illustrativeSuccessValueMillionsUSD:upside,timelineMonths:timeline,results:result}
-  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'})
-  const url=URL.createObjectURL(blob)
-  const a=document.createElement('a');a.href=url;a.download='exploration-evaluator-'+target.id+'.json';a.click();URL.revokeObjectURL(url)
- }
- return <div className="ee">
-  <div className="ee-heading"><div><span className="sg-eyebrow">MODULE 01 · GATE 1 · SCREENING & TARGETS</span><h1>Exploration Evaluator</h1><p>Connect subsurface evidence, hypothetical budgets and decision scenarios in one review workspace.</p></div><span className="sg-demo">UNCALIBRATED · DEMO ONLY</span></div>
-  <div className="sg-context"><label>Target<select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario<select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><span>Selections are shared with the other five modules.</span></div>
-  <div className="ee-kpis"><div><span>Assumption product (PoS proxy)</span><strong>{(result.score*100).toFixed(1)}%</strong><small>Not a calibrated probability of discovery</small></div><div><span>Illustrative EMV</span><strong>{money(result.emv)}</strong><small>Scenario expectation less exploration budget</small></div><div><span>Geological uncertainty proxy</span><strong>{(result.risk*100).toFixed(1)}%</strong><small>1 − assumption product</small></div><div><span>Screening suggestion</span><strong>{result.verdict}</strong><small>Heuristic · requires expert review</small></div></div>
-  <div className="ee-columns">
-   <section className="ee-panel"><h2><Layers size={19}/> Inputs: Subsurface Reality</h2><p className="ee-muted">Adjust four conceptual mineral-system factors (unvalidated subjective confidence).</p>
-    <div className="ee-inputs">{factorLabels.map(([label,desc],i)=><label key={label}><span><b>{label}</b><strong>{(factors[i]*100).toFixed(0)}%</strong></span><small>{desc}</small><input type="range" min="5" max="100" step="1" value={Math.round(factors[i]*100)} onChange={e=>updateFactor(i,Number(e.target.value))}/></label>)}</div>
-    <div className="ee-number-grid"><label><Wallet size={15}/> Exploration budget ($M)<input type="number" min="0" max="10000" step=".1" value={budget} onChange={e=>setBudgets(x=>({...x,[target.id]:bound(Number(e.target.value)||0,0,10000)}))}/></label><label>Success case value ($M)<input type="number" min="0" max="100000" step=".5" value={upside} onChange={e=>setValues(x=>({...x,[target.id]:bound(Number(e.target.value)||0,0,100000)}))}/></label><label>Timeline (months)<input type="number" min="1" max="240" step="1" value={timeline} onChange={e=>setMonths(x=>({...x,[target.id]:bound(Number(e.target.value)||1,1,240)}))}/></label></div>
-    <div className="ee-evidence"><b>Existing target evidence</b>{target.evidence.map(x=><span key={x}>• {x}</span>)}<button onClick={()=>onNavigate('targets')}>Open target intelligence <ArrowRight size={14}/></button></div>
+  // Fictional inputs, not independent or calibrated geological probabilities.
+  const pos=Math.max(0,Math.min(1,factors.reduce((p,v)=>p*v/100,1)*scenarios[context.scenario]))
+  return {pos,emv:pos*successValue-budget}
+ },[factors,context.scenario,budget,successValue])
+ const updateFactor=(i:number,v:number)=>setFactorByTarget(old=>({...old,[target.id]:factors.map((x,j)=>i===j?clamp(v):x) as Factors}))
+ const toggleVerified=(i:number)=>setChecksByTarget(old=>({...old,[target.id]:verified.map((v,j)=>i===j?!v:v)}))
+ const exportData=()=>{const blob=new Blob([JSON.stringify({demo:true,warning:'Uncalibrated synthetic demonstration, not geological or financial advice',target:target.name,scenario:context.scenario,factors,verified,posProxy:result.pos,emvMillions:result.emv},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gate1-demo.json';a.click();URL.revokeObjectURL(url)}
+ return <div className="ee-reference">
+  <div className="ee-topbar">
+   <label className="ee-project-select"><span>PROJECT SELECTOR</span><select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label>
+   <div className="ee-pass">Pass Gate 1</div>
+   <label className="ee-scenario">SCENARIO <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label>
+  </div>
+  <div className="ee-kpi-grid">
+   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors">{[['S','Seequent'],['M','Micromine'],['D','Datamine']].map(([letter,name])=><div key={name}><b>{letter}</b>{name}<ExternalLink size={13}/></div>)}</div><small>Reference integrations · not connected</small></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title">DATA CONFIDENCE INDEX (DCI)</div><div className="ee-big">88% <TrendingUp size={22}/></div><small>Illustrative QA/QC index</small></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title">ADJUSTED PROBABILITY OF SUCCESS (PoS)</div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small>Uncalibrated assumption-product proxy</small></section>
+   <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title">EXPECTED MONETARY VALUE (EMV)</div><div className="ee-big">{currency(result.emv)}</div><small>Based on illustrative parameters</small></section>
+  </div>
+  <div className="ee-main">
+   <section className="ee-panel ee-geological"><div className="ee-panel-title">GEOLOGICAL FACTORS</div>
+    {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{title}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{verified[i]?'Verified QA/QC':'Needs verification'}</button></div>)}
+    <div className="ee-summary"><small>QA/QC SUMMARY</small><div>All Factors Verified ({passed}/4) <CheckCircle2 size={16}/></div><div className="ee-progress"><i style={{width:(passed*25)+'%'}}/></div></div>
    </section>
-   <section className="ee-panel ee-compute"><h2><GitBranch size={19}/> Computational Outputs</h2><p className="ee-muted">Transparent illustration of the concept in your reference diagram.</p>
-     <div className="ee-tree"><div><span>4 geological assumptions</span><strong>{factors.map(x=>(x*100).toFixed(0)+'%').join(' × ')}</strong></div><div className="ee-tree-arrow">↓</div><div><span>Joint assumption index · scenario adjustment</span><strong>{(result.score*100).toFixed(1)}%</strong></div><div className="ee-tree-split"><div><b>Illustrative success</b><strong>{(result.score*100).toFixed(1)}%</strong><small>Value after discount: {money(result.successValue)}</small></div><div><b>Illustrative failure</b><strong>{(result.risk*100).toFixed(1)}%</strong><small>Success value: $0M</small></div></div><div className="ee-emv"><span>Expected monetary value (simplified)</span><strong>{money(result.emv)}</strong><small>Assumption index × discounted success value − exploration budget</small></div></div>
-    <h3>Risk vs Expected Value</h3><div className="ee-matrix" role="img" aria-label={'Decision quadrant: '+result.quadrant}><div>Quick Win<small>Low risk · Low EMV</small></div><div>Transformational<small>Low risk · High EMV</small></div><div>Deprioritize<small>High risk · Low EMV</small></div><div>Strategic Bet<small>High risk · High EMV</small></div><i style={{left:(result.emv>=2?'75%':'25%'),top:(result.risk>=.70?'75%':'25%')}} title={target.name+' · '+result.quadrant}/></div><div className="ee-matrix-caption">Current quadrant: <strong>{result.quadrant}</strong> · Thresholds: risk 70%, EMV $2M</div>
-   </section>
-   <section className="ee-panel"><h2><Database size={19}/> Technology & Data Enablers</h2><p className="ee-muted">Internal workspaces are navigable. Third-party systems below are reference integrations, not connected services.</p>
-    <div className="ee-integrations"><button onClick={()=>onNavigate('map')}><Map size={19}/><span><b>GIS Exploration Map</b><small>Evidence layers and exploration targets</small></span><ArrowRight size={15}/></button><button onClick={()=>onNavigate('geoscience')}><Activity size={19}/><span><b>Geochemistry & Geophysics</b><small>Surface anomalies and survey coverage</small></span><ArrowRight size={15}/></button><button onClick={()=>onNavigate('qaqc')}><ShieldAlert size={19}/><span><b>Data QA / QC</b><small>Review provenance and data completeness</small></span><ArrowRight size={15}/></button><button onClick={()=>onNavigate('ai')}><Target size={19}/><span><b>AI Prospectivity</b><small>Separate ranking score · not a PoS estimate</small></span><ArrowRight size={15}/></button></div>
-    <h3>Potential external integration</h3><div className="ee-vendors"><span>Seequent Target / Oasis montaj <small>Not connected</small></span><span>Micromine Geobank <small>Not connected</small></span><span>Datamine Discover <small>Not connected</small></span></div><button className="ee-export" onClick={exportReport}>Export assumptions & decision JSON</button>
-   </section>
-  </div><div className="ee-warning">DEMONSTRATION ONLY · Mineral-system factors are not independent calibrated probabilities. The calculated product, risk index, EMV, quadrant and GO/HOLD/REVIEW suggestion are hypothetical teaching aids. They must not drive actual exploration, resource classification or investment decisions.</div>
+   <section className="ee-panel ee-probability"><div className="ee-tab">Module 1: Exploration Evaluator (Gate 1)</div><div className="ee-panel-title">PROBABILITY TREE DIAGRAM</div><div className="ee-tags"><span><ThumbsUp size={13}/> Exploration</span><span><ThumbsDown size={13}/> Failure</span></div><Tree success={result.pos} emv={result.emv} budget={budget}/><div className="ee-assumptions"><label>Budget ($M)<input type="number" value={budget} min="0" step=".1" onChange={e=>setBudget(Math.max(0,Number(e.target.value)||0))}/></label><label>Success value ($M)<input type="number" value={successValue} min="0" step=".25" onChange={e=>setSuccessValue(Math.max(0,Number(e.target.value)||0))}/></label></div></section>
+   <section className="ee-panel ee-anomalies"><div className="ee-panel-title">MULTI-ANOMALY SCATTER PLOT COMPARISON MATRIX</div><div className="ee-legend"><span><i className="gold"/> High Potential</span><span><i className="cyan"/> Medium Potential</span><span><i className="teal"/> Low Potential</span><span>◇ Risk Areas</span></div><div className="ee-scatter-grid">{['Geochemical Anomaly (ppm)','Geophysical Anomaly (mGal)','Structural Anomaly (Confidence)','Geochemical Anomaly (ppm)','Structural Anomaly (Confidence)','Mineralization Potential (Grade)'].map((title,i)=><div className="ee-scatter" key={i}><Scatter index={i} title={title}/><small>{title}</small></div>)}</div><div className="ee-filters">{['Filters Type','Geophysical Anomaly','Compare Threshold','Threshold'].map((title,i)=><label key={i}>{title}<select value={filterValues[i]} onChange={e=>setFilterValues(v=>v.map((x,j)=>i===j?e.target.value:x))}>{['Geochemical Anomaly','Geophysical Anomaly','Structural Anomaly','Mineralization Potential','Low (Typical Anomaly)','High (Potential Anomaly)'].map(v=><option key={v}>{v}</option>)}</select></label>)}</div></section>
+  </div>
+  <footer className="ee-footer"><span>DEMO DATA · NOT LIVE &nbsp; | &nbsp; SYSTEM STATUS: <b>ONLINE (PRESENTATION)</b></span><span><button onClick={exportData}><Database size={12}/> Export Gate 1</button> · Synthetic, uncalibrated values; not suitable for real decisions</span></footer>
  </div>
 }
