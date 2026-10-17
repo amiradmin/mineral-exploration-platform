@@ -79,9 +79,9 @@ export default function Operations(){
     <Metric icon={<AlertTriangle size={18}/>} label="Open QA/QC issues" value={f(activeIssues.length)} sub="Exceptions requiring owner review" tone="red"/>
   </div>
   <div className="ops-row">
-    <section className="panel ops-chart-panel">
+    <section className="panel ops-chart-panel chart-panel">
       <div className="ops-section-head"><div><h2>Drilling performance</h2><p>Last seven illustrative shifts · metres drilled</p></div><span className="ops-chip ok">Daily target vs actual</span></div>
-      <div className="ops-chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={shifts} barGap={3}><CartesianGrid stroke="#244137" strokeDasharray="3 4" vertical={false}/><XAxis dataKey="day" tick={{fill:'#a1b8ae',fontSize:11}} axisLine={false} tickLine={false}/><YAxis tick={{fill:'#a1b8ae',fontSize:11}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:'#10231c',border:'1px solid #315444',color:'#f3fff9'}}/><Bar dataKey="plan" name="Planned m" fill="#617d72" radius={[4,4,0,0]}/><Bar dataKey="actual" name="Actual m" fill="#65d7a6" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div>
+      <div className="ops-chart chart-frame"><span className="chart-corner tl"/><span className="chart-corner tr"/><span className="chart-corner bl"/><span className="chart-corner br"/><ResponsiveContainer width="100%" height="100%"><BarChart data={shifts} barGap={3} margin={{top:17,right:12,left:-13,bottom:0}}><CartesianGrid stroke="#31516a" strokeDasharray="2 5" vertical={false}/><XAxis dataKey="day" tick={{fill:'#9ec8e5',fontSize:10}} axisLine={{stroke:'#6ca7cf'}} tickLine={false}/><YAxis tick={{fill:'#7fa8c4',fontSize:10}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:'#0b1826',border:'1px solid #438ebc',borderRadius:2,color:'#f3fbff'}}/><Bar dataKey="plan" name="Planned m" fill="#477b9c" radius={[1,1,0,0]}/><Bar dataKey="actual" name="Actual m" fill="#59c9f4" radius={[1,1,0,0]}/></BarChart></ResponsiveContainer></div>
     </section>
     <section className="panel ops-chart-panel">
       <div className="ops-section-head"><div><h2>Program execution</h2><p>Selected project drilling and cost utilisation</p></div><Target size={19} color="#65d7a6"/></div>

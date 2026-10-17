@@ -1,9 +1,30 @@
 services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mineral-exploration-api
+    environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,api"
+      CORS_ALLOWED_ORIGINS: "http://localhost:4173,http://localhost:8085"
+      SQLITE_PATH: /app/data/db.sqlite3
+    ports:
+      - "8000:8000"
+    volumes:
+      - api_data:/app/data
+    restart: unless-stopped
+
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: mineral-exploration-frontend
+    depends_on:
+      - api
     ports:
       - "8085:80"
     restart: unless-stopped
+
+volumes:
+  api_data:

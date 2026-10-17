@@ -1,5 +1,8 @@
 node_modules
 dist
+.venv
+backend/db.sqlite3
+**/__pycache__
 .git
 .vscode
 *.log

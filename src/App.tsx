@@ -4,7 +4,7 @@ import {
   Layers3, Map, Mountain, Orbit, Radar, Search, Settings2, ShieldCheck, Sparkles,
   Target, Waves
 } from 'lucide-react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
 import Operations from './Operations'
@@ -258,8 +258,10 @@ function Geoscience(){
   <Title eyebrow="MULTI-DOMAIN GEOSCIENCE" title="Geochemistry & Geophysics" sub="Identify anomalous populations and spatial coincidence across exploration datasets."/>
   <div className="element-tabs">{elements.map(e=><button key={e.symbol} className={e.symbol===element?'active':''} onClick={()=>setElement(e.symbol)}><b>{e.symbol}</b><span>{e.name}</span></button>)}</div>
   <div className="grid geo-grid">
-    <section className="panel chart"><PanelTitle title="Anomaly Counts by Element" sub="Samples above project P95"/>
-      <ResponsiveContainer width="100%" height={290}><BarChart data={chart}><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name"/><YAxis/><Tooltip/><Bar dataKey="value" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>
+    <section className="panel chart chart-panel"><PanelTitle title="Anomaly Counts by Element" sub="Samples above project P95"/>
+      <div className="chart-frame"><span className="chart-corner tl"/><span className="chart-corner tr"/><span className="chart-corner bl"/><span className="chart-corner br"/>
+      <ResponsiveContainer width="100%" height={290}><BarChart data={chart} margin={{top:16,right:12,left:-14,bottom:0}}><CartesianGrid stroke="#31516a" strokeDasharray="2 5" vertical={false}/><XAxis dataKey="name" tick={{fill:'#9ec8e5',fontSize:10}} axisLine={{stroke:'#6ca7cf'}} tickLine={false}/><YAxis tick={{fill:'#7fa8c4',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip cursor={{fill:'#62c6f012'}} contentStyle={{background:'#0b1826',border:'1px solid #438ebc',borderRadius:2,color:'#edf7ff'}}/><Bar dataKey="value" radius={[1,1,0,0]}>{chart.map((entry,index)=><Cell key={entry.name} fill={index===0?'#e7a06d':'#57c5f2'}/>)}</Bar></BarChart></ResponsiveContainer>
+      </div>
     </section>
     <section className="panel"><PanelTitle title={`${activeElement.name} (illustrative distribution)`} sub="Synthetic histogram · not actual laboratory assays"/>
       <div className="stats-grid"><div><span>P50</span><b>86 ppm</b></div><div><span>P90</span><b>241 ppm</b></div><div><span>P95</span><b>418 ppm</b></div><div><span>Max</span><b>2,940 ppm</b></div></div>

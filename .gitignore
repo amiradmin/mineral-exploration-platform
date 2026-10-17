@@ -1,5 +1,9 @@
 node_modules/
 dist/
 .env
+.venv/
+__pycache__/
+*.py[cod]
+backend/db.sqlite3
 .DS_Store
 *.log

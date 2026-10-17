@@ -1,6 +1,6 @@
 # TerraScope AI — Mineral Exploration Platform
 
-An interactive **frontend-only presentation demo** for mineral-exploration teams, built using React 19, TypeScript, Vite, Recharts, Leaflet, OpenStreetMap tiles, Nginx and Docker.
+An interactive mineral-exploration demonstration platform with a React 19 frontend and a Django REST API. It uses TypeScript, Vite, Recharts, Leaflet, OpenStreetMap tiles, Nginx and Docker.
 
 **Important:** Every target location, score, assay, drillhole, geological interpretation, model readiness label and recommendation is **synthetic demonstration data**. No production GIS, machine-learning inference or validated mineral resource estimate is included. The real-world OpenStreetMap basemap is geographic context only; all displayed target coordinates, geoscience overlays and the subsurface illustration are invented examples and must not be used for exploration decisions.
 
@@ -12,7 +12,31 @@ cd mineral-exploration-platform
 docker compose up -d --build
 ```
 
-Open **http://localhost:8085**. To stop: `docker compose down`.
+Open **http://localhost:8085**. The API is available at **http://localhost:8000/api/** and is also proxied through the frontend at **http://localhost:8085/api/**. To stop: `docker compose down`.
+
+## Django API
+
+The backend persists the demonstration dataset in SQLite and exposes REST endpoints for targets, drillholes, element anomalies, evidence factors, exploration programs, assay batches, QA/QC issues and work tasks. All API records remain synthetic.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r backend/requirements.txt
+cd backend
+../.venv/bin/python manage.py migrate
+../.venv/bin/python manage.py seed_demo
+../.venv/bin/python manage.py runserver
+```
+
+Key endpoints:
+
+- `GET /api/targets/`
+- `GET /api/drillholes/`
+- `GET /api/elements/`
+- `GET /api/evidence-factors/`
+- `GET /api/programs/summary/`
+- `GET /api/assay-batches/`
+- `GET /api/qaqc-issues/`
+- `GET /api/tasks/`
 
 ## Three functional role views
 
