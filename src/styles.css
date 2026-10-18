@@ -41,7 +41,7 @@ button{cursor:pointer}
 .system-card small{display:block;color:var(--muted);font-size:8px;margin:7px 0}
 .system-line{height:4px;border-radius:10px;background:#173027;overflow:hidden}.system-line i{display:block;height:100%;background:linear-gradient(90deg,#42a97e,#8be2b9)}
 
-main{margin-left:272px;min-width:0;flex:1}
+main{margin-left:272px;min-width:0;width:calc(100% - 272px);flex:0 0 calc(100% - 272px);max-width:calc(100% - 272px)}
 header{height:70px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:13px;padding:0 28px;border-bottom:1px solid var(--line);background:#07111eeb;backdrop-filter:blur(16px)}
 .search{display:flex;align-items:center;gap:8px;width:min(420px,38vw);height:38px;border:1px solid var(--line);background:#0a1827;border-radius:4px;padding:0 12px;color:var(--muted)}
 .search input{width:100%;border:0;outline:0;background:transparent;color:#e8f1ed;font-size:10px}
@@ -138,13 +138,13 @@ linear-gradient(145deg,#1a3027,#0d1b16 58%,#13221d)}
   .geo-grid{grid-template-columns:1fr 1fr}.geophys-card{grid-column:1/-1}
 }
 @media(max-width:900px){
-  .sidebar{width:225px}.brand span{display:none}main{margin-left:225px}
+  .sidebar{width:225px}.brand span{display:none}main{margin-left:225px;width:calc(100% - 225px);max-width:calc(100% - 225px);flex-basis:calc(100% - 225px)}
   .kpis{grid-template-columns:1fr 1fr}.hero-grid,.two,.drill-grid,.ai-grid{grid-template-columns:1fr}
   .target-tabs{grid-template-columns:1fr 1fr}.target-summary{grid-template-columns:1fr}.project-pill{display:none}
   .dashboard-lower,.geo-grid{grid-template-columns:1fr}.health-panel,.geophys-card{grid-column:auto}
 }
 @media(max-width:700px){
-  .sidebar{display:none}main{margin-left:0}.content{padding:20px 12px}.title{align-items:flex-start;flex-direction:column}.title-actions{width:100%}.primary,.secondary{flex:1;justify-content:center}
+  .sidebar{display:none}main{margin-left:0;width:100%;max-width:100%;flex-basis:100%}.content{padding:20px 12px}.title{align-items:flex-start;flex-direction:column}.title-actions{width:100%}.primary,.secondary{flex:1;justify-content:center}
   .search{display:none}.live{margin-left:auto}.kpis{grid-template-columns:1fr 1fr}.explore{grid-template-columns:1fr}.mapbox,.explore .mapbox{height:430px}.target-tabs{grid-template-columns:1fr}
   .element-tabs{overflow:auto}.factor{grid-template-columns:110px 1fr 30px}.drill-table{grid-template-columns:60px 60px 75px 80px 1fr;font-size:7px}.assistant{left:10px;right:10px;width:auto}
 }
