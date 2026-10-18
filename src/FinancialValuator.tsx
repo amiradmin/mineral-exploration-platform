@@ -1,5 +1,5 @@
 import React,{useMemo,useState} from 'react'
-import {ArrowRight,Coins,Database,TrendingUp} from 'lucide-react'
+import {ArrowRight, CheckCircle2, Database, ShieldCheck, Radio} from 'lucide-react'
 import {targets} from './mockData'
 import type {DecisionContext,Scenario} from './decisionPipeline'
 import './FinancialValuator.css'
@@ -33,44 +33,49 @@ function model(input:Inputs,scenario:Scenario,targetFactor:number){
  for(const x of points){if(x.previous<0&&x.cumulative>=0&&x.cash>0){payback=x.year-1+(-x.previous/x.cash);break}}
  return {points,npv,irr,payback,total:accumulated}
 }
+
 function CashChart({points,start}:{points:ReturnType<typeof model>['points'];start:number}){
- const w=920,h=490,left=65,right=35,top=52,bottom=58
- const cum=points.map(p=>p.cumulative)
- const values=[...points.map(p=>p.cash),...cum,0]
- const lo=Math.min(...values),hi=Math.max(...values)
- const pad=(hi-lo)*.10||1
- const min=lo-pad,max=hi+pad
- const y=(v:number)=>top+(max-v)/(max-min)*(h-top-bottom)
- const step=(w-left-right)/points.length
- const x=(idx:number)=>left+step*(idx+.5)
- const zero=y(0)
- const line=points.map((p,i)=>(i===0?'M':'L')+x(i).toFixed(1)+' '+y(p.cumulative).toFixed(1)).join(' ')
- return <svg viewBox={`0 0 ${w} ${h}`} className="fv-chart-svg" role="img" aria-label="Annual negative CAPEX bars, positive copper operating cash flow bars and cumulative cash flow line">
- <defs><linearGradient id="fv-positive" x1="0" y1="0" x2="1" y2="0"><stop stopColor="#80513f"/><stop offset=".5" stopColor="#eab48b"/><stop offset="1" stopColor="#b77856"/></linearGradient><linearGradient id="fv-negative" x1="0" y1="0" x2="1"><stop stopColor="#8c424b"/><stop offset=".55" stopColor="#e0828a"/><stop offset="1" stopColor="#a85661"/></linearGradient><filter id="fv-glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
- {Array.from({length:6},(_,i)=>{const value=min+(max-min)*i/5;return <g key={i}><line x1={left} x2={w-right} y1={y(value)} y2={y(value)} stroke="#607d96" opacity=".24"/><text x={left-10} y={y(value)+4} fill="#a5bbcb" fontSize="12" textAnchor="end">{value.toFixed(0)}</text></g>})}
- <line x1={left} y1={zero} x2={w-right} y2={zero} stroke="#a3c4d7" strokeWidth="2"/>
- {points.map((p,i)=>{const yy=y(p.cash);return <g key={p.year}><rect x={x(i)-step*.34} y={Math.min(yy,zero)} width={step*.68} height={Math.max(1,Math.abs(yy-zero))} rx="1" fill={p.cash<0?'url(#fv-negative)':'url(#fv-positive)'} stroke={p.cash<0?'#ef9a9a':'#f2c8a0'} strokeOpacity=".45"/><text x={x(i)} y={h-30} fontSize="13" fill="#d4e0e9" textAnchor="middle">Y{p.year}</text></g>})}
- <line x1={left+step*(start-1)} x2={left+step*(start-1)} y1={top} y2={h-bottom} stroke="#9ed4f7" strokeDasharray="8 7" opacity=".85"/>
- <text x={clamp(left+step*(start-1)+9,left+10,w-185)} y={top+24} fill="#d6eafb" fontSize="16">Production Start</text>
- <path d={line} stroke="#83c1ec" strokeWidth="4" fill="none" strokeLinejoin="round" strokeLinecap="round" filter="url(#fv-glow)"/>
- <text x={left+18} y={zero+24} fill="#f5b6b8" fontSize="17">CAPEX Outflow</text><text x={w-right-172} y={zero-20} fill="#eec19a" fontSize="17">LOM Cash Flow</text><text x={w/2} y={h-5} fontSize="16" textAnchor="middle" fill="#bfd9e7">Years</text>
- <text x={14} y={h/2} fontSize="14" fill="#bed3df" textAnchor="middle" transform={`rotate(-90 14 ${h/2})`}>Cash flow ($M)</text>
+ const w=790,h=365,l=56,r=19,t=24,b=49,pw=w-l-r,ph=h-t-b
+ const vals=[0,...points.flatMap(v=>[v.cash,v.cumulative])]
+ const min=Math.min(-50,...vals),max=Math.max(120,...vals)
+ const y=(v:number)=>t+(max-v)/(max-min)*ph
+ const x=(i:number)=>l+(i+.5)*pw/points.length
+ const zero=y(0),line=points.map((p,i)=>(i===0?'M':'L')+x(i).toFixed(1)+','+y(p.cumulative).toFixed(1)).join(' ')
+ return <svg viewBox={`0 0 ${w} ${h}`} className="fv-reference-chart" role="img" aria-label="Annual operating cash flows in green, construction capital outflows in red, cumulative discounted cash flow proxy in cyan">
+ <defs><linearGradient id="fv-green" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#16f58c" stopOpacity=".9"/><stop offset="1" stopColor="#0a5d54" stopOpacity=".18"/></linearGradient><linearGradient id="fv-red" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#e63e57" stopOpacity=".2"/><stop offset="1" stopColor="#ff5266" stopOpacity=".8"/></linearGradient><filter id="fv-halo"><feGaussianBlur stdDeviation="4"/></filter></defs>
+ <rect x={l} y={t} width={pw} height={ph} fill="#101931"/>
+ {Array.from({length:7},(_,i)=>{const v=min+(max-min)*i/6;return <g key={i}><line x1={l} x2={w-r} y1={y(v)} y2={y(v)} stroke="#415382" strokeWidth=".8"/><text x={l-7} y={y(v)+4} fill="#b4cbe0" fontSize="12" textAnchor="end">{'$'+Math.round(v)}</text></g>})}
+ {points.map((p,i)=><line key={'v'+i} x1={x(i)} x2={x(i)} y1={t} y2={h-b} stroke="#354b77" strokeWidth=".7"/>)}
+ <line x1={l} x2={w-r} y1={zero} y2={zero} stroke="#51d6c2" strokeWidth="1.5"/>
+ {points.map((p,i)=>{const yy=y(p.cash),negative=p.cash<0;return <g key={p.year}><rect x={x(i)-pw/points.length*.34} y={Math.min(yy,zero)} width={pw/points.length*.68} height={Math.max(2,Math.abs(yy-zero))} stroke={negative?'#fa6374':'#22f7a2'} strokeWidth="2" fill={negative?'url(#fv-red)':'url(#fv-green)'} filter="url(#fv-halo)" opacity=".65"/><rect x={x(i)-pw/points.length*.34} y={Math.min(yy,zero)} width={pw/points.length*.68} height={Math.max(2,Math.abs(yy-zero))} stroke={negative?'#fa6374':'#22f7a2'} strokeWidth="2" fill={negative?'url(#fv-red)':'url(#fv-green)'}/><text x={x(i)} y={h-28} textAnchor="middle" fontSize="12" fill="#b3c7df">{p.year}</text></g>})}
+ <path d={line} stroke="#45dfff" strokeWidth="4" fill="none" filter="url(#fv-halo)" opacity=".8"/><path d={line} stroke="#54dcff" strokeWidth="2.6" fill="none"/>
+ <path d={`M${l} ${h-23}h${Math.max(0,(start-1)*pw/points.length)}`} fill="none" stroke="#fd6476" strokeWidth="2"/><path d={`M${l+Math.max(0,(start-1)*pw/points.length)} ${h-23}H${w-r}`} fill="none" stroke="#5ae9ac" strokeWidth="2"/>
+ <text x={l+Math.max(25,(start-1)*pw/points.length/2)} y={h-8} textAnchor="middle" fill="#ff8a93" fontSize="13">Construction Years</text><text x={l+Math.max(0,(start-1)*pw/points.length)+(w-r-l-Math.max(0,(start-1)*pw/points.length))/2} y={h-8} textAnchor="middle" fill="#4ee9a3" fontSize="13">Operational Years</text>
+ <text x="14" y="174" transform="rotate(-90 14 174)" fill="#c1d6e5" fontSize="13">Cash Flow ($M)</text>
  </svg>
 }
 export default function FinancialValuator({context,onContext,onNavigate}:{context:DecisionContext;onContext:(c:DecisionContext)=>void;onNavigate:(page:string)=>void}){
  const [all,setAll]=useState<Record<string,Inputs>>({})
+ const [section,setSection]=useState('Executive KPI')
+ const [signed,setSigned]=useState([false,false,false])
+ const [notice,setNotice]=useState('')
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
  const inputs=all[target.id]??defaults
- const update=(key:keyof Inputs,v:number)=>setAll(a=>({...a,[target.id]:{...inputs,[key]:v}}))
+ const update=(key:keyof Inputs,v:number)=>{setAll(old=>({...old,[target.id]:{...inputs,[key]:v}}));setSigned([false,false,false]);setNotice('')}
  const projection=useMemo(()=>model(inputs,context.scenario,target.aiScore/92),[inputs,context.scenario,target.aiScore])
- const fields:[keyof Inputs,string,number,number,number,string][]=[['capex','Setup CAPEX',100,3000,25,'$M'],['opex','Annual operating costs',20,600,10,'$M/y'],['wacc','Discount rate (WACC proxy)',2,25,.5,'%'],['life','Mine production years',3,20,1,'years'],['start','Production begins in',2,8,1,'year'],['revenue','Annual gross revenue',50,1000,10,'$M/y'],['sustaining','Sustaining CAPEX',0,100,5,'$M/y'],['tax','Simplified tax rate',0,40,1,'%']]
- const exportReport=()=>{const obj={disclaimer:'Synthetic illustrative DCF, not lender-grade valuation',target:target.id,scenario:context.scenario,inputs,projection};const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const el=document.createElement('a');el.href=url;el.download='financial-valuation-demo-'+target.id+'.json';el.click();URL.revokeObjectURL(url)}
- return <div className="fv-root"><div className="fv-head"><div><span>MODULE 05 · GATE 4 · FINANCIAL VALUATION</span><h1>Financial Valuator</h1><p>Illustrative mine-life cash-flow analysis with traceable financial inputs.</p></div><b>DEMONSTRATION ONLY</b></div>
- <div className="sg-context"><label>Target<select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario<select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><span>Shared selection · economic inputs local to this demo workspace</span></div>
- <div className="fv-kpis"><div><small>Discounted NPV proxy</small><strong>{money(projection.npv)}</strong><span>At {inputs.wacc}% assumed discount rate</span></div><div><small>IRR proxy</small><strong>{projection.irr===null?'N/A':projection.irr.toFixed(1)+'%'}</strong><span>Calculated where conventional root exists</span></div><div><small>Capital payback</small><strong>{projection.payback===null?'Not reached':projection.payback.toFixed(1)+' years'}</strong><span>Undiscounted cumulative crossing</span></div><div><small>Final cumulative cash flow</small><strong>{money(projection.total)}</strong><span>Undiscounted · illustrative</span></div></div>
- <div className="fv-layout"><section className="fv-panel"><h2><Coins size={19}/> Valuation Inputs</h2><p>Adjust assumptions to update the annual cash flow chart.</p>{fields.map(([key,label,min,max,step,unit])=><label className="fv-control" key={key}><span><b>{label}</b><strong>{inputs[key].toLocaleString('en-US')} {unit}</strong></span><input type="range" min={min} max={max} step={step} value={inputs[key]} onChange={e=>update(key,Number(e.target.value))}/></label>)}</section>
- <section className="fv-panel fv-chart-panel"><h2>Annual Cash Flow</h2><p>Construction outflows (red) · Operating cash flow (copper) · Cumulative cash flow (blue)</p><CashChart points={projection.points} start={inputs.start}/><div className="fv-key"><span>■ CAPEX outflow</span><span>■ Operating cash flow</span><span>━ Cumulative cash flow</span></div></section>
- <section className="fv-panel"><h2><TrendingUp size={19}/> Computation & Audit</h2><p>Year-by-year cash flow drives the discounted valuation and payback estimates.</p><div className="fv-formula"><b>NPV</b><span>Σ Cash Flowₜ / (1 + r)ᵗ</span><b>IRR</b><span>Discount rate at which NPV = 0</span><b>Payback</b><span>First nonnegative cumulative cash-flow crossing</span></div><button className="fv-button" onClick={exportReport}>Export assumptions & annual cash flows</button></section>
- <section className="fv-panel"><h2><Database size={19}/> Executive Value</h2><p>A financial narrative for review, not a financing approval or investment recommendation.</p><div className="fv-audit"><span>Model status <b>Illustrative</b></span><span>Data provenance <b>Synthetic</b></span><span>Independent engineering <b>Not performed</b></span></div>{[['Mining Economics Engine','economics-engine'],['Risk & Scenario Analyzer','risk-scenarios'],['Executive Portfolio','executive']].map(([name,page])=><button className="fv-button" key={page} onClick={()=>onNavigate(page)}>{name}<ArrowRight size={15}/></button>)}</section></div>
- <div className="fv-warning">SIMULATED DEMONSTRATION — Revenue and expenditure schedules are user-adjusted assumptions, not linked to a validated mine plan, reserve declaration, commissioning schedule, taxes, financing structure, royalties or real engineering costs. The NPV and IRR calculations are mathematical outputs of this simplified cash-flow model, not a bankable feasibility valuation.</div></div>
+ const exportReport=()=>{const blob=new Blob([JSON.stringify({demo:true,target:target.id,inputs,scenario:context.scenario,projection},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='financial-gate4-demo.json';a.click();URL.revokeObjectURL(url)}
+ const controls=[{key:'capex' as const,label:'Setup CAPEX',min:100,max:1800,step:25,unit:'M'},{key:'opex' as const,label:'Annual OPEX',min:20,max:500,step:10,unit:'M'},{key:'wacc' as const,label:'Discount Rate',min:2,max:25,step:.5,unit:'%'},{key:'life' as const,label:'Mine Life',min:3,max:20,step:1,unit:' Years'}]
+ const revenue=inputs.revenue*scenarioFactor[context.scenario]*target.aiScore/92
+ const approved=signed.every(Boolean)
+ return <div className="fv-financial">
+ <header className="fv-refhead"><h1>Module 5: Financial Valuator</h1><label>◎ Target: <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setSigned([false,false,false])}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} {t.name}</option>)}</select></label><div className="fv-fid-status">GATE 4 FID STATUS: <b>{approved?'DEMO SIGNED':'AWAITING REVIEW'}</b></div></header>
+ <div className="fv-content"><aside className="fv-sidebar"><div className="fv-sidebar-head">Navigation</div>{['Executive KPI','Pillars','Annual Scores','Executive Report'].map(n=><button className={section===n?'active':''} onClick={()=>setSection(n)} key={n}>{n}</button>)}<div className="fv-side-controls"><h2>Financial Sliders</h2>{controls.map(c=><label key={c.key}><span>{c.label}: <b>{c.unit==='%'?inputs[c.key]+'%':c.unit===' Years'?inputs[c.key]+' Years':'$'+inputs[c.key].toLocaleString('en-US')+c.unit}</b></span><input aria-label={c.label} type="range" min={c.min} max={c.max} step={c.step} value={inputs[c.key]} onChange={e=>update(c.key,Number(e.target.value))}/></label>)}<label className="fv-scenario">Scenario<select value={context.scenario} onChange={e=>{onContext({...context,scenario:e.target.value as Scenario});setSigned([false,false,false])}}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label></div></aside>
+ <main className="fv-financial-main"><div className="fv-sync"><Radio size={17}/> Live Data Sync: <span><Database size={16}/> Datamine MineTrust <b>Demo only</b></span><span>⌁ Micromine Alastri <b>Not connected</b></span><span><ShieldCheck size={16}/> Financial Model Audit: <b>Illustrative</b></span></div>
+ <div className="fv-neon-kpis"><div className="cyan"><strong>{money(projection.npv)}</strong><small>Discounted NPV ({inputs.wacc}% WACC)</small></div><div className="gold"><strong>{projection.irr===null?'N/A':projection.irr.toFixed(1)+'%'}</strong><small>IRR</small></div><div className="green"><strong>{projection.payback===null?'Not reached':projection.payback.toFixed(1)+' Years'}</strong><small>Capital Payback</small></div><div className="blue"><strong>{money(revenue)+'/yr'}</strong><small>Annual Gross Revenue</small></div></div>
+ <div className="fv-hero-chart"><CashChart points={projection.points} start={inputs.start}/></div>
+ <footer className="fv-final-row"><div className="fv-signatures">{['CFO','CEO','Board Chairman'].map((role,i)=><label key={role}><span className="fv-sign-icon">{['▤','♙','♧'][i]}</span><input type="checkbox" checked={signed[i]} onChange={e=>setSigned(a=>a.map((v,j)=>j===i?e.target.checked:v))}/><span>{role}</span></label>)}</div><button className="fv-fid-button" disabled={!approved} onClick={()=>setNotice('FID preview only: no actual investment decision has been recorded.')}>FINAL INVESTMENT DECISION (FID) <ArrowRight size={19}/></button></footer>
+ {section!=='Executive KPI'&&<p className="fv-section-hint">{section} selected · current figures remain illustrative. Use the financial sliders to update the cash flow.</p>}
+ {notice&&<div className="fv-decision-note" role="status">{notice}<button onClick={exportReport}>Export financial demo JSON</button></div>}
+ </main></div><div className="fv-disclaimer">SYNTHETIC PRESENTATION · Datamine and Micromine are not connected. KPI estimates are generated from demonstration assumptions; sign-offs and FID are previews, not valid approvals.</div>
+ </div>
 }
