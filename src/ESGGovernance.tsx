@@ -1,5 +1,5 @@
 import React,{useMemo,useState} from 'react'
-import {ArrowRight,ClipboardCheck,Database,Droplets,Leaf,ShieldCheck} from 'lucide-react'
+import {ShieldCheck} from 'lucide-react'
 import {targets} from './mockData'
 import type {DecisionContext,Scenario} from './decisionPipeline'
 import './ESGGovernance.css'
@@ -8,21 +8,24 @@ const baseline:ESGInputs={carbon:43,water:2.8,incidents:3,hours:620000,community
 const scenarioAdjust:Record<Scenario,number>={conservative:-8,base:0,optimistic:7}
 const bound=(n:number,lo:number,hi:number)=>Math.min(hi,Math.max(lo,n))
 function Radar({values}:{values:number[]}){
- const cx=250,cy=250,r=153
- const labels=['Carbon\nFootprint','Water\nUsage','Tailings\nRisk','Safety\nIncidents','Social\nLicense']
- const xy=(i:number,scale:number)=>{const a=-Math.PI/2+i*2*Math.PI/5;return [cx+Math.cos(a)*r*scale,cy+Math.sin(a)*r*scale]}
- const poly=(v:number[])=>v.map((s,i)=>xy(i,s/100).map(n=>n.toFixed(1)).join(',')).join(' ')
- return <svg viewBox="0 0 500 500" role="img" aria-label="ESG radar chart with five normalized performance dimensions and continuous green audit cycle" className="esg-radar">
- <defs><radialGradient id="esg-radar-bg"><stop stopColor="#254a52"/><stop offset="1" stopColor="#101f30"/></radialGradient><linearGradient id="esg-fill" x1="0" x2="1"><stop stopColor="#3ed8a8" stopOpacity=".62"/><stop offset="1" stopColor="#6ce3bc" stopOpacity=".3"/></linearGradient><filter id="esg-soft"><feGaussianBlur stdDeviation="2"/></filter></defs>
- <circle cx={cx} cy={cy} r="215" fill="url(#esg-radar-bg)" fillOpacity=".65"/>
- <circle cx={cx} cy={cy} r="205" fill="none" stroke="#6ce2b3" strokeWidth="3" strokeDasharray="365 24" transform="rotate(-89 250 250)"/>
- <path d="M252 45l15 10-17 10z M455 256l-10 15-10-17z M239 454l-14-10 16-10z" fill="#80e8bb"/>
- {[.25,.5,.75,1].map(t=><polygon key={t} points={poly([t*100,t*100,t*100,t*100,t*100])} fill="none" stroke="#5e9c9a" strokeWidth="1.5" opacity=".65"/>)}
- {Array.from({length:5},(_,i)=>{const [x,y]=xy(i,1);return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#588c9d" strokeWidth="1.5"/>})}
- <polygon points={poly(values)} fill="url(#esg-fill)" stroke="#70e2ad" strokeWidth="3"/>
- {values.map((s,i)=>{const [x,y]=xy(i,s/100);return <circle key={i} cx={x} cy={y} r="4" fill="#b1fcd0"/>})}
- {labels.map((v,i)=>{const [x,y]=xy(i,1.19);return <text x={x} y={y} key={i} textAnchor="middle" fontSize="17" fill="#e3f6f2" fontWeight="600">{v.split('\n').map((line,j)=><tspan key={j} x={x} dy={j?19:0}>{line}</tspan>)}</text>})}
- <text x={cx} y={cy-8} textAnchor="middle" fill="#ddfff0" fontWeight="700" fontSize="14">ESG PROFILE</text><text x={cx} y={cy+13} textAnchor="middle" fill="#a4cebf" fontSize="11">Synthetic normalized scores</text>
+ const cx=270,cy=235,r=173
+ const labels=[['Carbon Footprint',270,27],['Water',490,196],['Stewardship',490,216],['Workplace',422,431],['Safety',422,451],['Tailings',118,431],['Governance',118,451],['Community',53,196],['Relations',53,216]]
+ const xy=(i:number,v:number)=>{const a=-Math.PI/2+i*2*Math.PI/5;return [cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v]}
+ const poly=(v:number[])=>v.map((n,i)=>xy(i,n/100).join(',')).join(' ')
+ const reference=[88,81,85,78,76],budget=[70,68,65,60,66]
+ return <svg viewBox="0 0 540 475" className="esg-ref-radar" role="img" aria-label="Five-axis radar comparing adjustable synthetic ESG performance against illustrative reference and baseline">
+ <defs><radialGradient id="esg-radar-core"><stop stopColor="#24f19e" stopOpacity=".35"/><stop offset="1" stopColor="#0b202c" stopOpacity="0"/></radialGradient><filter id="esg-radar-glow"><feGaussianBlur stdDeviation="5"/></filter></defs>
+ <circle cx={cx} cy={cy} r="195" fill="url(#esg-radar-core)"/>
+ {[20,40,60,80,100].map(v=><polygon key={v} points={poly([v,v,v,v,v])} fill="none" stroke="#3a7778" strokeWidth="1.2" opacity=".55"/>)}
+ {Array.from({length:5},(_,i)=>{const [x,y]=xy(i,1);return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#439a90" opacity=".65"/>})}
+ <polygon points={poly(reference)} fill="#41e87c" fillOpacity=".09" stroke="#52ee95" strokeWidth="2.5"/>
+ <polygon points={poly(values)} fill="#3eeac7" fillOpacity=".18" stroke="#37ddfc" strokeWidth="3"/>
+ <polygon points={poly(budget)} fill="none" stroke="#52f28f" strokeWidth="2.5"/>
+ {reference.map((v,i)=>{const [x,y]=xy(i,v/100);return <circle key={i} cx={x} cy={y} r="7" fill="#40e990" stroke="#92ffc7" strokeWidth="1.4"/>})}
+ {values.map((v,i)=>{const [x,y]=xy(i,v/100);return <circle key={i} cx={x} cy={y} r="6" fill="#32d7fd" stroke="#8cfcff" strokeWidth="1.4"/>})}
+ {labels.map(([label,x,y],i)=><text key={i} x={x} y={y} textAnchor="middle" fill="#74def0" fontSize="17">{label}</text>)}
+ <circle cx={cx} cy={cy} r="20" fill="#24d97b" stroke="#63ffad" strokeWidth="2" filter="url(#esg-radar-glow)"/>
+ <circle cx={cx} cy={cy} r="17" fill="#1dba7a" stroke="#70ffad" strokeWidth="2"/>
  </svg>
 }
 export default function ESGGovernance({context,onContext,onNavigate}:{context:DecisionContext;onContext:(v:DecisionContext)=>void;onNavigate:(v:string)=>void}){
@@ -45,15 +48,27 @@ export default function ESGGovernance({context,onContext,onNavigate}:{context:De
  const tasks=['Verify local permit status','Review water monitoring evidence','Investigate open safety actions','Refresh community engagement log']
  const exportJSON=()=>{const blob=new Blob([JSON.stringify({disclaimer:'Synthetic ESG presentation data. No regulatory audit or compliance verification.',target:target.id,scenario:context.scenario,inputs:a,indicators:data,actions:tasks.map(t=>({task:t,completed:!!actions[target.id+':'+t]}))},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='esg-governance-demo-'+target.id+'.json';link.click();URL.revokeObjectURL(url)}
  const inputs:[keyof ESGInputs,string,number,number,number,string][]=[['carbon','Carbon intensity',0,100,1,'t CO₂e / kt (demo)'],['water','Water intensity',0,6,.1,'m³/t (demo)'],['incidents','Recordable incidents',0,20,1,'cases'],['hours','Hours worked',10000,2000000,10000,'hours'],['community','Community engagement index',0,100,1,'/100'],['tailings','Tailings exposure proxy',0,100,1,'/100'],['permits','Permits reviewed',0,a.permitTotal,1,'permits']]
- return <div className="esg-root">
-  <div className="esg-heading"><div><span>MODULE 06 · CONTINUOUS GOVERNANCE · ALL GATES</span><h1>Continuous ESG & Governance Tracker</h1><p>Environmental, safety and social indicators with a continuous audit perspective.</p></div><b>SIMULATED · NOT CERTIFIED</b></div>
-  <div className="sg-context"><label>Target<select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario<select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><span>ESG oversight spans every Stage-Gate</span></div>
-  <div className="esg-kpis"><div><small>Social license proxy</small><strong>{data.slo.toFixed(0)}/100</strong><span>Subjective engagement input</span></div><div><small>TRIFR illustration</small><strong>{data.trifr.toFixed(2)}</strong><span>Recordable incidents per million hours</span></div><div><small>Permits reviewed</small><strong>{a.permits} / {a.permitTotal}</strong><span>{data.permits.toFixed(0)}% reviewed, not approved</span></div><div><small>Composite dashboard score</small><strong>{data.audit.toFixed(0)}/100</strong><span>Unvalidated aggregate proxy</span></div></div>
-  <div className="esg-grid">
-   <section className="esg-panel"><h2><Droplets size={18}/> Environmental & Social Inputs</h2><p>Adjust synthetic operational measurements and see the dashboard recalculate.</p>{inputs.map(([key,label,min,max,step,unit])=><label key={key} className="esg-slider"><span><b>{label}</b><strong>{a[key].toLocaleString('en-US')} {unit}</strong></span><input min={min} max={max} step={step} value={a[key]} type="range" onChange={e=>update(key,Number(e.target.value))}/></label>)}<small>These are illustrative user inputs without live sensors, permits, or incident reporting feeds.</small></section>
-   <section className="esg-panel esg-chart"><h2><Leaf size={19}/> Continuous ESG Audit</h2><p>Five normalized dimensions; higher scores indicate better demonstration performance.</p><Radar values={data.scores}/><div className="esg-legend"><span>● Synthetic performance index</span><span>◯ Continuous monitoring lifecycle</span></div></section>
-   <section className="esg-panel"><h2><ShieldCheck size={19}/> Computational Outputs</h2><div className="esg-metrics">{[['Carbon performance',data.scores[0]],['Water performance',data.scores[1]],['Tailings exposure management',data.scores[2]],['Safety performance',data.scores[3]],['Social license proxy',data.scores[4]]].map(([k,v])=><div key={String(k)}><span>{k}</span><b>{Number(v).toFixed(0)}/100</b><i><em style={{width:Number(v)+'%'}}/></i></div>)}</div><h3>Continuous audit checklist</h3>{tasks.map(t=><label className="esg-action" key={t}><input type="checkbox" checked={!!actions[target.id+':'+t]} onChange={e=>setActions(x=>({...x,[target.id+':'+t]:e.target.checked}))}/>{t}</label>)}</section>
-   <section className="esg-panel"><h2><Database size={19}/> Technology Enablers</h2><p>Existing internal navigation; external products are reference examples only.</p>{[['Data QA / QC','qaqc'],['Daily Operations','operations'],['Executive Portfolio','executive'],['GIS Exploration Map','map']].map(([label,page])=><button key={page} className="esg-link" onClick={()=>onNavigate(page)}>{label}<ArrowRight size={15}/></button>)}<div className="esg-vendors"><b>Not connected</b><span>Seequent GeoStudio & PLAXIS</span><span>Datamine Sustainability Suite</span></div><h3>Executive value</h3><p>Visualize emerging risks, review evidence gaps, and prepare transparent governance conversations without representing these inputs as verified compliance data.</p><button className="esg-export" onClick={exportJSON}><ClipboardCheck size={16}/> Export ESG demonstration snapshot</button></section>
-  </div><div className="esg-warning">DEMONSTRATION ONLY — All indicators are synthetic or user-entered, including the SLO proxy, TRIFR example, tailings exposure score and permit review count. They are not verified safety statistics, regulatory compliance statuses, engineering risk evaluations or independently assured ESG reports. Actions are stored only in current browser state.</div>
+ return <div className="esg-ref">
+ <div className="esg-ref-head"><div><h1>Module 6: Continuous ESG Tracker</h1><span>Central Tethyan Belt · {target.id}</span></div><div className="esg-governance-status"><ShieldCheck size={23}/> ALL GATES GOVERNANCE: <b>DEMO REVIEW</b></div></div>
+ <div className="esg-sensor-ticks" aria-hidden="true"/>
+ <div className="esg-sensors"><strong>LIVE SENSOR INTEGRATION:</strong><span>⚙ &nbsp; Datamine Sustainability Suite</span><span>⌁ &nbsp; Micromine Pitram Safety</span><span>♧ &nbsp; Environmental IoT Sensors (Air, Water, Soil, Noise)</span><b>Not connected · Demo</b></div>
+ <div className="esg-sensor-ticks lower" aria-hidden="true"/>
+ <div className="esg-ref-kpis">
+  <div className="esg-green"><strong>{data.audit.toFixed(0)}<small>/100</small></strong><span>Composite ESG Score</span><i>↗</i></div>
+  <div className="esg-blue"><strong>{data.slo.toFixed(0)}<small>/100</small></strong><span>Social License Index (SLO)</span><i>⬡</i></div>
+  <div className="esg-lime"><strong>{data.trifr.toFixed(2)}</strong><span>Safety Rate (TRIFR)</span><i>◴</i></div>
+  <div className="esg-gold"><strong>{a.permits}<small>/{a.permitTotal} ({data.permits.toFixed(0)}%)</small></strong><span>Permits Reviewed (demo)</span><i>▤</i></div>
+ </div>
+ <div className="esg-ref-workspace">
+  <section className="esg-ref-environment"><h2>ENVIRONMENTAL<br/>METRICS</h2>
+   <div className="esg-ref-measure"><div className="esg-measure-icon">▥</div><div><span>Carbon Intensity:</span><strong>{a.carbon} t CO₂e/kt</strong></div><span className="esg-small-icon">☁</span><input aria-label="Carbon intensity" type="range" min="0" max="100" value={a.carbon} onChange={e=>update('carbon',Number(e.target.value))}/></div>
+   <div className="esg-ref-measure"><div className="esg-measure-icon">♧</div><div><span>Water Intensity:</span><strong>{a.water.toFixed(1)} m³/t</strong></div><span className="esg-small-icon">◕</span><input aria-label="Water intensity" type="range" min="0" max="6" step=".1" value={a.water} onChange={e=>update('water',Number(e.target.value))}/></div>
+   <div className="esg-ref-measure"><div className="esg-measure-icon">♧</div><div><span>Community Engagement Index:</span><strong>{a.community}/100</strong></div><span className="esg-small-icon">☺</span><input aria-label="Community engagement" type="range" min="0" max="100" value={a.community} onChange={e=>update('community',Number(e.target.value))}/></div>
+  </section>
+  <section className="esg-ref-chart"><Radar values={[data.scores[0],data.scores[1],data.scores[3],data.scores[2],data.scores[4]]}/><div className="esg-chart-legend"><span>● Current synthetic ESG score</span><span>● Illustrative reference</span></div></section>
+ </div>
+ <div className="esg-ref-footer"><div className="esg-officers">{['ESG Officer','HSE Director'].map((role,i)=><label key={role}><span className="esg-officer-icon">{i?'♙':'♧'}</span><span>{role}:<small>Demo acknowledgement</small></span><input type="checkbox" checked={!!actions[target.id+':'+role]} onChange={e=>setActions(p=>({...p,[target.id+':'+role]:e.target.checked}))}/></label>)}</div><button className="esg-maintain" onClick={()=>{const complete=['ESG Officer','HSE Director'].every(role=>actions[target.id+':'+role]);setActions(p=>({...p,[target.id+':lastReviewed']:true}));if(!complete){window.alert('Demo review requires both ESG Officer and HSE Director acknowledgements.')}else{window.alert('Demo SLO review recorded locally. No regulatory approval issued.')}}}>⚙ &nbsp; MAINTAIN CONTINUOUS<br/> SLO APPROVAL</button></div>
+ <details className="esg-extra-controls"><summary>Additional ESG controls and audit checklist</summary><label>Target <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label>Scenario <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label><label>Incidents <input type="range" min="0" max="20" value={a.incidents} onChange={e=>update('incidents',Number(e.target.value))}/>{a.incidents}</label><label>Tailings exposure <input type="range" min="0" max="100" value={a.tailings} onChange={e=>update('tailings',Number(e.target.value))}/>{a.tailings}</label><label>Permits reviewed <input type="range" min="0" max={a.permitTotal} value={a.permits} onChange={e=>update('permits',Number(e.target.value))}/>{a.permits}</label>{tasks.map(t=><label key={t}><input type="checkbox" checked={!!actions[target.id+':'+t]} onChange={e=>setActions(p=>({...p,[target.id+':'+t]:e.target.checked}))}/>{t}</label>)}<button onClick={exportJSON}>Export ESG demo snapshot</button></details>
+ <p className="esg-ref-disclaimer">SYNTHETIC PRESENTATION · No live sensor data, verified permits, actual governance compliance or legal approvals. Indicators and acknowledgements are demonstration-only.</p>
  </div>
 }
