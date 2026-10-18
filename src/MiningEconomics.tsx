@@ -66,7 +66,13 @@ export default function MiningEconomics({context,onContext,onNavigate}:{context:
  const cutoff=analysis.scenarios[1].cutoff
  const focus=clamp(selectedGrade??cutoff,0,2)
  const current=analysis.points.reduce((p,c)=>Math.abs(c.grade-focus)<Math.abs(p.grade-focus)?c:p,analysis.points[0])
- const economicControls:[keyof Assumptions,string,number,number,number,string][]=[['cost','PROCESSING OPEX ($/t)',10,120,1,'
+ const economicControls: [keyof Assumptions,string,number,number,number,string][] = [
+  ['cost','PROCESSING OPEX ($/t)',10,120,1,'$'],
+  ['mining','ORE MINING COST ($/t)',0,20,.5,'$'],
+  ['strip','STRIPPING RATIO',0,12,.1,':1'],
+  ['recovery','DYNAMIC RECOVERY (%)',45,98,1,'%'],
+  ['price','COPPER PRICE ($/t)',4000,16000,100,'$']
+ ]
  const eligible=engineer&&metallurgist&&simulated
  return <div className="me-gate">
   <div className="me-ribbon">Module 3: Mining Economics Engine (Gate 3: Pre-Feasibility Screening)</div>
