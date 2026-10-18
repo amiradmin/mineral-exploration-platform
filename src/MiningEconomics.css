@@ -35,3 +35,29 @@
 @media(max-width:1500px){.me-workspace{grid-template-columns:1.11fr 2.06fr 1fr}.me-connections{grid-template-columns:1fr 1.3fr 2fr}}
 @media(max-width:1250px){.me-workspace{grid-template-columns:1fr 1.65fr}.me-summary{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.me-summary h2{grid-column:1/-1}.me-connections{grid-template-columns:1fr 1fr}.me-connections span:last-child{grid-column:1/-1;justify-content:flex-start}}
 @media(max-width:850px){.me-workspace,.me-approval{grid-template-columns:1fr}.me-summary{grid-template-columns:1fr}.me-connections{grid-template-columns:1fr}.me-connections span:last-child{grid-column:auto;white-space:normal}.me-tools{grid-template-columns:1fr 1fr}.me-tools button{grid-column:1/-1}.me-ribbon{clip-path:none}.me-topline label{font-size:15px}}
+
+/* High-fidelity Gate 3 reference chart and specialty slider treatments */
+.me-chart-frame{height:auto!important;min-height:0!important;border:1px solid #27475b;background:radial-gradient(ellipse at 50% 20%,#152e40,#081a2a 80%)!important;overflow:hidden}
+.me-reference-svg{width:100%;height:auto;display:block;touch-action:pan-y;cursor:crosshair}
+.me-legends{gap:22px!important;margin:5px 0 12px!important}
+.me-legends span{font-size:11px;white-space:nowrap}
+.me-control{position:relative;min-height:75px!important;overflow:hidden}
+.me-control strong{display:flex;align-items:center;gap:5px}
+.me-control input[type=range]{width:calc(100% - 28px)!important;max-width:100%;margin:15px 0 7px!important;border:1px solid #638bad;background:linear-gradient(90deg,#738dfc,#46d4e6 54%,#58f1ae 80%,#122b3c 80%)!important;box-shadow:0 0 7px #51f2c44d}
+.me-control input[type=range]::-webkit-slider-thumb{width:21px;height:21px;background:radial-gradient(circle,#b3ddea 0 36%,#648ba2 37% 64%,#d9faff 65%);border:2px solid #c5eff9;box-shadow:0 0 0 3px #4a99bd55,0 0 14px #88ddffb3}
+.me-control input[type=range]::-moz-range-thumb{width:19px;height:19px;background:#a2c9de;border:3px solid #d4f7ff;box-shadow:0 0 0 3px #4a99bd55,0 0 14px #88ddffb3}
+.me-trend-arrow{color:#64eaa9;font-size:17px;margin-left:4px}
+.me-control:nth-of-type(2) .me-trend-arrow{color:#5cb9fb;transform:rotate(90deg)}
+.me-control:nth-of-type(3) input{width:75%!important}
+.me-control:nth-of-type(4) input{width:90%!important}
+.me-control:nth-of-type(5) input{width:87%!important}
+.me-stripping-detail{display:flex;position:absolute;right:8px;bottom:25px;gap:3px;opacity:.65;font-size:8px;color:#a7d2e1}
+.me-stripping-detail span:last-child{background:#324655;color:#efe8d3;padding:1px 3px;border-radius:3px}
+.me-small-wave{position:absolute;right:12px;top:21px;color:#6aecc2;font-size:13px;letter-spacing:-3px;pointer-events:none}
+.me-slider-detail{position:absolute;right:8px;bottom:6px;color:#83cae2;font-size:9px;pointer-events:none}
+.me-exec{overflow:hidden}
+.me-exec:after{content:'';position:absolute;inset:auto 8px 6px;opacity:.22;height:24px;background:repeating-linear-gradient(90deg,var(--accent) 0 4px,transparent 4px 9px);mask-image:linear-gradient(0deg,black,transparent)}
+.me-exec button{z-index:1;position:relative}
+.me-approval>button:not(:disabled){background:linear-gradient(100deg,#164733,#228453,#124d36)!important;text-shadow:0 0 5px #b8ffe0;box-shadow:0 0 21px #28f0a8aa,inset 0 0 9px #4df2ac66}
+@media(min-width:1300px){.me-charts{padding:12px 14px!important}.me-main-layout{min-width:0}.me-control{min-height:76px}.me-workspace{grid-template-columns:1.1fr 2.05fr 1fr!important}}
+@media(max-width:1000px){.me-legends{gap:8px!important}.me-reference-svg{min-width:0}.me-workspace{grid-template-columns:1fr!important}}
