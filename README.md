@@ -1,4 +1,4 @@
-# TerraScope AI — Mineral Exploration Platform
+# Data Mine — Mineral Exploration Platform
 
 An interactive mineral-exploration demonstration platform with a React 19 frontend and a Django REST API. It uses TypeScript, Vite, Recharts, Leaflet, OpenStreetMap tiles, Nginx and Docker.
 

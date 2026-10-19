@@ -25,17 +25,16 @@ export default function App(){
   const [page,setPage]=useState<Page>('decision-center')
   const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
-  const [assistantOpen,setAssistantOpen]=useState(false)
   const [query,setQuery]=useState('')
   const [notice,setNotice]=useState('')
   const matches=targets.filter(t=>`${t.id} ${t.name} ${t.commodity} ${t.deposit}`.toLowerCase().includes(query.trim().toLowerCase()))
-  const exportDemo=(brief=false)=>{const body=brief?`# TerraScope demonstration brief\n\nSIMULATED DATA — DO NOT USE FOR EXPLORATION DECISIONS\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}\n\nNo live model or real survey data connected.`:JSON.stringify({demo:true,targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'terrascope-demo-brief.md':'terrascope-demo-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Demo brief downloaded':'Demo snapshot exported')}
+  const exportDemo=(brief=false)=>{const body=brief?`# Data Mine demonstration brief\n\nSIMULATED DATA — DO NOT USE FOR EXPLORATION DECISIONS\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}\n\nNo live model or real survey data connected.`:JSON.stringify({demo:true,targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'data-mine-demo-brief.md':'data-mine-demo-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Demo brief downloaded':'Demo snapshot exported')}
 
   return <div className="app">
     <aside className="sidebar">
       <div className="brand">
         <div className="logo"><Mountain size={24}/></div>
-        <div><b>TerraScope AI</b><span>Mineral Exploration Platform</span></div>
+        <div><b>Data Mine</b><span>Mineral Exploration Platform</span></div>
       </div>
 
       <div className="nav-group-label">COMMAND CENTER</div>
@@ -55,7 +54,6 @@ export default function App(){
         <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No demo targets found</span>}</div>}</div>
         <div className="project-pill"><span>PROJECT</span><b>Central Tethyan Belt</b></div>
         
-        <button className="icon-btn" onClick={()=>setAssistantOpen(!assistantOpen)}><Bot size={17}/></button>
         <div className="avatar">GA</div>
       </header>
 
@@ -78,7 +76,6 @@ export default function App(){
       </div>
     </main>
 
-    {assistantOpen&&<AssistantPanel close={()=>setAssistantOpen(false)}/>}
   </div>
 }
 
@@ -310,18 +307,3 @@ function QAQC(){
 }
 
 function Donut({value}:{value:number}){return <div className="donut" style={{background:`conic-gradient(var(--accent) ${value*3.6}deg,#173028 0)`}}><div><b>{value}%</b><span>complete</span></div></div>}
-
-function AssistantPanel({close}:{close:()=>void}){
- const [question,setQuestion]=useState('')
- const [response,setResponse]=useState('')
- const ask=()=>{const q=question.trim().toLowerCase();if(!q)return;const t=targets.find(t=>q.includes(t.id.toLowerCase())||q.includes(t.name.toLowerCase()))||targets[0];setResponse(`${t.name} (${t.id}): ${t.rationale} Recommended demo action: ${t.action}. This is a mock-data lookup, not live AI inference.`)}
- return <aside className="assistant">
-  <div className="assistant-head"><div><Sparkles/><span><b>GeoAI Copilot</b><small>Exploration assistant</small></span></div><button onClick={close}>×</button></div>
-  <div className="assistant-body">
-    <div className="user-msg">Why is North Ridge ranked high?</div>
-    <div className="ai-msg"><b>North Ridge is supported by four coincident evidence groups.</b><p>The strongest contributors are the structural intersection, Cu-Mo geochemical anomaly and residual magnetic response. Hydrothermal alteration and favorable intrusive lithology add secondary support.</p><div className="ai-list"><span>34% Structural control</span><span>27% Geochemistry</span><span>21% Magnetics</span><span>18% Other evidence</span></div></div>
-  </div>
-  {response&&<div className="ai-msg assistant-response"><b>Illustrative demo response</b><p>{response}</p></div>}
-  <div className="assistant-input"><input value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ask()}} placeholder="Ask about T-001 or North Ridge..." aria-label="Ask about demo target"/><button onClick={ask} aria-label="Look up demo target"><Sparkles size={14}/></button></div>
- </aside>
-}
