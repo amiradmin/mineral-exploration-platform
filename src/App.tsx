@@ -52,7 +52,7 @@ export default function App(){
     <main>
       <header>
         <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No demo targets found</span>}</div>}</div>
-        <div className="project-pill"><span>PROJECT</span><b>Central Tethyan Belt</b></div>
+        <div className="project-pill"><span>PROJECT</span><b>Sarcheshmeh Copper Mine</b></div>
         
         <div className="avatar">GA</div>
       </header>
