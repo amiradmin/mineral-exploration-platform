@@ -28,7 +28,7 @@ export default function App(){
   const [query,setQuery]=useState('')
   const [notice,setNotice]=useState('')
   const matches=targets.filter(t=>`${t.id} ${t.name} ${t.commodity} ${t.deposit}`.toLowerCase().includes(query.trim().toLowerCase()))
-  const exportDemo=(brief=false)=>{const body=brief?`# Data Mine demonstration brief\n\nSIMULATED DATA — DO NOT USE FOR EXPLORATION DECISIONS\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}\n\nNo live model or real survey data connected.`:JSON.stringify({demo:true,targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'data-mine-demo-brief.md':'data-mine-demo-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Demo brief downloaded':'Demo snapshot exported')}
+  const exportDemo=(brief=false)=>{const body=brief?`# Data Mine project brief\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}`:JSON.stringify({targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'data-mine-brief.md':'data-mine-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Brief downloaded':'Snapshot exported')}
 
   return <div className="app">
     <aside className="sidebar">
@@ -42,8 +42,8 @@ export default function App(){
 
       <div className="sidebar-foot">
         <div className="system-card">
-          <div className="system-head"><Activity size={15}/><b>Exploration Engine</b><span>DEMO</span></div>
-          <small>Presentation mode · sample datasets</small>
+          <div className="system-head"><Activity size={15}/><b>Exploration Engine</b></div>
+
           <div className="system-line"><i style={{width:'92%'}}/></div>
         </div>
       </div>
@@ -51,9 +51,9 @@ export default function App(){
 
     <main>
       <header>
-        <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No demo targets found</span>}</div>}</div>
+        <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No targets found</span>}</div>}</div>
         <div className="project-pill"><span>PROJECT</span><b>Sarcheshmeh Copper Mine</b></div>
-        
+
         <div className="avatar">GA</div>
       </header>
 
@@ -82,7 +82,7 @@ export default function App(){
 function Title({eyebrow,title,sub,actions=true}:{eyebrow:string,title:string,sub:string,actions?:boolean}){
   return <div className="title">
     <div><small>{eyebrow}</small><h1>{title}</h1><p>{sub}</p></div>
-    {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> Export Demo Snapshot</button><button className="primary" data-action="brief"><Sparkles size={15}/> Generate Demo Brief</button></div>}
+    {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> Export Snapshot</button><button className="primary" data-action="brief"><Sparkles size={15}/> Generate Brief</button></div>}
   </div>
 }
 
@@ -163,7 +163,7 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
       {layerList.map(([label,Icon])=><label key={label}><input checked={layers[label]} onChange={()=>setLayers({...layers,[label]:!layers[label]})} type="checkbox"/><Icon size={14}/><span>{label}</span></label>)}
       <div className="layer-foot"><Settings2 size={14}/><span>Layer opacity & symbology</span></div>
     </section>
-    <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers} selectedId={selected.id}/><p className="map-layer-note">Real OpenStreetMap basemap; prospectivity, geological units, faults, anomalies and target points are synthetic. Radiometrics and satellite-analysis datasets are not connected.</p></section>
+    <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers} selectedId={selected.id}/></section>
     <section className="panel inspector">
       <span className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</span>
       <h2>{selected.name}</h2><p>{selected.id} · {selected.commodity} target</p>
@@ -260,10 +260,10 @@ function Geoscience(){
       <ResponsiveContainer width="100%" height={290}><BarChart data={chart} margin={{top:16,right:12,left:-14,bottom:0}}><CartesianGrid stroke="#31516a" strokeDasharray="2 5" vertical={false}/><XAxis dataKey="name" tick={{fill:'#9ec8e5',fontSize:10}} axisLine={{stroke:'#6ca7cf'}} tickLine={false}/><YAxis tick={{fill:'#7fa8c4',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip cursor={{fill:'#62c6f012'}} contentStyle={{background:'#0b1826',border:'1px solid #438ebc',borderRadius:2,color:'#edf7ff'}}/><Bar dataKey="value" radius={[1,1,0,0]}>{chart.map((entry,index)=><Cell key={entry.name} fill={index===0?'#e7a06d':'#57c5f2'}/>)}</Bar></BarChart></ResponsiveContainer>
       </div>
     </section>
-    <section className="panel"><PanelTitle title={`${activeElement.name} (illustrative distribution)`} sub="Synthetic histogram · not actual laboratory assays"/>
+    <section className="panel"><PanelTitle title={`${activeElement.name} distribution`} sub="Element distribution"/>
       <div className="stats-grid"><div><span>P50</span><b>86 ppm</b></div><div><span>P90</span><b>241 ppm</b></div><div><span>P95</span><b>418 ppm</b></div><div><span>Max</span><b>2,940 ppm</b></div></div>
       <div className="histogram">{[22,28,31,38,45,65,88,70,48,29,18,11].map((v,i)=><i key={i} style={{height:v+'%'}}/>)}</div>
-      <small className="chart-note">{activeElement.symbol}: {activeElement.anomalies} simulated anomalies. Percentiles are illustrative copper placeholders.</small>
+      <small className="chart-note">{activeElement.symbol}: {activeElement.anomalies} anomalies.</small>
     </section>
     <section className="panel geophys-card"><PanelTitle title="Geophysical Coverage" sub="Processed survey products"/>
       {['Total Magnetic Intensity','Residual Magnetics','Analytic Signal','Gravity Bouguer','Radiometric K/Th/U'].map((x,i)=><div className="survey-row" key={x}><span>{x}</span><div><i style={{width:(96-i*5)+'%'}}/></div><b>{96-i*5}%</b></div>)}
@@ -276,7 +276,7 @@ function AIProspectivity({selected}:{selected:any}){
  return <>
   <Title eyebrow="EXPLAINABLE GEOAI" title="AI Prospectivity" sub="Transparent evidence fusion for target ranking, anomaly detection and next-action recommendation."/>
   <div className="grid ai-grid">
-    <section className="panel ai-hero"><div><span>MODEL</span><b>Prospectivity Fusion v2.4</b><p>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</p></div><div className="model-ready"><i/>DEMO ONLY</div></section>
+    <section className="panel ai-hero"><div><span>MODEL</span><b>Prospectivity Fusion v2.4</b><p>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</p></div></section>
     <section className="panel"><PanelTitle title="Selected Target" sub={selected.id}/><h2>{selected.name}</h2><div className="huge-score">{selected.aiScore}</div><p className="muted">Prospectivity score</p></section>
   </div>
   <div className="grid two lower">

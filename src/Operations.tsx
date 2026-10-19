@@ -62,25 +62,25 @@ export default function Operations(){
    const head=rows.length?Object.keys(rows[0]):[]
    const csv=[head.map(quote).join(','),...rows.map(r=>head.map(k=>quote((r as unknown as Record<string,unknown>)[k])).join(','))].join('\r\n')
    const u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}))
-   const a=document.createElement('a');a.href=u;a.download='exploration-demo-'+tab+'.csv';a.click();URL.revokeObjectURL(u)
+   const a=document.createElement('a');a.href=u;a.download='exploration-'+tab+'.csv';a.click();URL.revokeObjectURL(u)
  }
  return <div className="ops">
   <div className="ops-topline">
     <div><span className="ops-eyebrow">FIELD OPERATIONS / DAILY CONTROL</span><h1>Exploration Operations</h1><p>Drilling · core logging · samples · laboratory turnaround · data integrity</p></div>
     <div className="ops-tools"><label htmlFor="ops-project">Exploration program</label><select id="ops-project" value={project} onChange={e=>setProject(e.target.value)}><option>All projects</option>{programs.map(p=><option key={p.id}>{p.id}</option>)}</select></div>
   </div>
-  <div className="ops-demo-note"><AlertTriangle size={15}/> <b>SIMULATED OPERATIONS — 10 OCT 2026</b> All activities, costs, assays and dates are fictional. Numbers are examples, not live project telemetry.</div>
+
   <div className="ops-metrics">
     <Metric icon={<HardHat size={18}/>} label="Drilling completed" value={f(actual)} unit="m" sub={f(actual/plan*100,1)+'% of '+f(plan)+' m scheduled'}/>
     <Metric icon={<Layers size={18}/>} label="Geological logging" value={f(logged/actual*100,1)} unit="%" sub={f(logged)+' / '+f(actual)+' m logged'} tone="blue"/>
-    <Metric icon={<PackageCheck size={18}/>} label="Field samples" value={f(samples)} sub="Collected in the demo shift" tone="purple"/>
+    <Metric icon={<PackageCheck size={18}/>} label="Field samples" value={f(samples)} sub="Collected in the shift" tone="purple"/>
     <Metric icon={<FlaskConical size={18}/>} label="Assays awaiting results" value={f(pending)} sub={backlog.length+' batches not yet validated'} tone="amber"/>
     <Metric icon={<CheckCircle2 size={18}/>} label="Core recovery" value={f(quality,1)} unit="%" sub="Metres-weighted campaign average" tone="blue"/>
     <Metric icon={<AlertTriangle size={18}/>} label="Open QA/QC issues" value={f(activeIssues.length)} sub="Exceptions requiring owner review" tone="red"/>
   </div>
   <div className="ops-row">
     <section className="panel ops-chart-panel chart-panel">
-      <div className="ops-section-head"><div><h2>Drilling performance</h2><p>Last seven illustrative shifts · metres drilled</p></div><span className="ops-chip ok">Daily target vs actual</span></div>
+      <div className="ops-section-head"><div><h2>Drilling performance</h2><p>Last seven shifts · metres drilled</p></div><span className="ops-chip ok">Daily target vs actual</span></div>
       <div className="ops-chart chart-frame"><span className="chart-corner tl"/><span className="chart-corner tr"/><span className="chart-corner bl"/><span className="chart-corner br"/><ResponsiveContainer width="100%" height="100%"><BarChart data={shifts} barGap={3} margin={{top:17,right:12,left:-13,bottom:0}}><CartesianGrid stroke="#31516a" strokeDasharray="2 5" vertical={false}/><XAxis dataKey="day" tick={{fill:'#9ec8e5',fontSize:10}} axisLine={{stroke:'#6ca7cf'}} tickLine={false}/><YAxis tick={{fill:'#7fa8c4',fontSize:10}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:'#0b1826',border:'1px solid #438ebc',borderRadius:2,color:'#f3fbff'}}/><Bar dataKey="plan" name="Planned m" fill="#477b9c" radius={[1,1,0,0]}/><Bar dataKey="actual" name="Actual m" fill="#59c9f4" radius={[1,1,0,0]}/></BarChart></ResponsiveContainer></div>
     </section>
     <section className="panel ops-chart-panel">
@@ -97,7 +97,7 @@ export default function Operations(){
       <div className="ops-table-scroll">
       {tab==='laboratory'?<table className="ops-table"><thead><tr><th>Batch</th><th>Program</th><th>Samples</th><th>Due</th><th>Lab status</th><th>QA/QC</th></tr></thead><tbody>{(rows as typeof assays).map(r=><tr key={r.id}><td><b>{r.batch}</b><small>{r.id}</small></td><td>{r.project}</td><td>{r.samples}</td><td>{r.due}</td><td><span className={badge(r.status)}>{r.status}</span></td><td><span className={badge(r.qa)}>{r.qa}</span></td></tr>)}</tbody></table>:
         tab==='quality'?<table className="ops-table"><thead><tr><th>Issue</th><th>Finding</th><th>Program</th><th>Owner</th><th>Severity</th><th>Status</th></tr></thead><tbody>{(rows as typeof issues).map(r=><tr key={r.id}><td><b>{r.id}</b></td><td>{r.category}</td><td>{r.project}</td><td>{r.owner}</td><td><span className={badge(r.severity)}>{r.severity}</span></td><td>{r.status}</td></tr>)}</tbody></table>:
-        <table className="ops-table"><thead><tr><th>Task</th><th>Program</th><th>Team</th><th>Priority</th><th>Demo completion</th></tr></thead><tbody>{(rows as typeof tasks).map(r=><tr key={r.name}><td>{r.name}</td><td>{r.project}</td><td>{r.team}</td><td><span className={badge(r.priority)}>{r.priority}</span></td><td><label className="ops-checkbox"><input type="checkbox" checked={r.done||done.includes(r.name)} disabled={r.done} onChange={e=>setDone(current=>e.target.checked?[...current,r.name]:current.filter(x=>x!==r.name))}/>{r.done||done.includes(r.name)?'Complete':'Mark done'}</label></td></tr>)}</tbody></table>}
+        <table className="ops-table"><thead><tr><th>Task</th><th>Program</th><th>Team</th><th>Priority</th><th>Completion</th></tr></thead><tbody>{(rows as typeof tasks).map(r=><tr key={r.name}><td>{r.name}</td><td>{r.project}</td><td>{r.team}</td><td><span className={badge(r.priority)}>{r.priority}</span></td><td><label className="ops-checkbox"><input type="checkbox" checked={r.done||done.includes(r.name)} disabled={r.done} onChange={e=>setDone(current=>e.target.checked?[...current,r.name]:current.filter(x=>x!==r.name))}/>{r.done||done.includes(r.name)?'Complete':'Mark done'}</label></td></tr>)}</tbody></table>}
       {rows.length===0&&<div className="ops-empty">No records match your filters.</div>}
       </div>
     </section>

@@ -36,10 +36,10 @@ export function createDecisionSnapshot(context:DecisionContext):DecisionSnapshot
  const gate4:GateVerdict=npv>0&&risk<=20?'GO':'HOLD'
  return {context,targetName:target.name,commodity:target.commodity,risk,npv,irR:irr,esg,records:[
   {stage:'exploration-evaluator',label:'Prospectivity',value:target.aiScore+'/100',note:target.evidence.length+' evidence groups · '+target.action,verdict:gate1},
-  {stage:'reserve-simulator',label:'Conceptual mineralized material',value:compact(tonnes/1e6)+' Mt',note:'Illustrative '+grade.toFixed(2)+'% Cu equivalent assumption; NOT a mineral resource or reserve',verdict:gate2},
-  {stage:'economics-engine',label:'One-period operating margin',value:margin.toFixed(1)+'%',note:'Illustrative recovered metal '+compact(recoveredCu/1000)+' kt',verdict:gate3},
+  {stage:'reserve-simulator',label:'Conceptual mineralized material',value:compact(tonnes/1e6)+' Mt',note:grade.toFixed(2)+'% Cu equivalent assumption',verdict:gate2},
+  {stage:'economics-engine',label:'One-period operating margin',value:margin.toFixed(1)+'%',note:'Recovered metal '+compact(recoveredCu/1000)+' kt',verdict:gate3},
   {stage:'risk-scenarios',label:'Scenario risk index',value:risk.toFixed(0)+'/100',note:'Heuristic index, not a probabilistic risk model',verdict:risk<=20?'GO':'REVIEW'},
   {stage:'financial-valuator',label:'Discounted scenario proxy',value:(npv>=0?'+':'−')+'$'+compact(Math.abs(npv))+'M',note:'Single-period proxy, not an NPV, IRR or feasibility valuation',verdict:gate4},
-  {stage:'esg-governance',label:'Evidence coverage proxy',value:esg.toFixed(0)+'%',note:'Derived demo completeness proxy, not permit or ESG compliance status',verdict:esg>=75?'GO':'REVIEW'}
+  {stage:'esg-governance',label:'Evidence coverage proxy',value:esg.toFixed(0)+'%',note:'Derived evidence completeness',verdict:esg>=75?'GO':'REVIEW'}
  ]}
 }

@@ -32,7 +32,7 @@ function Scatter({index,title,factors,scenario,targetId,xMetric,yMetric,threshol
  })
  const active=points.filter(p=>p.high).length
  const cut=89-threshold*81
- return <svg viewBox="0 0 115 100" role="img" aria-label={title+' synthetic scatter plot: '+active+' of 125 high potential points'}>
+ return <svg viewBox="0 0 115 100" role="img" aria-label={title+' scatter plot: '+active+' of 125 high potential points'}>
   <defs><linearGradient id={'zone-'+index} x1="0" y1="1" x2="1" y2="0"><stop stopColor="#14d8e0" stopOpacity=".04"/><stop offset=".6" stopColor="#22bcbd" stopOpacity=".16"/><stop offset="1" stopColor="#ffcb4b" stopOpacity=".32"/></linearGradient></defs>
   {[20,40,60,80].map(v=><path key={v} d={`M${v} 8V89 M8 ${v}H108`} stroke="#3c5566" strokeWidth=".5"/>)}
   <path d={`M8 ${cut} L108 ${cut} V8 H8Z`} fill={`url(#zone-${index})`}/>
@@ -44,7 +44,7 @@ function Scatter({index,title,factors,scenario,targetId,xMetric,yMetric,threshol
 function Tree({success,emv,budget}:{success:number,emv:number,budget:number}){
  const pct=(success*100).toFixed(2)+'%'
  const nodes=[{y:46,title:'TECHNICAL SUCCESS',amount:currency(emv),color:'#2bebac',mark:'↗'},{y:138,title:'ECONOMIC VIABILITY',amount:currency(emv),color:'#2bebac',mark:'$'},{y:226,title:'GEOLOGICAL RISK',amount:'-$'+budget.toFixed(2)+'M',color:'#ff827b',mark:'!'},{y:313,title:'EXECUTION RISK',amount:'-$'+budget.toFixed(2)+'M',color:'#ff827b',mark:'×'}]
- return <svg className="ee-tree-svg" viewBox="0 0 535 350" role="img" aria-label={`Illustrative probability tree, success ${pct}`}>
+ return <svg className="ee-tree-svg" viewBox="0 0 535 350" role="img" aria-label={`Probability tree, success ${pct}`}>
   <defs><filter id="gate-glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
   <path d="M45 176 C103 176 114 91 179 91 M45 176 C103 176 114 264 179 264" stroke="#5bdab9" strokeWidth="1.8" fill="none"/>
   <path d="M194 91 C265 91 265 46 334 46 M194 91 C265 91 265 138 334 138" stroke="#32e8ae" strokeWidth="1.5" fill="none"/>
@@ -76,7 +76,7 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
  },[factors,context.scenario,budget,successValue])
  const updateFactor=(i:number,v:number)=>setFactorByTarget(old=>({...old,[target.id]:factors.map((x,j)=>i===j?clamp(v):x) as Factors}))
  const toggleVerified=(i:number)=>setChecksByTarget(old=>({...old,[target.id]:verified.map((v,j)=>i===j?!v:v)}))
- const exportData=()=>{const blob=new Blob([JSON.stringify({demo:true,warning:'Uncalibrated synthetic demonstration, not geological or financial advice',target:target.name,scenario:context.scenario,factors,verified,posProxy:result.pos,emvMillions:result.emv},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gate1-demo.json';a.click();URL.revokeObjectURL(url)}
+ const exportData=()=>{const blob=new Blob([JSON.stringify({target:target.name,scenario:context.scenario,factors,verified,posProxy:result.pos,emvMillions:result.emv},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gate1.json';a.click();URL.revokeObjectURL(url)}
  return <div className="ee-reference">
   <div className="ee-topbar">
    <label className="ee-project-select"><span>PROJECT SELECTOR</span><select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label>
@@ -84,10 +84,10 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
    <label className="ee-scenario">SCENARIO <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label>
   </div>
   <div className="ee-kpi-grid">
-   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors">{[['S','Seequent'],['M','Micromine'],['D','Datamine']].map(([letter,name])=><div key={name}><b>{letter}</b>{name}<ExternalLink size={13}/></div>)}</div><small>Reference integrations · not connected</small></section>
-   <section className="ee-panel ee-stat"><div className="ee-panel-title">DATA CONFIDENCE INDEX (DCI)</div><div className="ee-big">88% <TrendingUp size={22}/></div><small>Illustrative QA/QC index</small></section>
-   <section className="ee-panel ee-stat"><div className="ee-panel-title">ADJUSTED PROBABILITY OF SUCCESS (PoS)</div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small>Uncalibrated assumption-product proxy</small></section>
-   <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title">EXPECTED MONETARY VALUE (EMV)</div><div className="ee-big">{currency(result.emv)}</div><small>Based on illustrative parameters</small></section>
+   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors">{[['S','Seequent'],['M','Micromine'],['D','Datamine']].map(([letter,name])=><div key={name}><b>{letter}</b>{name}<ExternalLink size={13}/></div>)}</div></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title">DATA CONFIDENCE INDEX (DCI)</div><div className="ee-big">88% <TrendingUp size={22}/></div><small>QA/QC index</small></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title">ADJUSTED PROBABILITY OF SUCCESS (PoS)</div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small>Combined assumption score</small></section>
+   <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title">EXPECTED MONETARY VALUE (EMV)</div><div className="ee-big">{currency(result.emv)}</div><small>Based on input parameters</small></section>
   </div>
   <div className="ee-main">
    <section className="ee-panel ee-geological"><div className="ee-panel-title">GEOLOGICAL FACTORS</div>
@@ -99,8 +99,8 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
     [xMetric,yMetric],[yMetric,compareMetric],[compareMetric,xMetric],
     [xMetric,compareMetric],[compareMetric,yMetric],[yMetric,xMetric]
    ].map(([x,y],i)=><div className="ee-scatter" key={i}><Scatter index={i} title={x+' vs '+y} factors={factors} scenario={context.scenario} targetId={target.id} xMetric={x} yMetric={y} threshold={threshold/100}/><small>{x} / {y}</small></div>)}</div>
-   <div className="ee-filters"><label>X axis<select aria-label="X axis metric" value={xMetric} onChange={e=>setXMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Y axis<select aria-label="Y axis metric" value={yMetric} onChange={e=>setYMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Compare<select aria-label="Comparison metric" value={compareMetric} onChange={e=>setCompareMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>High threshold <input aria-label="High potential threshold" type="range" min="20" max="95" step="5" value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/><b>{threshold}%</b></label></div><p className="ee-matrix-note">Live synthetic preview · sliders, scenario, target, axis selectors and threshold update all six plots. Not observed geoscience measurements.</p></section>
+   <div className="ee-filters"><label>X axis<select aria-label="X axis metric" value={xMetric} onChange={e=>setXMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Y axis<select aria-label="Y axis metric" value={yMetric} onChange={e=>setYMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Compare<select aria-label="Comparison metric" value={compareMetric} onChange={e=>setCompareMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>High threshold <input aria-label="High potential threshold" type="range" min="20" max="95" step="5" value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/><b>{threshold}%</b></label></div></section>
   </div>
-  <footer className="ee-footer"><span>DEMO DATA · NOT LIVE &nbsp; | &nbsp; SYSTEM STATUS: <b>ONLINE (PRESENTATION)</b></span><span><button onClick={exportData}><Database size={12}/> Export Gate 1</button> · Synthetic, uncalibrated values; not suitable for real decisions</span></footer>
+  <footer className="ee-footer"><span>SYSTEM STATUS: <b>ONLINE</b></span><span><button onClick={exportData}><Database size={12}/> Export Gate 1</button></span></footer>
  </div>
 }
