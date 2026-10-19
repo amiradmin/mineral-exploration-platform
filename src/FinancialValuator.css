@@ -23,7 +23,7 @@
 .fv-side-controls input[type=range]::-webkit-slider-thumb{appearance:none;background:#36bbe3;border:2px solid #bdf7ff;border-radius:50%;width:16px;height:16px;box-shadow:0 0 10px #50cfff}
 .fv-side-controls input[type=range]::-moz-range-thumb{background:#36bbe3;border:2px solid #bdf7ff;border-radius:50%;width:15px;height:15px;box-shadow:0 0 10px #50cfff}
 .fv-scenario select{background:#152754;border:1px solid #4865ad;color:#d9eaff;border-radius:4px;padding:5px}
-.fv-financial-main{display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;max-width:100%}
+.fv-financial-main{margin-left:0;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;max-width:100%}
 .fv-sync{width:100%;min-width:0;display:flex;align-items:center;justify-content:space-around;flex-wrap:wrap;gap:7px;border:1px solid #334c8d;border-radius:5px;background:#111b40;padding:9px 10px;font-size:11px;color:#e6f6ff}
 .fv-sync span{display:inline-flex;align-items:center;gap:5px;color:#48ddea;font-size:11px}
 .fv-sync b{color:#7ce9bc;font-size:10px}
