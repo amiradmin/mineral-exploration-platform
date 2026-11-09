@@ -87,7 +87,7 @@ export default function SourceRawHistory({targetId,softwareKey}:{targetId:string
   }
   return <section className="ee-history-panel" aria-label="Raw source data history">
     <header className="ee-history-header">
-      <div><h3><Database size={16}/> <T>RAW DATA / HISTORY</T></h3><p>Actual JSON snapshots stored in Data Mine · filter by <strong><T>received time</T></strong></p></div>
+      <div><h3><Database size={16}/> <T>RAW DATA / HISTORY</T></h3><p><T>Actual JSON snapshots stored in Data Mine · filter by</T> <strong><T>received time</T></strong></p></div>
       <button type="button" className="ee-history-refresh" onClick={()=>setRevision(i=>i+1)} disabled={loading}><RefreshCw size={14}/> <T>Reload</T></button>
     </header>
     <form className="ee-history-filters" onSubmit={e=>{e.preventDefault();apply()}}>

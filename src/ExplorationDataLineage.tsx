@@ -236,14 +236,14 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
           <div className="ee-lineage-column-heading"><GitBranch size={15}/> <T>EVALUATION FACTORS</T></div>
           <div className="ee-lineage-factor-list">
             {factorOrder.map(factor=><div key={factor} className={'ee-lineage-factor'+(active&&!active.factors.includes(factor)?' ee-lineage-muted':'')+(active?.factors.includes(factor)?' ee-lineage-selected':'')}>
-              <span className="ee-lineage-factor-connector" aria-hidden="true"/><span><strong>{factor}</strong><small>{t(factorLabels[factor])}</small></span>{covered.has(factor)?<CheckCircle2 size={16}/>:<span className="ee-lineage-empty">No mapping</span>}
+              <span className="ee-lineage-factor-connector" aria-hidden="true"/><span><strong>{factor}</strong><small>{t(factorLabels[factor])}</small></span>{covered.has(factor)?<CheckCircle2 size={16}/>:<span className="ee-lineage-empty"><T>No mapping</T></span>}
             </div>)}
           </div>
           <div className="ee-lineage-score"><span><T>EXPLORATION EVALUATION</T></span><strong><T>Source → Evidence → Factor</T></strong><small><T>Illustrative mapping only. Does not recalculate the Gate 1 score.</T></small></div>
         </div>
       </div>
       <div className="ee-lineage-foot">
-        <span><span className="ee-lineage-legend-dot"/> Mapped in example</span>
+        <span><span className="ee-lineage-legend-dot"/> <T>Mapped in example</T></span>
         <span><T>Source selection:</T> <strong>{active?t(active.name):t('All sources')}</strong></span>
         <span><T>Only registered rules and stored snapshots contribute to evaluation runs. Unconfigured sources are catalog possibilities.</T></span>
       </div>

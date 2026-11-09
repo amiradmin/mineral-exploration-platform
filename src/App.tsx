@@ -89,7 +89,7 @@ function Title({eyebrow,title,sub,actions=true}:{eyebrow:string,title:string,sub
   const {t}=useI18n()
   return <div className="title">
     <div><small>{t(eyebrow)}</small><h1>{t(title)}</h1><p>{t(sub)}</p></div>
-    {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> Export Snapshot</button><button className="primary" data-action="brief"><Sparkles size={15}/> Generate Brief</button></div>}
+    {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> <T>Export Snapshot</T></button><button className="primary" data-action="brief"><Sparkles size={15}/> <T>Generate Brief</T></button></div>}
   </div>
 }
 
@@ -120,7 +120,7 @@ function Overview({openTarget}:{openTarget:(t:any)=>void}){
         <div className="target-list">{targets.slice(0,5).map(t=><button className="target-row" key={t.id} onClick={()=>openTarget(t)}>
           <span className={'rank '+t.priority.toLowerCase()}>{t.aiScore}</span>
           <div><b>{t.name}</b><small>{t.id} · {t.commodity} · {t.stage}</small></div>
-          <div className="pos"><b>{t.confidence}%</b><small>confidence</small></div>
+          <div className="pos"><b>{t.confidence}%</b><small><T>confidence</T></small></div>
         </button>)}</div>
       </section>
     </div>
@@ -145,7 +145,7 @@ function Overview({openTarget}:{openTarget:(t:any)=>void}){
       <section className="panel health-panel">
         <PanelTitle title="Data Coverage" sub="Project-wide completeness"/>
         <Donut value={93}/>
-        <div className="coverage-grid"><span>Geology <b>98%</b></span><span>Geochem <b>94%</b></span><span>Geophysics <b>91%</b></span><span>Drilling <b>88%</b></span></div>
+        <div className="coverage-grid"><span><T>Geology</T> <b>98%</b></span><span><T>Geochem</T> <b>94%</b></span><span><T>Geophysics</T> <b>91%</b></span><span><T>Drilling</T> <b>88%</b></span></div>
       </section>
     </div>
   </>
@@ -171,7 +171,7 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
     <section className="panel layers">
       <PanelTitle title="Map Layers" sub="Evidence stack"/>
       {layerList.map(([label,Icon])=><label key={label}><input checked={layers[label]} onChange={()=>setLayers({...layers,[label]:!layers[label]})} type="checkbox"/><Icon size={14}/><span>{label}</span></label>)}
-      <div className="layer-foot"><Settings2 size={14}/><span>Layer opacity & symbology</span></div>
+      <div className="layer-foot"><Settings2 size={14}/><span><T>Layer opacity & symbology</T></span></div>
     </section>
     <section className="panel map-workspace"><MapPanel onSelect={setSelected} layers={layers} selectedId={selected.id}/></section>
     <section className="panel inspector">
@@ -180,8 +180,8 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
       <Score label="AI Prospectivity" value={selected.aiScore}/>
       <Score label="Model Confidence" value={selected.confidence}/>
       <Score label="Data Completeness" value={selected.completeness}/>
-      <div className="insight-box"><Sparkles size={15}/><div><b>Why this target?</b><p>{selected.rationale}</p></div></div>
-      <div className="decision"><span>Recommended action</span><b>{selected.action}</b></div>
+      <div className="insight-box"><Sparkles size={15}/><div><b><T>Why this target?</T></b><p>{selected.rationale}</p></div></div>
+      <div className="decision"><span><T>Recommended action</T></span><b>{selected.action}</b></div>
     </section>
   </div>
  </>
@@ -197,9 +197,9 @@ function TargetIntelligence({selected,setSelected}:{selected:any,setSelected:(x:
   <Title eyebrow="TARGET GENERATION & RANKING" title="Target Intelligence" sub="Explainable ranking based on geology, structure, geochemistry, geophysics and remote sensing."/>
   <div className="target-tabs">{targets.map(t=><button key={t.id} className={selected.id===t.id?'active':''} onClick={()=>setSelected(t)}><b>{t.id}</b><span>{t.name}</span><em>{t.aiScore}</em></button>)}</div>
   <div className="grid target-summary">
-    <section className="panel big-score"><span>COMPOSITE PROSPECTIVITY</span><b>{selected.aiScore}</b><small>/100</small><div className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</div></section>
-    <section className="panel target-detail"><span><T>Target</T></span><h2>{selected.name}</h2><p>{selected.commodity} · {selected.deposit}</p><div><small>Stage</small><b>{selected.stage}</b></div><div><small>Next Action</small><b>{selected.action}</b></div></section>
-    <section className="panel confidence-card"><span>MODEL CONFIDENCE</span><Donut value={selected.confidence}/><p>{selected.completeness}% data completeness</p></section>
+    <section className="panel big-score"><span><T>COMPOSITE PROSPECTIVITY</T></span><b>{selected.aiScore}</b><small>/100</small><div className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</div></section>
+    <section className="panel target-detail"><span><T>Target</T></span><h2>{selected.name}</h2><p>{selected.commodity} · {selected.deposit}</p><div><small><T>Stage</T></small><b>{selected.stage}</b></div><div><small><T>Next Action</T></small><b>{selected.action}</b></div></section>
+    <section className="panel confidence-card"><span><T>MODEL CONFIDENCE</T></span><Donut value={selected.confidence}/><p>{selected.completeness}% data completeness</p></section>
   </div>
   <div className="grid two lower">
     <section className="panel"><PanelTitle title="Evidence Contribution" sub="Contribution to composite prospectivity score"/>
@@ -208,7 +208,7 @@ function TargetIntelligence({selected,setSelected}:{selected:any,setSelected:(x:
     <section className="panel"><PanelTitle title="AI Geological Rationale" sub="Traceable decision explanation"/>
       <div className="ai-rationale"><Sparkles/><p>{selected.rationale}</p></div>
       <div className="evidence-chips">{selected.evidence.map((x:string)=><span key={x}>✓ {x}</span>)}</div>
-      <div className="recommendation-card"><span>RECOMMENDATION</span><b>{selected.action}</b><p>Advance only after confirming the listed field evidence and maintaining QA/QC thresholds.</p></div>
+      <div className="recommendation-card"><span><T>RECOMMENDATION</T></span><b>{selected.action}</b><p><T>Advance only after confirming the listed field evidence and maintaining QA/QC thresholds.</T></p></div>
     </section>
   </div>
  </>
@@ -225,15 +225,15 @@ function DrillholeManager(){
   </div>
   <div className="grid drill-grid">
     <section className="panel"><PanelTitle title="Drill Program" sub="Current campaign status"/>
-      <div className="drill-table table-head"><span>Hole ID</span><span><T>Depth</T></span><span>Az / Dip</span><span><T>Status</T></span><span>Best Intercept</span></div>
+      <div className="drill-table table-head"><span><T>Hole ID</T></span><span><T>Depth</T></span><span><T>Az / Dip</T></span><span><T>Status</T></span><span><T>Best Intercept</T></span></div>
       {drillholes.map(h=><div className="drill-table" key={h.id}><b>{h.id}</b><span>{h.depth} m</span><span>{h.azimuth}° / {h.dip}°</span><span><i className={'status-dot '+h.status.toLowerCase().replace(' ','-')}/>{h.status}</span><strong>{h.intercept}</strong></div>)}
     </section>
     <section className="panel drill-profile"><PanelTitle title="DH-021 Downhole Profile" sub="Lithology and copper assay"/>
       <div className="hole-scale">{[0,100,200,300,400].map(x=><span key={x}>{x}m</span>)}</div>
       <div className="hole-track">
-        <div className="lith basalt" style={{height:'25%'}}>Basalt</div>
-        <div className="lith diorite" style={{height:'40%'}}>Diorite</div>
-        <div className="lith altered" style={{height:'35%'}}>Altered intrusive</div>
+        <div className="lith basalt" style={{height:'25%'}}><T>Basalt</T></div>
+        <div className="lith diorite" style={{height:'40%'}}><T>Diorite</T></div>
+        <div className="lith altered" style={{height:'35%'}}><T>Altered intrusive</T></div>
         <div className="ore-zone" style={{top:'58%',height:'12%'}}><b>1.8% Cu</b><span>24 m</span></div>
       </div>
     </section>
@@ -251,9 +251,9 @@ function Subsurface(){
       <div className="strata s1"/><div className="strata s2"/><div className="strata s3"/>
       <div className="orebody o1"/><div className="orebody o2"/>
       {[18,31,45,57,69,81].map((x,i)=><div className="drill-line" key={x} style={{left:x+'%',height:(46+i%3*10)+'%',transform:`rotate(${-12+i*3}deg)`}}><i/></div>)}
-      <div className="model-caption"><b>Central Intrusive Complex</b><span>Interpreted porphyry system · looking NE</span></div>
+      <div className="model-caption"><b><T>Central Intrusive Complex</T></b><span><T>Interpreted porphyry system · looking NE</T></span></div>
     </div>
-    <div className="model-legend"><span><i className="lg1"/> Volcanics</span><span><i className="lg2"/> Intrusive</span><span><i className="lg3"/> Alteration shell</span><span><i className="lg4"/> High-grade target</span></div>
+    <div className="model-legend"><span><i className="lg1"/> <T>Volcanics</T></span><span><i className="lg2"/> <T>Intrusive</T></span><span><i className="lg3"/> <T>Alteration shell</T></span><span><i className="lg4"/> <T>High-grade target</T></span></div>
   </section>
  </>
 }
@@ -272,7 +272,7 @@ function Geoscience(){
       </div>
     </section>
     <section className="panel"><PanelTitle title={`${activeElement.name} distribution`} sub="Element distribution"/>
-      <div className="stats-grid"><div><span>P50</span><b>86 ppm</b></div><div><span>P90</span><b>241 ppm</b></div><div><span>P95</span><b>418 ppm</b></div><div><span>Max</span><b>2,940 ppm</b></div></div>
+      <div className="stats-grid"><div><span>P50</span><b>86 ppm</b></div><div><span>P90</span><b>241 ppm</b></div><div><span>P95</span><b>418 ppm</b></div><div><span><T>Max</T></span><b>2,940 ppm</b></div></div>
       <div className="histogram">{[22,28,31,38,45,65,88,70,48,29,18,11].map((v,i)=><i key={i} style={{height:v+'%'}}/>)}</div>
       <small className="chart-note">{activeElement.symbol}: {activeElement.anomalies} anomalies.</small>
     </section>
@@ -287,8 +287,8 @@ function AIProspectivity({selected}:{selected:any}){
  return <>
   <Title eyebrow="EXPLAINABLE GEOAI" title="AI Prospectivity" sub="Transparent evidence fusion for target ranking, anomaly detection and next-action recommendation."/>
   <div className="grid ai-grid">
-    <section className="panel ai-hero"><div><span>MODEL</span><b>Prospectivity Fusion v2.4</b><p>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</p></div></section>
-    <section className="panel"><PanelTitle title="Selected Target" sub={selected.id}/><h2>{selected.name}</h2><div className="huge-score">{selected.aiScore}</div><p className="muted">Prospectivity score</p></section>
+    <section className="panel ai-hero"><div><span><T>MODEL</T></span><b>Prospectivity Fusion v2.4</b><p><T>Combines spatial evidence from geology, structures, geochemistry, magnetics, remote sensing and drilling.</T></p></div></section>
+    <section className="panel"><PanelTitle title="Selected Target" sub={selected.id}/><h2>{selected.name}</h2><div className="huge-score">{selected.aiScore}</div><p className="muted"><T>Prospectivity score</T></p></section>
   </div>
   <div className="grid two lower">
     <section className="panel"><PanelTitle title="Feature Attribution" sub="Why the model ranked this target highly"/>
@@ -296,7 +296,7 @@ function AIProspectivity({selected}:{selected:any}){
         ['Structural intersection',34],['Cu geochemical anomaly',27],['Magnetic anomaly',21],['Alteration signature',11],['Favorable lithology',7]
       ].map(([n,v])=><div className="attribution" key={String(n)}><span>{n}</span><div><i style={{width:(Number(v)*2.5)+'%'}}/></div><b>{v}%</b></div>)}
     </section>
-    <section className="panel"><PanelTitle title="GeoAI Recommendation" sub="Suggested next technical action"/><div className="copilot-answer"><Bot/><div><b>Advance T-001 to drill targeting.</b><p>Prioritize an oriented drilling fence across the interpreted fault intersection. Before collar finalization, acquire infill IP/resistivity and confirm the surface Cu-Mo anomaly with duplicate sampling.</p></div></div><div className="prompt-box">Ask GeoAI about this target...<Sparkles size={15}/></div></section>
+    <section className="panel"><PanelTitle title="GeoAI Recommendation" sub="Suggested next technical action"/><div className="copilot-answer"><Bot/><div><b><T>Advance T-001 to drill targeting.</T></b><p>Prioritize an oriented drilling fence across the interpreted fault intersection. Before collar finalization, acquire infill IP/resistivity and confirm the surface Cu-Mo anomaly with duplicate sampling.</p></div></div><div className="prompt-box"><T>Ask GeoAI about this target...</T><Sparkles size={15}/></div></section>
   </div>
  </>
 }
@@ -311,10 +311,10 @@ function QAQC(){
       {items.map(([n,v,s])=><div className="qaqc-row" key={String(n)}><span>{n}</span><div><i style={{width:v+'%'}}/></div><b>{v}%</b><em className={s==='Passed'?'passed':'review'}>{s}</em></div>)}
     </section>
     <section className="panel"><PanelTitle title="Open Data Issues" sub="Non-blocking exceptions"/>
-      {['3 duplicate sample identifiers','2 overlapping lithology intervals','1 missing downhole survey station','1 coordinate outside license boundary'].map((x,i)=><div className="issue-row" key={x}><span>{i+1}</span><div><b>{x}</b><small>{i<2?'Assay / geology import':'Spatial validation'}</small></div><em>Review</em></div>)}
+      {['3 duplicate sample identifiers','2 overlapping lithology intervals','1 missing downhole survey station','1 coordinate outside license boundary'].map((x,i)=><div className="issue-row" key={x}><span>{i+1}</span><div><b>{x}</b><small>{i<2?'Assay / geology import':'Spatial validation'}</small></div><em><T>Review</T></em></div>)}
     </section>
   </div>
  </>
 }
 
-function Donut({value}:{value:number}){return <div className="donut" style={{background:`conic-gradient(var(--accent) ${value*3.6}deg,#173028 0)`}}><div><b>{value}%</b><span>complete</span></div></div>}
+function Donut({value}:{value:number}){return <div className="donut" style={{background:`conic-gradient(var(--accent) ${value*3.6}deg,#173028 0)`}}><div><b>{value}%</b><span><T>complete</T></span></div></div>}

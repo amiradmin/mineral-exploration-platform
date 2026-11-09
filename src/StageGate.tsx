@@ -50,7 +50,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
     <div className="sg-art-title"><h2><T>The 6-Module Stage-Gate Decision Architecture</T></h2><p><T>Transforming raw geological inputs into boardroom computational outputs.</T></p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
     <div className="sg-art-flow">
-      <div className="sg-art-raw"><span>Raw<br/>Geological<br/>Inputs</span></div>
+      <div className="sg-art-raw"><span><T>Raw</T><br/><T>Geological</T><br/><T>Inputs</T></span></div>
       <div className="sg-art-tunnel">
        <div className="sg-art-rays" aria-hidden="true">{Array.from({length:9},(_,i)=><span key={i} style={{top:(12+i*9.5)+'%'}}/>)}</div>
        <div className="sg-art-particles" aria-hidden="true">{Array.from({length:52},(_,i)=><i key={i} style={{left:((i*37)%97)+'%',top:((i*61+11)%90+4)+'%',opacity:.25+(i%5)*.14,transform:'scale('+(.65+(i%4)*.2)+')'}}/>)}</div>
@@ -59,7 +59,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
        <div className="sg-art-bar sg-bar-3"><span><T>Gate 3</T></span><small><T>Pre-Feasibility</T></small></div>
        <div className="sg-art-bar sg-bar-4"><span><T>Gate 4</T></span><small><T>Bankable FS</T></small></div>
       </div>
-      <div className="sg-art-result"><span>Financial<br/><T>Value</T></span></div>
+      <div className="sg-art-result"><span><T>Financial</T><br/><T>Value</T></span></div>
     </div>
     <div className="sg-art-bottom">{lower.map(card)}</div>
     <p className="sg-art-hint"><T>Select a module to open its decision workspace. ESG and governance span all four gates.</T></p>
@@ -89,10 +89,10 @@ export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:
  const m=decisionModules.find(x=>x.id===id)!
  const Icon=m.icon
  const linked:Record<string,string>={'Geologist Workbench':'geologist','Exploration Overview':'overview','Daily Operations':'operations','Executive Portfolio':'executive','Geochemistry & Geophysics':'geoscience','GIS Exploration Map':'map','Target Intelligence':'targets','AI Prospectivity':'ai','Drillhole Manager':'drillholes','3D Subsurface':'subsurface','Data QA / QC':'qaqc'}
- return <div className="sg-wrap"><button className="sg-back" onClick={onBack}>← Decision Center</button><div className="sg-heading"><div><span className="sg-eyebrow">{t(m.gate).toUpperCase()} · {t(m.phase).toUpperCase()}</span><h1><Icon size={29}/> {t(m.name)}</h1><p>{t(m.summary)}</p></div></div>
+ return <div className="sg-wrap"><button className="sg-back" onClick={onBack}><T>← Decision Center</T></button><div className="sg-heading"><div><span className="sg-eyebrow">{t(m.gate).toUpperCase()} · {t(m.phase).toUpperCase()}</span><h1><Icon size={29}/> {t(m.name)}</h1><p>{t(m.summary)}</p></div></div>
   <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><strong>{snapshot.targetName}</strong></div>
-  <div className="sg-summary sg-three"><div><span>{t(current.label)}</span><strong>{current.value}</strong><small>{t(current.note)}</small></div><div><span>Gate indication</span><strong>{t(current.verdict)}</strong><small>Review indicator</small></div><div><span>Shared scenario</span><strong>{t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))}</strong><small>Inputs are linked across all six modules</small></div></div>
-  <div className="sg-detail-grid"><section className="sg-panel"><div className="sg-section-title"><h2>Decision outputs</h2><p>Information this module must produce before its gate review</p></div>{m.signals.map((s,i)=><div className="sg-output" key={s}><CheckCircle2 size={19}/><div><strong>{String(i+1).padStart(2,'0')}</strong><span>{t(s)}</span></div></div>)}</section><section className="sg-panel"><div className="sg-section-title"><h2>Supporting workspaces</h2><p>Existing exploration screens and planned dependencies</p></div>{m.dependencies.map(d=><div className="sg-dependency" key={d}><span>{t(d)}</span>{linked[d]?<button onClick={()=>onNavigate(linked[d])}>Open <ArrowRight size={14}/></button>:<small>Planned integration</small>}</div>)}</section></div>
+  <div className="sg-summary sg-three"><div><span>{t(current.label)}</span><strong>{current.value}</strong><small>{t(current.note)}</small></div><div><span><T>Gate indication</T></span><strong>{t(current.verdict)}</strong><small><T>Review indicator</T></small></div><div><span><T>Shared scenario</T></span><strong>{t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))}</strong><small><T>Inputs are linked across all six modules</T></small></div></div>
+  <div className="sg-detail-grid"><section className="sg-panel"><div className="sg-section-title"><h2><T>Decision outputs</T></h2><p><T>Information this module must produce before its gate review</T></p></div>{m.signals.map((s,i)=><div className="sg-output" key={s}><CheckCircle2 size={19}/><div><strong>{String(i+1).padStart(2,'0')}</strong><span>{t(s)}</span></div></div>)}</section><section className="sg-panel"><div className="sg-section-title"><h2><T>Supporting workspaces</T></h2><p><T>Existing exploration screens and planned dependencies</T></p></div>{m.dependencies.map(d=><div className="sg-dependency" key={d}><span>{t(d)}</span>{linked[d]?<button onClick={()=>onNavigate(linked[d])}><T>Open</T> <ArrowRight size={14}/></button>:<small><T>Planned integration</T></small>}</div>)}</section></div>
 
  </div>
 }
