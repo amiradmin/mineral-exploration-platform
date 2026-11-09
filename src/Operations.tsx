@@ -1,3 +1,4 @@
+import {T} from './i18n'
 import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowUpRight, CheckCircle2, ClipboardList, FlaskConical, HardHat, Layers, PackageCheck, Target, Truck } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -66,8 +67,8 @@ export default function Operations(){
  }
  return <div className="ops">
   <div className="ops-topline">
-    <div><span className="ops-eyebrow">FIELD OPERATIONS / DAILY CONTROL</span><h1>Exploration Operations</h1><p>Drilling · core logging · samples · laboratory turnaround · data integrity</p></div>
-    <div className="ops-tools"><label htmlFor="ops-project">Exploration program</label><select id="ops-project" value={project} onChange={e=>setProject(e.target.value)}><option>All projects</option>{programs.map(p=><option key={p.id}>{p.id}</option>)}</select></div>
+    <div><span className="ops-eyebrow"><T>FIELD OPERATIONS / DAILY CONTROL</T></span><h1><T>Exploration Operations</T></h1><p><T>Drilling · core logging · samples · laboratory turnaround · data integrity</T></p></div>
+    <div className="ops-tools"><label htmlFor="ops-project"><T>Exploration program</T></label><select id="ops-project" value={project} onChange={e=>setProject(e.target.value)}><option><T>All projects</T></option>{programs.map(p=><option key={p.id}>{p.id}</option>)}</select></div>
   </div>
 
   <div className="ops-metrics">
@@ -80,31 +81,31 @@ export default function Operations(){
   </div>
   <div className="ops-row">
     <section className="panel ops-chart-panel chart-panel">
-      <div className="ops-section-head"><div><h2>Drilling performance</h2><p>Last seven shifts · metres drilled</p></div><span className="ops-chip ok">Daily target vs actual</span></div>
+      <div className="ops-section-head"><div><h2><T>Drilling performance</T></h2><p><T>Last seven shifts · metres drilled</T></p></div><span className="ops-chip ok"><T>Daily target vs actual</T></span></div>
       <div className="ops-chart chart-frame"><span className="chart-corner tl"/><span className="chart-corner tr"/><span className="chart-corner bl"/><span className="chart-corner br"/><ResponsiveContainer width="100%" height="100%"><BarChart data={shifts} barGap={3} margin={{top:17,right:12,left:-13,bottom:0}}><CartesianGrid stroke="#31516a" strokeDasharray="2 5" vertical={false}/><XAxis dataKey="day" tick={{fill:'#9ec8e5',fontSize:10}} axisLine={{stroke:'#6ca7cf'}} tickLine={false}/><YAxis tick={{fill:'#7fa8c4',fontSize:10}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:'#0b1826',border:'1px solid #438ebc',borderRadius:2,color:'#f3fbff'}}/><Bar dataKey="plan" name="Planned m" fill="#477b9c" radius={[1,1,0,0]}/><Bar dataKey="actual" name="Actual m" fill="#59c9f4" radius={[1,1,0,0]}/></BarChart></ResponsiveContainer></div>
     </section>
     <section className="panel ops-chart-panel">
-      <div className="ops-section-head"><div><h2>Program execution</h2><p>Selected project drilling and cost utilisation</p></div><Target size={19} color="#65d7a6"/></div>
+      <div className="ops-section-head"><div><h2><T>Program execution</T></h2><p><T>Selected project drilling and cost utilisation</T></p></div><Target size={19} color="#65d7a6"/></div>
       {filtered.map(p=><div className="ops-program" key={p.id}><div className="ops-program-line"><b>{p.id}</b><span>{p.commodity} · {p.rigs} rig{p.rigs!==1?'s':''}</span></div><div className="ops-progress"><i style={{width:(p.actual/p.planned*100)+'%'}}/></div><div className="ops-progress-meta"><span>{p.actual} / {p.planned} m drilled</span><span>{p.cost}% budget used</span></div></div>)}
-      <p className="ops-footnote">Budget utilisation is a sample percentage, not a currency ledger.</p>
+      <p className="ops-footnote"><T>Budget utilisation is a sample percentage, not a currency ledger.</T></p>
     </section>
   </div>
   <div className="ops-row ops-lower">
     <section className="panel ops-queue">
-      <div className="ops-section-head"><div><h2>Operational registers</h2><p>Search, filter and export exploration records</p></div><button className="ops-export" onClick={exportCsv}>Export {tab} CSV <ArrowUpRight size={15}/></button></div>
+      <div className="ops-section-head"><div><h2><T>Operational registers</T></h2><p><T>Search, filter and export exploration records</T></p></div><button className="ops-export" onClick={exportCsv}>Export {tab} CSV <ArrowUpRight size={15}/></button></div>
       <div className="ops-tabs">{([['laboratory','Lab batches'],['quality','QA/QC exceptions'],['tasks','Daily actions']] as const).map(([id,label])=><button key={id} className={tab===id?'selected':''} onClick={()=>{setTab(id);setFind('')}}>{label}</button>)}</div>
       <input className="ops-search" value={find} onChange={e=>setFind(e.target.value)} placeholder={'Search '+tab+' records…'} aria-label="Search operational records"/>
       <div className="ops-table-scroll">
-      {tab==='laboratory'?<table className="ops-table"><thead><tr><th>Batch</th><th>Program</th><th>Samples</th><th>Due</th><th>Lab status</th><th>QA/QC</th></tr></thead><tbody>{(rows as typeof assays).map(r=><tr key={r.id}><td><b>{r.batch}</b><small>{r.id}</small></td><td>{r.project}</td><td>{r.samples}</td><td>{r.due}</td><td><span className={badge(r.status)}>{r.status}</span></td><td><span className={badge(r.qa)}>{r.qa}</span></td></tr>)}</tbody></table>:
-        tab==='quality'?<table className="ops-table"><thead><tr><th>Issue</th><th>Finding</th><th>Program</th><th>Owner</th><th>Severity</th><th>Status</th></tr></thead><tbody>{(rows as typeof issues).map(r=><tr key={r.id}><td><b>{r.id}</b></td><td>{r.category}</td><td>{r.project}</td><td>{r.owner}</td><td><span className={badge(r.severity)}>{r.severity}</span></td><td>{r.status}</td></tr>)}</tbody></table>:
-        <table className="ops-table"><thead><tr><th>Task</th><th>Program</th><th>Team</th><th>Priority</th><th>Completion</th></tr></thead><tbody>{(rows as typeof tasks).map(r=><tr key={r.name}><td>{r.name}</td><td>{r.project}</td><td>{r.team}</td><td><span className={badge(r.priority)}>{r.priority}</span></td><td><label className="ops-checkbox"><input type="checkbox" checked={r.done||done.includes(r.name)} disabled={r.done} onChange={e=>setDone(current=>e.target.checked?[...current,r.name]:current.filter(x=>x!==r.name))}/>{r.done||done.includes(r.name)?'Complete':'Mark done'}</label></td></tr>)}</tbody></table>}
-      {rows.length===0&&<div className="ops-empty">No records match your filters.</div>}
+      {tab==='laboratory'?<table className="ops-table"><thead><tr><th><T>Batch</T></th><th><T>Program</T></th><th><T>Samples</T></th><th><T>Due</T></th><th><T>Lab status</T></th><th><T>QA/QC</T></th></tr></thead><tbody>{(rows as typeof assays).map(r=><tr key={r.id}><td><b>{r.batch}</b><small>{r.id}</small></td><td>{r.project}</td><td>{r.samples}</td><td>{r.due}</td><td><span className={badge(r.status)}>{r.status}</span></td><td><span className={badge(r.qa)}>{r.qa}</span></td></tr>)}</tbody></table>:
+        tab==='quality'?<table className="ops-table"><thead><tr><th><T>Issue</T></th><th><T>Finding</T></th><th><T>Program</T></th><th><T>Owner</T></th><th><T>Severity</T></th><th><T>Status</T></th></tr></thead><tbody>{(rows as typeof issues).map(r=><tr key={r.id}><td><b>{r.id}</b></td><td>{r.category}</td><td>{r.project}</td><td>{r.owner}</td><td><span className={badge(r.severity)}>{r.severity}</span></td><td>{r.status}</td></tr>)}</tbody></table>:
+        <table className="ops-table"><thead><tr><th><T>Task</T></th><th><T>Program</T></th><th><T>Team</T></th><th><T>Priority</T></th><th><T>Completion</T></th></tr></thead><tbody>{(rows as typeof tasks).map(r=><tr key={r.name}><td>{r.name}</td><td>{r.project}</td><td>{r.team}</td><td><span className={badge(r.priority)}>{r.priority}</span></td><td><label className="ops-checkbox"><input type="checkbox" checked={r.done||done.includes(r.name)} disabled={r.done} onChange={e=>setDone(current=>e.target.checked?[...current,r.name]:current.filter(x=>x!==r.name))}/>{r.done||done.includes(r.name)?'Complete':'Mark done'}</label></td></tr>)}</tbody></table>}
+      {rows.length===0&&<div className="ops-empty"><T>No records match your filters.</T></div>}
       </div>
     </section>
     <section className="panel ops-attention">
-      <div className="ops-section-head"><div><h2>Action required</h2><p>Operational handoff queue</p></div><ClipboardList size={19} color="#65d7a6"/></div>
-      {visibleTasks.length?visibleTasks.map(t=><div className="ops-task" key={t.name}><span className={badge(t.priority)}>{t.priority}</span><strong>{t.name}</strong><small>{t.team} · {t.project}</small><button onClick={()=>setDone(current=>[...current,t.name])}>Mark complete <CheckCircle2 size={14}/></button></div>):<p className="ops-footnote">All sample tasks are complete for this filter.</p>}
-      <div className="ops-hand-off"><Truck size={18}/><div><b>Next shift handoff</b><p>Check laboratory turnaround, unresolved QA/QC, and daily drill metres before approving new target work.</p></div></div>
+      <div className="ops-section-head"><div><h2><T>Action required</T></h2><p><T>Operational handoff queue</T></p></div><ClipboardList size={19} color="#65d7a6"/></div>
+      {visibleTasks.length?visibleTasks.map(t=><div className="ops-task" key={t.name}><span className={badge(t.priority)}>{t.priority}</span><strong>{t.name}</strong><small>{t.team} · {t.project}</small><button onClick={()=>setDone(current=>[...current,t.name])}><T>Mark complete</T> <CheckCircle2 size={14}/></button></div>):<p className="ops-footnote"><T>All sample tasks are complete for this filter.</T></p>}
+      <div className="ops-hand-off"><Truck size={18}/><div><b><T>Next shift handoff</T></b><p><T>Check laboratory turnaround, unresolved QA/QC, and daily drill metres before approving new target work.</T></p></div></div>
     </section>
   </div>
  </div>
