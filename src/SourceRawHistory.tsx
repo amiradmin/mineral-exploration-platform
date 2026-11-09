@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from 'react'
 import {CalendarClock, ChevronLeft, ChevronRight, Code2, Download, Database, RefreshCw} from 'lucide-react'
 import './SourceRawHistory.css'
+import {T,useI18n} from './i18n'
 
 type Snapshot = {
   id:number
@@ -22,7 +23,7 @@ const isoFromLocal=(value:string):string|null=>{
   const dt=new Date(value)
   return Number.isNaN(dt.getTime())?null:dt.toISOString()
 }
-const fmt=(value:string)=>new Date(value).toLocaleString()
+const fmt=(value:string,locale:string)=>new Date(value).toLocaleString(locale)
 const downloadJson=(filename:string,content:string)=>{
   const url=URL.createObjectURL(new Blob([content],{type:'application/json'}))
   const a=document.createElement('a')
@@ -33,6 +34,7 @@ const downloadJson=(filename:string,content:string)=>{
 }
 
 export default function SourceRawHistory({targetId,softwareKey}:{targetId:string;softwareKey:string}){
+  const {t,locale}=useI18n()
   const [fromDraft,setFromDraft]=useState('')
   const [toDraft,setToDraft]=useState('')
   const [applied,setApplied]=useState<{from:string;to:string}>({from:'',to:''})
@@ -85,8 +87,8 @@ export default function SourceRawHistory({targetId,softwareKey}:{targetId:string
   }
   return <section className="ee-history-panel" aria-label="Raw source data history">
     <header className="ee-history-header">
-      <div><h3><Database size={16}/> RAW DATA / HISTORY</h3><p>Actual JSON snapshots stored in Data Mine · filter by <strong>received time</strong></p></div>
-      <button type="button" className="ee-history-refresh" onClick={()=>setRevision(i=>i+1)} disabled={loading}><RefreshCw size={14}/> Reload</button>
+      <div><h3><Database size={16}/> <T>RAW DATA / HISTORY</T></h3><p>Actual JSON snapshots stored in Data Mine · filter by <strong><T>received time</T></strong></p></div>
+      <button type="button" className="ee-history-refresh" onClick={()=>setRevision(i=>i+1)} disabled={loading}><RefreshCw size={14}/> <T>Reload</T></button>
     </header>
     <form className="ee-history-filters" onSubmit={e=>{e.preventDefault();apply()}}>
       <label><CalendarClock size={14}/> From (local time)
@@ -95,34 +97,34 @@ export default function SourceRawHistory({targetId,softwareKey}:{targetId:string
       <label><CalendarClock size={14}/> To (local time)
         <input type="datetime-local" value={toDraft} onChange={e=>setToDraft(e.target.value)}/>
       </label>
-      <button type="submit" disabled={loading||invalidDate||invalidRange}>Apply interval</button>
-      <button type="button" className="ee-history-clear" onClick={clear}>All records</button>
-      {(invalidDate||invalidRange)&&<span className="ee-history-invalid" role="alert">{invalidRange?'Start must not be after end.':'Enter a valid date/time.'}</span>}
+      <button type="submit" disabled={loading||invalidDate||invalidRange}><T>Apply interval</T></button>
+      <button type="button" className="ee-history-clear" onClick={clear}><T>All records</T></button>
+      {(invalidDate||invalidRange)&&<span className="ee-history-invalid" role="alert">{t(invalidRange?'Start must not be after end.':'Enter a valid date/time.')}</span>}
     </form>
     <div className="ee-history-summary" aria-live="polite">
-      <span>{loading?'Loading records…':error?'Unable to load history':data?.count===0?'No snapshots in this interval':`${data?.count??0} matching snapshots`}</span>
-      <span>{applied.from||applied.to?'Filtered interval · inclusive':'All available history'} · UTC stored, shown in local time</span>
+      <span>{loading?t('Loading records…'):error?t('Unable to load history'):data?.count===0?t('No snapshots in this interval'):`${data?.count??0} ${t('matching snapshots')}`}</span>
+      <span>{t(applied.from||applied.to?'Filtered interval · inclusive':'All available history')} · UTC stored, shown in local time</span>
     </div>
     {error&&<p className="ee-history-error" role="alert">{error}</p>}
     {!loading&&!error&&data&&<>
       <div className="ee-history-table-wrap">
         <table className="ee-history-table">
-          <thead><tr><th>Received</th><th>Observed</th><th>Dataset</th><th>Features</th><th>Raw JSON</th></tr></thead>
-          <tbody>{data.results.length===0?<tr><td colSpan={5} className="ee-history-empty">No stored snapshots match this time range.</td></tr>:data.results.map(row=><tr key={row.id} className={selected===row.id?'ee-history-active':''}>
-            <td>{fmt(row.received_at)}</td><td>{fmt(row.observed_at)}</td><td>{row.dataset}{row.values.simulated===true&&<span className="ee-history-synthetic">SYNTHETIC</span>}</td><td>{typeof row.values.feature_count==='number'?row.values.feature_count:'—'}</td>
-            <td><button type="button" aria-pressed={selected===row.id} onClick={()=>setSelected(old=>old===row.id?null:row.id)}><Code2 size={14}/> {selected===row.id?'Hide':'View'}</button></td>
+          <thead><tr><th><T>Received</T></th><th><T>Observed</T></th><th><T>Dataset</T></th><th><T>Features</T></th><th><T>Raw JSON</T></th></tr></thead>
+          <tbody>{data.results.length===0?<tr><td colSpan={5} className="ee-history-empty"><T>No stored snapshots match this time range.</T></td></tr>:data.results.map(row=><tr key={row.id} className={selected===row.id?'ee-history-active':''}>
+            <td>{fmt(row.received_at,locale)}</td><td>{fmt(row.observed_at,locale)}</td><td>{row.dataset}{row.values.simulated===true&&<span className="ee-history-synthetic"><T>SYNTHETIC</T></span>}</td><td>{typeof row.values.feature_count==='number'?row.values.feature_count:'—'}</td>
+            <td><button type="button" aria-pressed={selected===row.id} onClick={()=>setSelected(old=>old===row.id?null:row.id)}><Code2 size={14}/> {t(selected===row.id?'Hide':'View')}</button></td>
           </tr>)}</tbody>
         </table>
       </div>
       <div className="ee-history-pages">
         <span>Page {data.page} of {Math.max(data.pages,1)} · {data.page_size} per page</span>
         <div>
-          <button type="button" disabled={loading||page<=1} onClick={()=>setPage(n=>n-1)}><ChevronLeft size={15}/> Previous</button>
-          <button type="button" disabled={loading||page>=data.pages} onClick={()=>setPage(n=>n+1)}>Next <ChevronRight size={15}/></button>
+          <button type="button" disabled={loading||page<=1} onClick={()=>setPage(n=>n-1)}><ChevronLeft size={15}/> <T>Previous</T></button>
+          <button type="button" disabled={loading||page>=data.pages} onClick={()=>setPage(n=>n+1)}><T>Next</T> <ChevronRight size={15}/></button>
         </div>
       </div>
       {selectedRow&&<div className="ee-history-json">
-        <div><strong>RAW SNAPSHOT #{selectedRow.id} — {selectedRow.dataset}</strong><button type="button" onClick={()=>downloadJson(`${targetId}-${softwareKey}-snapshot-${selectedRow.id}.json`,JSON.stringify(selectedRow,null,2))}><Download size={14}/> Download JSON</button></div>
+        <div><strong>RAW SNAPSHOT #{selectedRow.id} — {selectedRow.dataset}</strong><button type="button" onClick={()=>downloadJson(`${targetId}-${softwareKey}-snapshot-${selectedRow.id}.json`,JSON.stringify(selectedRow,null,2))}><Download size={14}/> <T>Download JSON</T></button></div>
         <pre>{JSON.stringify(selectedRow,null,2)}</pre>
       </div>}
     </>}

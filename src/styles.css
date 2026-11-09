@@ -299,3 +299,28 @@ button:focus-visible,input:focus-visible{outline:2px solid #7bd9ad;outline-offse
 .element-tabs button,.target-tabs button,.model-toolbar button{border-color:#274f6b;background:#0a1929;color:#9ebdce;border-radius:3px}.element-tabs button.active,.target-tabs button.active,.model-toolbar button.active{background:#123951;border-color:#4baed5;color:#effaff}.target-tabs em{color:#71d7f8}.priority-label{background:#103d50;color:#8fe6fb;border-color:#347996;border-radius:3px}.priority-label.high{background:#442d20;color:#efc087;border-color:#765039}
 .stats-grid>div,.coverage-grid span{background:#0b1c2d;border:1px solid #21435e;border-radius:3px}.ai-rationale,.insight-box,.copilot-answer{background:#0b2032;border-color:#265674;color:#76d8fa;border-radius:4px}.recommendation-card{background:#0a1a2b;border-left-color:#64d3f5}.evidence-chips span{background:#0d2639;border-color:#24536e;color:#aed8ec;border-radius:3px}
 .assistant{background:#081522f8;border-color:#2e6282;border-radius:5px}.assistant-head{border-color:#234864}.assistant-input{border-color:#2b5b78;border-radius:4px}.assistant-input button{background:#164c69;color:#c7f3ff;border-radius:3px}.user-msg{background:#143b55;border-color:#31739b}.ai-msg{background:#0b1d2e;border-color:#254e6a}.ai-list span{background:#102e42;color:#a8d8eb}
+
+/* Persian locale: physical sidebar reversal, logical reading order and protected LTR data. */
+html[lang="fa"]{font-family:Tahoma,"Noto Sans Arabic",Arial,sans-serif}
+html[lang="fa"] body{font-family:Tahoma,"Noto Sans Arabic",Arial,sans-serif}
+html[dir="rtl"] .sidebar{left:auto;right:0;border-right:0;border-left:1px solid var(--line)}
+html[dir="rtl"] .app>main{margin-left:0;margin-right:272px}
+html[dir="rtl"] .nav{text-align:right}
+html[dir="rtl"] .nav.active{box-shadow:inset -3px 0 var(--accent),0 0 20px #4bc6fa14}
+html[dir="rtl"] .sidebar .brand{flex-direction:row}
+html[dir="rtl"] .sg-art-flow,html[dir="rtl"] .sg-symbol,
+html[dir="rtl"] .ee-tree-svg,html[dir="rtl"] .ee-scatter svg,
+html[dir="rtl"] .ee-gis-map,html[dir="rtl"] .geo-map,
+html[dir="rtl"] .ee-history-json pre,html[dir="rtl"] .ee-audit-scroll code,
+html[dir="rtl"] .chart-frame{direction:ltr}
+html[dir="rtl"] .ee-scenario{margin-left:0;margin-right:auto}
+html[dir="rtl"] .ee-tab{left:auto;right:-1px}
+html[dir="rtl"] .ee-source-dialog,html[dir="rtl"] .ee-history-panel{direction:rtl;text-align:right}
+html[dir="rtl"] .ee-history-json pre{direction:ltr;text-align:left}
+html[dir="rtl"] .ee-source-meta strong,html[dir="rtl"] .ee-source-values strong{text-align:left}
+html[dir="rtl"] .sg-art-card-arrow{transform:scaleX(-1)}
+.language-switcher{display:inline-flex;align-items:center;gap:3px;border:1px solid #355d66;background:#102533;border-radius:8px;padding:4px;margin-inline-start:auto;flex-shrink:0}
+.language-switcher button{background:transparent;border:0;border-radius:5px;color:#b3cbd5;font-size:11px;font-weight:800;padding:6px 9px;cursor:pointer;min-width:36px}
+.language-switcher button.active{color:#061b25;background:#5ddac4}
+.language-switcher button:focus-visible{outline:2px solid #6df5de;outline-offset:2px}
+@media(max-width:760px){html[dir="rtl"] .sidebar{right:0;left:auto}html[dir="rtl"] .app>main{margin-left:0;margin-right:0}.language-switcher{margin-inline-start:0}}

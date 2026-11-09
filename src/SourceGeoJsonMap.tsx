@@ -1,6 +1,7 @@
 import {useEffect, useRef} from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import {T,useI18n} from './i18n'
 
 type Feature = {
   type: 'Feature'
@@ -36,6 +37,7 @@ function validCollection(value: unknown): FeatureCollection | null {
 }
 
 export default function SourceGeoJsonMap({geojson,observedAt}:{geojson:unknown;observedAt:string}){
+  const {t,locale}=useI18n()
   const containerRef=useRef<HTMLDivElement>(null)
   const mapRef=useRef<L.Map|null>(null)
   const layerRef=useRef<L.GeoJSON|null>(null)
@@ -89,8 +91,8 @@ export default function SourceGeoJsonMap({geojson,observedAt}:{geojson:unknown;o
     }
   },[geojson])
   return <section className="ee-gis-map-panel" aria-label="Received GeoJSON map">
-    <div className="ee-gis-map-heading"><div><strong>RECEIVED GIS FEATURES</strong><span>WGS84 GeoJSON · observed {new Date(observedAt).toLocaleString()}</span></div><span className="ee-gis-map-demo">SYNTHETIC</span></div>
+    <div className="ee-gis-map-heading"><div><strong><T>RECEIVED GIS FEATURES</T></strong><span>WGS84 GeoJSON · observed {new Date(observedAt).toLocaleString(locale)}</span></div><span className="ee-gis-map-demo"><T>SYNTHETIC</T></span></div>
     <div ref={containerRef} className="ee-gis-map" role="application" aria-label="Interactive map of received synthetic GIS features"/>
-    <div className="ee-gis-map-legend"><span><i className="ee-gis-legend-fault"/> Fault</span><span><i className="ee-gis-legend-fracture"/> Fracture</span><span><i className="ee-gis-legend-point"/> Intersection</span><small>Tiles may require an internet connection. Pan/zoom remains under your control during refresh.</small></div>
+    <div className="ee-gis-map-legend"><span><i className="ee-gis-legend-fault"/> <T>Fault</T></span><span><i className="ee-gis-legend-fracture"/> <T>Fracture</T></span><span><i className="ee-gis-legend-point"/> <T>Intersection</T></span><small><T>Tiles may require an internet connection. Pan/zoom remains under your control during refresh.</T></small></div>
   </section>
 }

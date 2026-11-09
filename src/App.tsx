@@ -7,6 +7,7 @@ import {
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
+import {T,useI18n} from './i18n'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
@@ -22,27 +23,28 @@ const nav=[
 ] as const
 
 export default function App(){
+  const {t,language,setLanguage}=useI18n()
   const [page,setPage]=useState<Page>('decision-center')
   const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
   const [query,setQuery]=useState('')
   const [notice,setNotice]=useState('')
   const matches=targets.filter(t=>`${t.id} ${t.name} ${t.commodity} ${t.deposit}`.toLowerCase().includes(query.trim().toLowerCase()))
-  const exportDemo=(brief=false)=>{const body=brief?`# Data Mine project brief\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}`:JSON.stringify({targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'data-mine-brief.md':'data-mine-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(brief?'Brief downloaded':'Snapshot exported')}
+  const exportDemo=(brief=false)=>{const body=brief?`# Data Mine project brief\n\n${targets.map(t=>`${t.id} ${t.name}: ${t.aiScore}/100, ${t.action}`).join('\n')}`:JSON.stringify({targets,drillholes,elements},null,2);const blob=new Blob([body],{type:brief?'text/markdown':'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=brief?'data-mine-brief.md':'data-mine-snapshot.json';a.click();URL.revokeObjectURL(url);setNotice(t(brief?'Brief downloaded':'Snapshot exported'))}
 
   return <div className="app">
     <aside className="sidebar">
       <div className="brand">
         <div className="logo"><Mountain size={24}/></div>
-        <div><b>Data Mine</b><span>Mineral Exploration Platform</span></div>
+        <div><b>Data Mine</b><span>{t('Mineral Exploration Platform')}</span></div>
       </div>
 
-      <div className="nav-group-label">COMMAND CENTER</div>
-      <nav>{nav.map(n=>{const Icon=n.icon;return <button key={n.id} className={page===n.id?'nav active':'nav'} onClick={()=>setPage(n.id as Page)}><Icon size={17}/><span>{n.label}</span></button>})}</nav>
+      <div className="nav-group-label">{t("COMMAND CENTER")}</div>
+      <nav>{nav.map(n=>{const Icon=n.icon;return <button key={n.id} className={page===n.id?'nav active':'nav'} onClick={()=>setPage(n.id as Page)}><Icon size={17}/><span>{t(n.label)}</span></button>})}</nav>
 
       <div className="sidebar-foot">
         <div className="system-card">
-          <div className="system-head"><Activity size={15}/><b>Exploration Engine</b></div>
+          <div className="system-head"><Activity size={15}/><b>{t("Exploration Engine")}</b></div>
 
           <div className="system-line"><i style={{width:'92%'}}/></div>
         </div>
@@ -51,14 +53,18 @@ export default function App(){
 
     <main>
       <header>
-        <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search target ID, name or commodity..." aria-label="Search targets"/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>No targets found</span>}</div>}</div>
-        <div className="project-pill"><span>PROJECT</span><b>Sarcheshmeh Copper Mine</b></div>
+        <div className="search search-wrapper"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t("Search target ID, name or commodity...")} aria-label={t("Search targets")}/>{query&&<div className="search-results">{matches.length?matches.map(t=><button key={t.id} onClick={()=>{setSelected(t);setPage("targets");setQuery("")}}>{t.id} · {t.name} ({t.commodity})</button>):<span>{t('No targets found')}</span>}</div>}</div>
+        <div className="project-pill"><span>{t('PROJECT')}</span><b>Sarcheshmeh Copper Mine</b></div>
 
+        <div className="language-switcher" role="group" aria-label={t('Language')}>
+          <button type="button" aria-pressed={language==='en'} className={language==='en'?'active':''} onClick={()=>setLanguage('en')}>EN</button>
+          <button type="button" aria-pressed={language==='fa'} className={language==='fa'?'active':''} onClick={()=>setLanguage('fa')}>فا</button>
+        </div>
         <div className="avatar">GA</div>
       </header>
 
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
-      {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>← Back to Dashboard</button></div>}
+      {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
         {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)} context={decisionContext} onContext={setDecisionContext}/>}
@@ -187,7 +193,7 @@ function TargetIntelligence({selected,setSelected}:{selected:any,setSelected:(x:
   <div className="target-tabs">{targets.map(t=><button key={t.id} className={selected.id===t.id?'active':''} onClick={()=>setSelected(t)}><b>{t.id}</b><span>{t.name}</span><em>{t.aiScore}</em></button>)}</div>
   <div className="grid target-summary">
     <section className="panel big-score"><span>COMPOSITE PROSPECTIVITY</span><b>{selected.aiScore}</b><small>/100</small><div className={'priority-label '+selected.priority.toLowerCase()}>{selected.priority} PRIORITY</div></section>
-    <section className="panel target-detail"><span>Target</span><h2>{selected.name}</h2><p>{selected.commodity} · {selected.deposit}</p><div><small>Stage</small><b>{selected.stage}</b></div><div><small>Next Action</small><b>{selected.action}</b></div></section>
+    <section className="panel target-detail"><span><T>Target</T></span><h2>{selected.name}</h2><p>{selected.commodity} · {selected.deposit}</p><div><small>Stage</small><b>{selected.stage}</b></div><div><small>Next Action</small><b>{selected.action}</b></div></section>
     <section className="panel confidence-card"><span>MODEL CONFIDENCE</span><Donut value={selected.confidence}/><p>{selected.completeness}% data completeness</p></section>
   </div>
   <div className="grid two lower">
@@ -214,7 +220,7 @@ function DrillholeManager(){
   </div>
   <div className="grid drill-grid">
     <section className="panel"><PanelTitle title="Drill Program" sub="Current campaign status"/>
-      <div className="drill-table table-head"><span>Hole ID</span><span>Depth</span><span>Az / Dip</span><span>Status</span><span>Best Intercept</span></div>
+      <div className="drill-table table-head"><span>Hole ID</span><span><T>Depth</T></span><span>Az / Dip</span><span><T>Status</T></span><span>Best Intercept</span></div>
       {drillholes.map(h=><div className="drill-table" key={h.id}><b>{h.id}</b><span>{h.depth} m</span><span>{h.azimuth}° / {h.dip}°</span><span><i className={'status-dot '+h.status.toLowerCase().replace(' ','-')}/>{h.status}</span><strong>{h.intercept}</strong></div>)}
     </section>
     <section className="panel drill-profile"><PanelTitle title="DH-021 Downhole Profile" sub="Lithology and copper assay"/>

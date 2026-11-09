@@ -4,6 +4,7 @@ import {targets} from './mockData'
 import type {DecisionContext, Scenario} from './decisionPipeline'
 import './ExplorationEvaluator.css'
 import ExplorationDataLineage from './ExplorationDataLineage'
+import {T,useI18n} from './i18n'
 import EvidenceAuditPanel from './EvidenceAuditPanel'
 
 type Factors = [number,number,number,number]
@@ -52,13 +53,14 @@ function Tree({success,emv,budget}:{success:number,emv:number,budget:number}){
   <path d="M194 91 C265 91 265 46 334 46 M194 91 C265 91 265 138 334 138" stroke="#32e8ae" strokeWidth="1.5" fill="none"/>
   <path d="M194 264 C265 264 265 226 334 226 M194 264 C265 264 265 313 334 313" stroke="#ef786f" strokeWidth="1.5" fill="none"/>
   <circle cx="45" cy="176" r="21" fill="#253c4a" stroke="#bfd7db"/><text x="45" y="183" fontSize="22" textAnchor="middle" fill="#fff">◎</text>
-  <text x="45" y="216" textAnchor="middle" fill="#e5f7fb" fontSize="10" fontWeight="bold">EXPLORATION</text><text x="45" y="228" textAnchor="middle" fill="#e5f7fb" fontSize="10">GATE 1</text>
+  <text x="45" y="216" textAnchor="middle" fill="#e5f7fb" fontSize="10" fontWeight="bold"><T>EXPLORATION</T></text><text x="45" y="228" textAnchor="middle" fill="#e5f7fb" fontSize="10">GATE 1</text>
   {[{y:91,color:'#1eeaa9',title:'SUCCESS',value:pct,mark:'+'},{y:264,color:'#fa786d',title:'FAILURE',value:(100-success*100).toFixed(2)+'%',mark:'−'}].map(n=><g key={n.title} textAnchor="middle"><circle cx="181" cy={n.y} r="22" fill="#13333c" stroke={n.color} strokeWidth="2" filter="url(#gate-glow)"/><text x="181" y={n.y+9} fill={n.color} fontSize="30" fontWeight="bold">{n.mark}</text><text x="181" y={n.y+43} fill="#f1fbff" fontSize="13" fontWeight="bold">{n.title}</text><text x="181" y={n.y+58} fill={n.color} fontSize="12">{n.value}</text></g>)}
   {nodes.map(n=><g key={n.title}><circle cx="350" cy={n.y} r="18" fill="#193340" stroke={n.color}/><text x="350" y={n.y+6} textAnchor="middle" fill={n.color} fontSize="21">{n.mark}</text><text x="377" y={n.y-8} fill="#eaf5fa" fontSize="11" fontWeight="bold">{n.title}</text><text x="377" y={n.y+8} fill={n.color} fontSize="12" fontWeight="bold">{n.amount}</text><path d={`M377 ${n.y+15}H513`} stroke={n.color} opacity=".7"/><circle cx="513" cy={n.y+15} r="6" fill={n.color} filter="url(#gate-glow)"/></g>)}
  </svg>
 }
 
 export default function ExplorationEvaluator({context,onContext,onNavigate}:{context:DecisionContext;onContext:(c:DecisionContext)=>void;onNavigate:(page:string)=>void}){
+ const {t}=useI18n()
  const [factorByTarget,setFactorByTarget]=useState<Record<string,Factors>>({})
  const [checksByTarget,setChecksByTarget]=useState<Record<string,boolean[]>>({})
  const [budget,setBudget]=useState(1.3)
@@ -81,30 +83,30 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
  const exportData=()=>{const blob=new Blob([JSON.stringify({target:target.name,scenario:context.scenario,factors,verified,posProxy:result.pos,emvMillions:result.emv},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gate1.json';a.click();URL.revokeObjectURL(url)}
  return <div className="ee-reference">
   <div className="ee-topbar">
-   <label className="ee-project-select"><span>PROJECT SELECTOR</span><select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label>
-   <div className="ee-pass">Pass Gate 1</div>
-   <label className="ee-scenario">SCENARIO <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label>
+   <label className="ee-project-select"><span><T>PROJECT SELECTOR</T></span><select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label>
+   <div className="ee-pass"><T>Pass Gate 1</T></div>
+   <label className="ee-scenario">SCENARIO <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label>
   </div>
   <div className="ee-kpi-grid">
-   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors"><div><b>◎</b> Multiple geological software inputs <Database size={13}/></div></div><small>Source associations shown below are demo mappings; no live vendor sync.</small></section>
-   <section className="ee-panel ee-stat"><div className="ee-panel-title">DATA CONFIDENCE INDEX (DCI)</div><div className="ee-big">88% <TrendingUp size={22}/></div><small>QA/QC index</small></section>
-   <section className="ee-panel ee-stat"><div className="ee-panel-title">ADJUSTED PROBABILITY OF SUCCESS (PoS)</div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small>Combined assumption score</small></section>
-   <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title">EXPECTED MONETARY VALUE (EMV)</div><div className="ee-big">{currency(result.emv)}</div><small>Based on input parameters</small></section>
+   <section className="ee-panel ee-ingest"><div className="ee-panel-title"><T>DATA INGESTION &amp; QA/QC HUB</T> <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors"><div><b>◎</b> <T>Multiple geological software inputs</T> <Database size={13}/></div></div><small><T>Source associations shown below are demo mappings; no live vendor sync.</T></small></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title"><T>DATA CONFIDENCE INDEX (DCI)</T></div><div className="ee-big">88% <TrendingUp size={22}/></div><small><T>QA/QC index</T></small></section>
+   <section className="ee-panel ee-stat"><div className="ee-panel-title"><T>ADJUSTED PROBABILITY OF SUCCESS (PoS)</T></div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small><T>Combined assumption score</T></small></section>
+   <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title"><T>EXPECTED MONETARY VALUE (EMV)</T></div><div className="ee-big">{currency(result.emv)}</div><small><T>Based on input parameters</T></small></section>
   </div>
   <ExplorationDataLineage targetId={target.id} targetName={target.name}/>
   <EvidenceAuditPanel targetId={target.id}/>
   <div className="ee-main">
-   <section className="ee-panel ee-geological"><div className="ee-panel-title">GEOLOGICAL FACTORS</div>
-    {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{title}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{verified[i]?'Verified QA/QC':'Needs verification'}</button></div>)}
-    <div className="ee-summary"><small>QA/QC SUMMARY</small><div>All Factors Verified ({passed}/4) <CheckCircle2 size={16}/></div><div className="ee-progress"><i style={{width:(passed*25)+'%'}}/></div></div>
+   <section className="ee-panel ee-geological"><div className="ee-panel-title"><T>GEOLOGICAL FACTORS</T></div>
+    {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{t(title)}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{t(verified[i]?'Verified QA/QC':'Needs verification')}</button></div>)}
+    <div className="ee-summary"><small><T>QA/QC SUMMARY</T></small><div>All Factors Verified ({passed}/4) <CheckCircle2 size={16}/></div><div className="ee-progress"><i style={{width:(passed*25)+'%'}}/></div></div>
    </section>
-   <section className="ee-panel ee-probability"><div className="ee-tab">Module 1: Exploration Evaluator (Gate 1)</div><div className="ee-panel-title">PROBABILITY TREE DIAGRAM</div><div className="ee-tags"><span><ThumbsUp size={13}/> Exploration</span><span><ThumbsDown size={13}/> Failure</span></div><Tree success={result.pos} emv={result.emv} budget={budget}/><div className="ee-assumptions"><label>Budget ($M)<input type="number" value={budget} min="0" step=".1" onChange={e=>setBudget(Math.max(0,Number(e.target.value)||0))}/></label><label>Success value ($M)<input type="number" value={successValue} min="0" step=".25" onChange={e=>setSuccessValue(Math.max(0,Number(e.target.value)||0))}/></label></div></section>
-   <section className="ee-panel ee-anomalies"><div className="ee-panel-title">MULTI-ANOMALY SCATTER PLOT COMPARISON MATRIX</div><div className="ee-legend"><span><i className="gold"/> High Potential</span><span><i className="cyan"/> Medium Potential</span><span><i className="teal"/> Low Potential</span><span>◇ Risk Areas</span></div><div className="ee-scatter-grid">{[
+   <section className="ee-panel ee-probability"><div className="ee-tab"><T>Module 1: Exploration Evaluator (Gate 1)</T></div><div className="ee-panel-title"><T>PROBABILITY TREE DIAGRAM</T></div><div className="ee-tags"><span><ThumbsUp size={13}/> Exploration</span><span><ThumbsDown size={13}/> Failure</span></div><Tree success={result.pos} emv={result.emv} budget={budget}/><div className="ee-assumptions"><label><T>Budget ($M)</T><input type="number" value={budget} min="0" step=".1" onChange={e=>setBudget(Math.max(0,Number(e.target.value)||0))}/></label><label><T>Success value ($M)</T><input type="number" value={successValue} min="0" step=".25" onChange={e=>setSuccessValue(Math.max(0,Number(e.target.value)||0))}/></label></div></section>
+   <section className="ee-panel ee-anomalies"><div className="ee-panel-title"><T>MULTI-ANOMALY SCATTER PLOT COMPARISON MATRIX</T></div><div className="ee-legend"><span><i className="gold"/> <T>High Potential</T></span><span><i className="cyan"/> <T>Medium Potential</T></span><span><i className="teal"/> <T>Low Potential</T></span><span>◇ Risk Areas</span></div><div className="ee-scatter-grid">{[
     [xMetric,yMetric],[yMetric,compareMetric],[compareMetric,xMetric],
     [xMetric,compareMetric],[compareMetric,yMetric],[yMetric,xMetric]
-   ].map(([x,y],i)=><div className="ee-scatter" key={i}><Scatter index={i} title={x+' vs '+y} factors={factors} scenario={context.scenario} targetId={target.id} xMetric={x} yMetric={y} threshold={threshold/100}/><small>{x} / {y}</small></div>)}</div>
-   <div className="ee-filters"><label>X axis<select aria-label="X axis metric" value={xMetric} onChange={e=>setXMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Y axis<select aria-label="Y axis metric" value={yMetric} onChange={e=>setYMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>Compare<select aria-label="Comparison metric" value={compareMetric} onChange={e=>setCompareMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label>High threshold <input aria-label="High potential threshold" type="range" min="20" max="95" step="5" value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/><b>{threshold}%</b></label></div></section>
+   ].map(([x,y],i)=><div className="ee-scatter" key={i}><Scatter index={i} title={t(x)+' vs '+t(y)} factors={factors} scenario={context.scenario} targetId={target.id} xMetric={x} yMetric={y} threshold={threshold/100}/><small>{t(x)} / {t(y)}</small></div>)}</div>
+   <div className="ee-filters"><label><T>X axis</T><select aria-label="X axis metric" value={xMetric} onChange={e=>setXMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v} value={v}>{t(v)}</option>)}</select></label><label><T>Y axis</T><select aria-label="Y axis metric" value={yMetric} onChange={e=>setYMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label><T>Compare</T><select aria-label="Comparison metric" value={compareMetric} onChange={e=>setCompareMetric(e.target.value as AnomalyMetric)}>{anomalyMetrics.map(v=><option key={v}>{v}</option>)}</select></label><label><T>High threshold</T> <input aria-label="High potential threshold" type="range" min="20" max="95" step="5" value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/><b>{threshold}%</b></label></div></section>
   </div>
-  <footer className="ee-footer"><span>SYSTEM STATUS: <b>ONLINE</b></span><span><button onClick={exportData}><Database size={12}/> Export Gate 1</button></span></footer>
+  <footer className="ee-footer"><span><T>SYSTEM STATUS:</T> <b><T>ONLINE</T></b></span><span><button onClick={exportData}><Database size={12}/> <T>Export Gate 1</T></button></span></footer>
  </div>
 }
