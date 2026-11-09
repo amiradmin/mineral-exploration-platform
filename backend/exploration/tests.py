@@ -409,7 +409,7 @@ class EvidenceLineageTests(APITestCase):
 
     def test_gis_simulator_creates_linked_demo_evaluation(self):
         from unittest.mock import patch
-        payload = self.simulated_gis_payload()
+        payload = ExplorationApiTests.simulated_gis_payload()
         payload["geojson"]["features"][1]["properties"]["fracture_density_per_km2"] = 2.5
         with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
             response = self.client.post(
