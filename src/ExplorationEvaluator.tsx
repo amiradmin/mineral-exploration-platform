@@ -3,6 +3,7 @@ import {CheckCircle2, Database, ExternalLink, SlidersHorizontal, ThumbsDown, Thu
 import {targets} from './mockData'
 import type {DecisionContext, Scenario} from './decisionPipeline'
 import './ExplorationEvaluator.css'
+import ExplorationDataLineage from './ExplorationDataLineage'
 
 type Factors = [number,number,number,number]
 const defaults:Factors=[75,82,68,90]
@@ -84,11 +85,12 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
    <label className="ee-scenario">SCENARIO <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative">Conservative</option><option value="base">Base</option><option value="optimistic">Optimistic</option></select></label>
   </div>
   <div className="ee-kpi-grid">
-   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors">{[['S','Seequent'],['M','Micromine'],['D','Datamine']].map(([letter,name])=><div key={name}><b>{letter}</b>{name}<ExternalLink size={13}/></div>)}</div></section>
+   <section className="ee-panel ee-ingest"><div className="ee-panel-title">DATA INGESTION &amp; QA/QC HUB <button onClick={()=>onNavigate('qaqc')} title="Open QA/QC"><SlidersHorizontal size={16}/></button></div><div className="ee-vendors"><div><b>◎</b> Multiple geological software inputs <Database size={13}/></div></div><small>Source associations shown below are demo mappings; no live vendor sync.</small></section>
    <section className="ee-panel ee-stat"><div className="ee-panel-title">DATA CONFIDENCE INDEX (DCI)</div><div className="ee-big">88% <TrendingUp size={22}/></div><small>QA/QC index</small></section>
    <section className="ee-panel ee-stat"><div className="ee-panel-title">ADJUSTED PROBABILITY OF SUCCESS (PoS)</div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small>Combined assumption score</small></section>
    <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title">EXPECTED MONETARY VALUE (EMV)</div><div className="ee-big">{currency(result.emv)}</div><small>Based on input parameters</small></section>
   </div>
+  <ExplorationDataLineage targetId={target.id} targetName={target.name}/>
   <div className="ee-main">
    <section className="ee-panel ee-geological"><div className="ee-panel-title">GEOLOGICAL FACTORS</div>
     {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{title}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{verified[i]?'Verified QA/QC':'Needs verification'}</button></div>)}
