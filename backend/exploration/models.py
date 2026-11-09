@@ -204,3 +204,94 @@ class SourceDataSnapshot(models.Model):
 
     def __str__(self):
         return f"{self.connection}: {self.dataset}"
+
+
+# Rules and evaluation runs are separate from the presentation-only EvidenceFactor
+# table. They never silently overwrite Gate 1's existing scenario sliders.
+class EvidenceFactorRule(models.Model):
+    FACTORS = [
+        ("P_Source", "P Source"), ("P_Pathway", "P Pathway"),
+        ("P_Trap", "P Trap"), ("P_Timing", "P Timing"),
+    ]
+    connection = models.ForeignKey(SourceConnection, on_delete=models.PROTECT, related_name="factor_rules")
+    factor = models.CharField(max_length=24, choices=FACTORS)
+    metric_key = models.CharField(max_length=80, help_text="Numeric top-level key from SourceDataSnapshot.values")
+    version = models.PositiveIntegerField(default=1)
+    input_min = models.FloatField()
+    input_max = models.FloatField()
+    output_min = models.FloatField(default=0)
+    output_max = models.FloatField(default=100)
+    weight = models.FloatField(default=1.0)
+    is_enabled = models.BooleanField(default=True)
+    is_demonstration = models.BooleanField(default=True)
+    rationale = models.TextField(help_text="Methodology and calibration evidence, or explicit demo disclaimer")
+    approved_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.PROTECT)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["connection", "factor", "metric_key", "version"],
+                name="unique_versioned_factor_rule",
+            ),
+        ]
+        ordering = ["connection_id", "factor", "version"]
+
+    def clean(self):
+        import math
+        from django.core.exceptions import ValidationError
+        if not all(math.isfinite(x) for x in (
+            self.input_min, self.input_max, self.output_min, self.output_max, self.weight,
+        )):
+            raise ValidationError("Rule parameters must be finite.")
+        if self.input_max <= self.input_min or self.output_max < self.output_min:
+            raise ValidationError("Rule ranges must be ordered, with input max greater than min.")
+        if self.weight <= 0 or self.weight > 1:
+            raise ValidationError("Weight must be greater than zero and at most one.")
+        if self.approved_by_id and self.is_demonstration:
+            raise ValidationError("Demonstration rules cannot be approved for real evaluations.")
+        if not self.rationale.strip():
+            raise ValidationError("A documented rule rationale is required.")
+
+    def __str__(self):
+        return f"{self.connection}: {self.factor} ({self.metric_key}) v{self.version}"
+
+
+class EvidenceEvaluation(models.Model):
+    STATUS = [
+        ("demo", "Synthetic/unverified example"),
+        ("incomplete", "Insufficient evidence"),
+        ("pending", "Pending competent-person review"),
+        ("approved", "Approved after expert review"),
+    ]
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="evidence_evaluations")
+    algorithm_version = models.CharField(max_length=40, default="linear-normalization-v1")
+    parameters = models.JSONField(default=dict)
+    outputs = models.JSONField(default=dict)
+    provenance = models.JSONField(default=dict)
+    content_sha256 = models.CharField(max_length=64)
+    status = models.CharField(max_length=16, choices=STATUS, default="incomplete")
+    created_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.PROTECT, related_name="created_evidence_evaluations")
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.PROTECT, related_name="approved_evidence_evaluations")
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class EvidenceEvaluationInput(models.Model):
+    evaluation = models.ForeignKey(EvidenceEvaluation, on_delete=models.PROTECT, related_name="inputs")
+    snapshot = models.ForeignKey(SourceDataSnapshot, on_delete=models.PROTECT)
+    rule = models.ForeignKey(EvidenceFactorRule, on_delete=models.PROTECT)
+    frozen_rule = models.JSONField(default=dict)
+    snapshot_sha256 = models.CharField(max_length=64)
+    observed_value = models.FloatField()
+    normalized_score = models.FloatField()
+    weighted_score = models.FloatField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["evaluation", "rule"], name="unique_eval_input_rule"),
+        ]
