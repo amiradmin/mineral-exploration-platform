@@ -324,3 +324,5 @@ html[dir="rtl"] .sg-art-card-arrow{transform:scaleX(-1)}
 .language-switcher button.active{color:#061b25;background:#5ddac4}
 .language-switcher button:focus-visible{outline:2px solid #6df5de;outline-offset:2px}
 @media(max-width:760px){html[dir="rtl"] .sidebar{right:0;left:auto}html[dir="rtl"] .app>main{margin-left:0;margin-right:0}.language-switcher{margin-inline-start:0}}
+
+.ua-navigation{margin-top:18px;border-top:1px solid #335160;padding-top:14px}.ua-navigation .nav{width:100%;}

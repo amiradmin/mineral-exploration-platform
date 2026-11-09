@@ -59,7 +59,7 @@ def _profile(user):
     ).values("target_id", "role"))
     return {"id": user.pk, "username": user.get_username(),
             "display_name": user.get_full_name() or user.get_username(),
-            "is_staff": user.is_staff,
+            "is_staff": user.is_staff, "is_superuser": user.is_superuser,
             "memberships": memberships}
 
 

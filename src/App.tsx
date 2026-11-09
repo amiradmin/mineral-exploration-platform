@@ -10,12 +10,13 @@ import GeoMap from './GeoMap'
 import {T,useI18n} from './i18n'
 import {useAuth} from './auth'
 import './AuthExtras.css'
+import UserAccessManagement from './UserAccessManagement'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
 import type { DecisionContext } from './decisionPipeline'
 
-type Page=DecisionModuleId|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
+type Page=DecisionModuleId|'admin-access'|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
 // Keep the primary navigation focused: one dashboard and the six decision modules.
 // Existing specialist screens remain accessible from their module workspaces.
@@ -44,6 +45,7 @@ export default function App(){
 
       <div className="nav-group-label">{t("COMMAND CENTER")}</div>
       <nav>{nav.map(n=>{const Icon=n.icon;return <button key={n.id} className={page===n.id?'nav active':'nav'} onClick={()=>setPage(n.id as Page)}><Icon size={17}/><span>{t(n.label)}</span></button>})}</nav>
+      {user?.is_superuser&&<div className="ua-navigation"><div className="nav-group-label">{t('ADMINISTRATION')}</div><button type="button" className={page==='admin-access'?'nav active':'nav'} onClick={()=>setPage('admin-access')}><Settings2 size={17}/><span>{t('User Access Management')}</span></button></div>}
 
       <div className="sidebar-foot">
         <div className="system-card">
@@ -73,6 +75,7 @@ export default function App(){
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
+        {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
         {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)} context={decisionContext} onContext={setDecisionContext}/>}
         {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}

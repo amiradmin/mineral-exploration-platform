@@ -718,3 +718,101 @@ class JWTLoginTests(APITestCase):
 
     def test_no_anonymous_committee_access(self):
         self.assertEqual(self.browser.get("/api/targets/T-001/committee/").status_code,403)
+
+
+class UserAccessManagementTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import CommitteeMembership
+        call_command("seed_demo")
+        User = get_user_model()
+        cls.admin = User.objects.create_superuser("access-admin", "root@example.test", "strong-test-password-01")
+        cls.staff = User.objects.create_user("access-staff", password="strong-test-password-02", is_staff=True)
+        cls.target = Target.objects.get(pk="T-001")
+
+    def test_superuser_lists_users_and_targets(self):
+        self.client.force_authenticate(user=self.admin)
+        response=self.client.get("/api/admin-access/users/")
+        self.assertEqual(response.status_code,200,response.data)
+        self.assertTrue(any(u["username"]=="access-staff" for u in response.data["users"]))
+        self.assertTrue(any(t["id"]=="T-001" for t in response.data["targets"]))
+        self.assertIn("chair",response.data["roles"])
+
+    def test_non_admin_cannot_read_or_mutate(self):
+        self.assertIn(self.client.get("/api/admin-access/users/").status_code,(401,403))
+        self.client.force_authenticate(user=self.staff)
+        self.assertEqual(self.client.get("/api/admin-access/users/").status_code,403)
+        self.assertEqual(self.client.post("/api/admin-access/users/",{
+            "username":"unauthorized","password":"strong-test-password"
+        },format="json").status_code,403)
+        self.assertEqual(self.client.post(
+            f"/api/admin-access/users/{self.staff.pk}/memberships/",
+            {"target_id":"T-001","role":"chair"},format="json"
+        ).status_code,403)
+        self.assertEqual(self.client.patch(
+            f"/api/admin-access/users/{self.staff.pk}/",{"is_active":False},format="json"
+        ).status_code,403)
+
+    def test_create_assign_revoke_and_status_are_audited(self):
+        from .models import CommitteeMembership
+        self.client.force_authenticate(user=self.admin)
+        created=self.client.post("/api/admin-access/users/",{
+            "username":"new-committee-user","email":"new@example.test",
+            "password":"long-unique-password-1122",
+        },format="json")
+        self.assertEqual(created.status_code,201,created.data)
+        uid=created.data["id"]
+        u=get_user_model().objects.get(pk=uid)
+        self.assertTrue(u.check_password("long-unique-password-1122"))
+        self.assertFalse(u.is_staff)
+        self.assertFalse(u.is_superuser)
+        self.assertNotIn("password",created.data)
+        assigned=self.client.post(f"/api/admin-access/users/{uid}/memberships/",{
+            "target_id":"T-001","role":"expert",
+        },format="json")
+        self.assertEqual(assigned.status_code,201,assigned.data)
+        mid=assigned.data["id"]
+        self.assertTrue(CommitteeMembership.objects.get(pk=mid).active)
+        self.client.force_authenticate(user=u)
+        self.assertEqual(self.client.get("/api/targets/T-001/committee/").status_code,200)
+        self.client.force_authenticate(user=self.admin)
+        revoked=self.client.delete(f"/api/admin-access/memberships/{mid}/")
+        self.assertEqual(revoked.status_code,200,revoked.data)
+        self.client.force_authenticate(user=u)
+        self.assertEqual(self.client.get("/api/targets/T-001/committee/").status_code,403)
+        self.client.force_authenticate(user=self.admin)
+        inactive=self.client.patch(f"/api/admin-access/users/{uid}/",{"is_active":False},format="json")
+        self.assertEqual(inactive.status_code,200,inactive.data)
+        self.assertFalse(inactive.data["is_active"])
+        events=AuditEvent.objects.filter(entity_type="UserAccess",entity_id=str(uid))
+        self.assertTrue(events.filter(action="user_created").exists())
+        self.assertTrue(events.filter(action="committee_membership_granted").exists())
+        self.assertTrue(events.filter(action="committee_membership_revoked").exists())
+        self.assertTrue(events.filter(action="user_status_changed").exists())
+
+    def test_reject_bad_password_and_invalid_roles(self):
+        self.client.force_authenticate(user=self.admin)
+        short=self.client.post("/api/admin-access/users/",{
+            "username":"weak-pass","password":"short"
+        },format="json")
+        self.assertEqual(short.status_code,400)
+        denied=self.client.post(f"/api/admin-access/users/{self.staff.pk}/memberships/",{
+            "target_id":"T-001","role":"superuser"
+        },format="json")
+        self.assertEqual(denied.status_code,400)
+
+    def test_prevent_self_deactivation(self):
+        self.client.force_authenticate(user=self.admin)
+        response=self.client.patch(f"/api/admin-access/users/{self.admin.pk}/",{
+            "is_active":False,
+        },format="json")
+        self.assertEqual(response.status_code,409)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+
+    def test_bearer_jwt_for_admin_api(self):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        token=str(RefreshToken.for_user(self.admin).access_token)
+        self.client.force_authenticate(user=None)
+        response=self.client.get("/api/admin-access/users/",HTTP_AUTHORIZATION="Bearer "+token)
+        self.assertEqual(response.status_code,200,response.data)
