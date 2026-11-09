@@ -437,3 +437,191 @@ class EvidenceLineageTests(APITestCase):
         public = self.client.get("/api/targets/T-001/evidence-evaluations/")
         self.assertEqual(public.status_code, 200)
         self.assertEqual(public.data["results"], [])
+
+
+class CommitteeWorkflowTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo")
+        from .models import CommitteeMembership
+        cls.target = Target.objects.get(pk="T-001")
+        cls.other = Target.objects.get(pk="T-002")
+        User = get_user_model()
+        cls.expert = User.objects.create_user("committee-expert", password="test-password")
+        cls.cp = User.objects.create_user("committee-cp", password="test-password")
+        cls.chair = User.objects.create_user("committee-chair", password="test-password")
+        cls.board = User.objects.create_user("committee-board", password="test-password")
+        cls.outsider = User.objects.create_user("committee-outsider", password="test-password")
+        for user, role in ((cls.expert,"expert"),(cls.cp,"cp"),(cls.chair,"chair"),(cls.board,"board")):
+            CommitteeMembership.objects.create(target=cls.target, user=user, role=role)
+        cls.evaluation = EvidenceEvaluation.objects.create(
+            target=cls.target, status="demo",
+            outputs={"P_Pathway":25.0}, algorithm_version="linear-normalization-v1",
+            parameters={}, provenance=[], content_sha256="a"*64,
+        )
+        cls.real_eval = EvidenceEvaluation.objects.create(
+            target=cls.other, status="approved",
+            outputs={"P_Source":25.0}, algorithm_version="linear-normalization-v1",
+            parameters={}, provenance=[], content_sha256="b"*64,
+        )
+
+    def url(self, sub=""):
+        return "/api/targets/T-001/committee/" + sub
+
+    def sign_in(self, user):
+        self.client.force_authenticate(user=user)
+
+    def test_membership_controls_reads_and_project_isolation(self):
+        self.assertEqual(self.client.get(self.url()).status_code, 403)
+        self.sign_in(self.outsider)
+        self.assertEqual(self.client.get(self.url()).status_code, 403)
+        self.sign_in(self.expert)
+        response = self.client.get(self.url())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["roles"], ["expert"])
+        self.assertEqual(self.client.get("/api/targets/T-002/committee/").status_code, 403)
+
+    def test_override_proposal_requires_evidence_and_independent_review(self):
+        from .models import ExpertOverride
+        self.sign_in(self.expert)
+        payload = dict(
+            factor="P_Pathway", delta_points=15, justification="Microscopy confirms contact metamorphism with skarn alteration.",
+            evidence_reference="LAB-CU-AU-001",
+            evidence_sha256="b"*64,
+        )
+        response = self.client.post(self.url("overrides/"),payload,format="json")
+        self.assertEqual(response.status_code,201,response.data)
+        self.assertEqual(response.data["base_score"],25)
+        self.assertEqual(response.data["adjusted_score"],40)
+        obj=ExpertOverride.objects.get(pk=response.data["id"])
+        self.assertEqual(obj.status,"proposed")
+        self.sign_in(self.cp)
+        reviewed=self.client.post(self.url(f"overrides/{obj.pk}/review/"),{
+            "decision":"approved","note":"Reviewed and agree with evidence under independent evaluation."
+        },format="json")
+        self.assertEqual(reviewed.status_code,409)
+        rejected=self.client.post(self.url(f"overrides/{obj.pk}/review/"),{
+            "decision":"rejected","note":"Synthetic model cannot provide an approved adjustment."
+        },format="json")
+        self.assertEqual(rejected.status_code,200)
+        self.assertEqual(rejected.data["status"],"rejected")
+        self.assertTrue(AuditEvent.objects.filter(action="expert_override_rejected",entity_id=str(obj.pk)).exists())
+
+    def test_overrides_validate_bounded_delta_and_hash(self):
+        self.sign_in(self.expert)
+        body=dict(factor="P_Pathway",delta_points=100,justification="This is a long enough geological evidence rationale.",
+                  evidence_reference="LAB-001",evidence_sha256="b"*64)
+        self.assertEqual(self.client.post(self.url("overrides/"),body,format="json").status_code,400)
+        body["delta_points"]=15
+        body["evidence_sha256"]="not-a-hash"
+        self.assertEqual(self.client.post(self.url("overrides/"),body,format="json").status_code,400)
+
+    def test_fatal_flaw_and_prerequisite_block_go(self):
+        from .models import StrategicProjectFlag
+        self.sign_in(self.expert)
+        payload={"kind":"fatal_flaw","title":"Arsenic-rich refractory ore",
+                 "rationale":"Requires autoclave testing and comprehensive metallurgical review.",
+                 "evidence_reference":"LAB-ARSENIC-2026","gate":1}
+        res=self.client.post(self.url("flags/"),payload,format="json")
+        self.assertEqual(res.status_code,201,res.data)
+        self.assertTrue(StrategicProjectFlag.objects.filter(target=self.target,kind="fatal_flaw",status="open").exists())
+        self.sign_in(self.board)
+        resp=self.client.post(self.url("gate-decisions/"),{"gate":1,"outcome":"GO",
+             "rationale":"The technical board has reviewed this matter thoroughly."},format="json")
+        self.assertEqual(resp.status_code,409)
+        self.assertIn("unresolved_strategic_blockers",resp.data["blockers"])
+        self.sign_in(self.cp)
+        self.assertEqual(self.client.post(self.url(f"flags/{res.data['id']}/resolve/"),{
+            "note":"Metallurgical follow-up completed and supporting analysis checked independently."
+        },format="json").status_code,200)
+
+    def test_memo_versioning_and_no_demo_signature(self):
+        from .models import ExecutiveCommitteeMemo
+        self.sign_in(self.expert)
+        body="Technical review concludes the skarn contact hypothesis requires additional confirmation drilling and validated laboratory work."
+        a=self.client.post(self.url("memos/"),{"gate":1,"body":body},format="json")
+        b=self.client.post(self.url("memos/"),{"gate":1,"body":body+" New revision."},format="json")
+        self.assertEqual((a.status_code,b.status_code),(201,201))
+        self.assertEqual((a.data["version"],b.data["version"]),(1,2))
+        self.assertEqual(ExecutiveCommitteeMemo.objects.count(),2)
+        self.sign_in(self.chair)
+        s=self.client.post(self.url(f"memos/{b.data['id']}/sign/"),{
+            "attestation":"I have independently reviewed this committee memo and evidence."
+        },format="json")
+        self.assertEqual(s.status_code,409)
+        self.assertEqual(ExecutiveCommitteeMemo.objects.filter(signed_at__isnull=False).count(),0)
+        self.sign_in(self.board)
+        decision=self.client.post(self.url("gate-decisions/"),{
+            "gate":1,"outcome":"HOLD","rationale":"Board requests additional confirmatory drilling before further approval."
+        },format="json")
+        self.assertEqual(decision.status_code,201,decision.data)
+        self.assertTrue(AuditEvent.objects.filter(action="committee_gate_decision").exists())
+
+    def test_project_membership_cannot_be_assumed_from_global_role(self):
+        User=get_user_model()
+        global_cp=User.objects.create_user("global-cp",password="test-password")
+        Group.objects.get_or_create(name="competent_person")[0].user_set.add(global_cp)
+        self.sign_in(global_cp)
+        self.assertEqual(self.client.get(self.url()).status_code,403)
+        self.assertEqual(self.client.post(self.url("flags/"),{},format="json").status_code,403)
+
+    def test_reviewed_real_override_and_signed_memo_enable_board_go(self):
+        from .models import CommitteeGateDecision, ExpertOverride
+        approved = EvidenceEvaluation.objects.create(
+            target=self.target, status="approved", outputs={"P_Pathway":25.0},
+            algorithm_version="reviewed-scientific-v1",
+            parameters={}, provenance=[], content_sha256="c"*64,
+        )
+        self.sign_in(self.expert)
+        proposal = self.client.post(self.url("overrides/"),{
+            "factor":"P_Pathway", "delta_points":15,
+            "justification":"An independent microscopy study documents a mineralized skarn contact zone.",
+            "evidence_reference":"LAB-SKARN-001",
+            "evidence_sha256":"a"*64,
+        },format="json")
+        self.assertEqual(proposal.status_code,201,proposal.data)
+        self.sign_in(self.cp)
+        reviewed = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
+            "decision":"approved",
+            "note":"I verified the laboratory reference and documented the geological rationale."
+        },format="json")
+        self.assertEqual(reviewed.status_code,200,reviewed.data)
+        overlay = self.client.get(self.url())
+        self.assertEqual(overlay.data["latest_evaluation"]["outputs"]["P_Pathway"],25)
+        self.assertEqual(overlay.data["committee_adjusted_outputs"]["P_Pathway"],40)
+        self.assertTrue(ExpertOverride.objects.filter(status="approved").exists())
+        self.sign_in(self.expert)
+        draft = self.client.post(self.url("memos/"),{
+            "gate":1,
+            "body":"Independent reviewers have assessed the contact-zone evidence and recommend conditional progression subject to continued QA/QC.",
+        },format="json")
+        self.assertEqual(draft.status_code,201,draft.data)
+        self.sign_in(self.chair)
+        signed = self.client.post(self.url(f"memos/{draft.data['id']}/sign/"),{
+            "attestation":"I independently attest that I reviewed the latest evaluation and committee memo."
+        },format="json")
+        self.assertEqual(signed.status_code,200,signed.data)
+        self.assertEqual(signed.data["signature_type"],"authenticated_attestation_only")
+        self.sign_in(self.board)
+        decision = self.client.post(self.url("gate-decisions/"),{
+            "gate":1, "outcome":"GO",
+            "rationale":"Board has reviewed the approved evaluation, adjustment and signed memo."
+        },format="json")
+        self.assertEqual(decision.status_code,201,decision.data)
+        self.assertEqual(CommitteeGateDecision.objects.get(pk=decision.data["id"]).evaluation,approved)
+
+    def test_self_review_is_denied_even_with_two_committee_roles(self):
+        from .models import CommitteeMembership
+        CommitteeMembership.objects.create(target=self.target,user=self.expert,role="cp")
+        self.sign_in(self.expert)
+        proposal = self.client.post(self.url("overrides/"),{
+            "factor":"P_Pathway", "delta_points":5,
+            "justification":"Detailed petrographic observations require additional field verification.",
+            "evidence_reference":"LAB-REVIEW-001",
+            "evidence_sha256":"a"*64,
+        },format="json")
+        self.assertEqual(proposal.status_code,201)
+        review = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
+            "decision":"rejected","note":"I inspected the evidence and reject this adjustment."
+        },format="json")
+        self.assertEqual(review.status_code,403)

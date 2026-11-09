@@ -6,6 +6,7 @@ import './ExplorationEvaluator.css'
 import ExplorationDataLineage from './ExplorationDataLineage'
 import {T,useI18n} from './i18n'
 import EvidenceAuditPanel from './EvidenceAuditPanel'
+import ExpertCommittee from './ExpertCommittee'
 
 type Factors = [number,number,number,number]
 const defaults:Factors=[75,82,68,90]
@@ -95,6 +96,7 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
   </div>
   <ExplorationDataLineage targetId={target.id} targetName={target.name}/>
   <EvidenceAuditPanel targetId={target.id}/>
+  <ExpertCommittee targetId={target.id}/>
   <div className="ee-main">
    <section className="ee-panel ee-geological"><div className="ee-panel-title"><T>GEOLOGICAL FACTORS</T></div>
     {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{t(title)}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{t(verified[i]?'Verified QA/QC':'Needs verification')}</button></div>)}

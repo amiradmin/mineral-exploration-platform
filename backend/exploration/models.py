@@ -295,3 +295,98 @@ class EvidenceEvaluationInput(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["evaluation", "rule"], name="unique_eval_input_rule"),
         ]
+
+
+class CommitteeMembership(models.Model):
+    """Target-scoped RBAC; global Django groups never imply committee access."""
+    ROLES = [
+        ("expert", "Technical expert"), ("cp", "Competent / qualified person"),
+        ("chair", "Technical committee chair"), ("board", "Board decision maker"),
+        ("auditor", "Read-only auditor"),
+    ]
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="committee_memberships")
+    user = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="committee_memberships")
+    role = models.CharField(max_length=12, choices=ROLES)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["target", "user", "role"], name="uniq_committee_membership")]
+        ordering = ["target_id", "role", "user_id"]
+
+
+class ExpertOverride(models.Model):
+    """Proposal is immutable by API after submission; no automatic PoS overwrite."""
+    STATUSES = [("proposed", "Proposed"), ("approved", "Approved"), ("rejected", "Rejected")]
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="expert_overrides")
+    evaluation = models.ForeignKey(EvidenceEvaluation, on_delete=models.PROTECT, related_name="expert_overrides")
+    factor = models.CharField(max_length=24, choices=EvidenceFactorRule.FACTORS)
+    base_score = models.FloatField()
+    delta_points = models.FloatField(help_text="Additive percentage-point change, not relative percent.")
+    adjusted_score = models.FloatField()
+    justification = models.TextField()
+    evidence_reference = models.CharField(max_length=240, help_text="Document URI or evidence record identifier; never store credentials.")
+    evidence_sha256 = models.CharField(max_length=64, help_text="SHA-256 supplied by author for external document")
+    status = models.CharField(max_length=12, choices=STATUSES, default="proposed")
+    proposed_by = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="proposed_overrides")
+    proposed_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey("auth.User", on_delete=models.PROTECT, null=True, blank=True, related_name="reviewed_overrides")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-proposed_at", "-id"]
+
+
+class StrategicProjectFlag(models.Model):
+    KINDS = [("catalyst", "Value catalyst"), ("fatal_flaw", "Fatal flaw"), ("prerequisite", "Gate prerequisite")]
+    STATUSES = [("open", "Open"), ("resolved", "Resolved")]
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="committee_flags")
+    kind = models.CharField(max_length=16, choices=KINDS)
+    title = models.CharField(max_length=180)
+    rationale = models.TextField()
+    evidence_reference = models.CharField(max_length=240)
+    gate = models.PositiveSmallIntegerField(default=1, help_text="Stage gate affected, 1-4")
+    status = models.CharField(max_length=12, choices=STATUSES, default="open")
+    created_by = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="authored_flags")
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.PROTECT, related_name="resolved_flags")
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_note = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class ExecutiveCommitteeMemo(models.Model):
+    """Immutable versioned content; sign-off is authenticated attestation, not PKI."""
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="committee_memos")
+    evaluation = models.ForeignKey(EvidenceEvaluation, on_delete=models.PROTECT, related_name="committee_memos")
+    gate = models.PositiveSmallIntegerField(default=1)
+    version = models.PositiveIntegerField()
+    body = models.TextField()
+    body_sha256 = models.CharField(max_length=64)
+    created_by = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="authored_committee_memos")
+    created_at = models.DateTimeField(auto_now_add=True)
+    signed_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.PROTECT, related_name="signed_committee_memos")
+    signed_at = models.DateTimeField(null=True, blank=True)
+    signing_attestation = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["target", "gate", "version"], name="uniq_committee_memo_version")]
+        ordering = ["-created_at", "-id"]
+
+
+class CommitteeGateDecision(models.Model):
+    """Target-scoped voting record; separate from the existing program-level FID."""
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="committee_gate_decisions")
+    gate = models.PositiveSmallIntegerField(default=1)
+    outcome = models.CharField(max_length=10, choices=[("GO", "GO"), ("HOLD", "HOLD"), ("REVIEW", "REVIEW")])
+    rationale = models.TextField()
+    evaluation = models.ForeignKey(EvidenceEvaluation, on_delete=models.PROTECT)
+    memo = models.ForeignKey(ExecutiveCommitteeMemo, on_delete=models.PROTECT)
+    decided_by = models.ForeignKey("auth.User", on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]

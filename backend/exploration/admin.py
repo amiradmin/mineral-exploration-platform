@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import (
     AssayBatch, AuditEvent, Drillhole, Element, EvidenceFactor,
     EvidenceReadiness, GateDecision, OperationProgram, QAQCIssue, SourceConnection, SourceDataSnapshot, EvidenceFactorRule, EvidenceEvaluation, EvidenceEvaluationInput, Target, WorkTask,
+    CommitteeMembership, ExpertOverride, StrategicProjectFlag, ExecutiveCommitteeMemo, CommitteeGateDecision,
 )
 
 admin.site.register([Target, Drillhole, Element, EvidenceFactor, OperationProgram, AssayBatch, QAQCIssue, WorkTask])
@@ -121,3 +122,53 @@ class EvidenceEvaluationInputAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(CommitteeMembership)
+class CommitteeMembershipAdmin(admin.ModelAdmin):
+    list_display = ("target", "user", "role", "active", "created_at")
+    list_filter = ("role", "active", "target")
+    search_fields = ("user__username", "target__name", "target__id")
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+class CommitteeReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user.is_staff)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.fields]
+
+
+@admin.register(ExpertOverride)
+class ExpertOverrideAdmin(CommitteeReadOnlyAdmin):
+    list_display = ("target", "factor", "delta_points", "status", "proposed_by", "reviewed_by")
+
+
+@admin.register(StrategicProjectFlag)
+class StrategicProjectFlagAdmin(CommitteeReadOnlyAdmin):
+    list_display = ("target", "gate", "kind", "title", "status", "created_by")
+
+
+@admin.register(ExecutiveCommitteeMemo)
+class ExecutiveCommitteeMemoAdmin(CommitteeReadOnlyAdmin):
+    list_display = ("target", "gate", "version", "signed_by", "signed_at")
+
+
+@admin.register(CommitteeGateDecision)
+class CommitteeGateDecisionAdmin(CommitteeReadOnlyAdmin):
+    list_display = ("target", "gate", "outcome", "decided_by", "created_at")
