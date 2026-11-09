@@ -790,6 +790,18 @@ class UserAccessManagementTests(APITestCase):
         self.assertTrue(events.filter(action="committee_membership_revoked").exists())
         self.assertTrue(events.filter(action="user_status_changed").exists())
 
+    def test_password_minimum_eight_characters(self):
+        self.client.force_authenticate(user=self.admin)
+        accepted = self.client.post("/api/admin-access/users/", {
+            "username": "eight-char-user", "password": "Ab1@xyZ8"
+        }, format="json")
+        self.assertEqual(accepted.status_code, 201, accepted.data)
+        self.assertTrue(get_user_model().objects.get(username="eight-char-user").check_password("Ab1@xyZ8"))
+        rejected = self.client.post("/api/admin-access/users/", {
+            "username": "seven-char-user", "password": "Ab1@xy7"
+        }, format="json")
+        self.assertEqual(rejected.status_code, 400, rejected.data)
+
     def test_reject_bad_password_and_invalid_roles(self):
         self.client.force_authenticate(user=self.admin)
         short=self.client.post("/api/admin-access/users/",{

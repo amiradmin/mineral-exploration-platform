@@ -591,7 +591,7 @@ const dictionary:Record<string,string>={
   "Users": "کاربران",
   "Search users": "جستجوی کاربران",
   "Email (optional)": "ایمیل (اختیاری)",
-  "Temporary password (minimum 12 characters)": "رمز عبور اولیه (حداقل ۱۲ نویسه)",
+  "Temporary password (minimum 8 characters)": "رمز عبور اولیه (حداقل ۸ نویسه)",
   "Accounts are created without administrator privileges. Assign committee permissions separately.": "حساب‌ها بدون سطح مدیریت ایجاد می‌شوند؛ نقش‌های کمیته را جداگانه تخصیص دهید.",
   "Project role assignments": "تخصیص نقش در پروژه",
   "Administrator": "مدیر سامانه",

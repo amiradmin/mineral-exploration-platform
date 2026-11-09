@@ -57,8 +57,8 @@ def users(request):
     password = data.get("password")
     if not isinstance(username, str) or not 3 <= len(username.strip()) <= 150:
         return Response({"detail": "Username must contain 3–150 characters."}, status=400)
-    if not isinstance(password, str) or len(password) < 12:
-        return Response({"detail": "Password must contain at least 12 characters."}, status=400)
+    if not isinstance(password, str) or len(password) < 8:
+        return Response({"detail": "Password must contain at least 8 characters."}, status=400)
     if User.objects.filter(username__iexact=username.strip()).exists():
         return Response({"detail": "Username already exists."}, status=409)
     email = data.get("email", "")

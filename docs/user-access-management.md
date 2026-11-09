@@ -4,7 +4,7 @@
 
 Superuser account → **Administration → User Access Management** in the left navigation.
 
-A user can be created with username, password (at least 12 characters), and optional
+A user can be created with username, password (at least 8 characters), and optional
 email. Accounts are regular users by default, not superusers or staff. An administrator
 can activate/deactivate accounts, grant or revoke one of five roles (`expert`, `cp`,
 `chair`, `board`, `auditor`) for a specific exploration target.
