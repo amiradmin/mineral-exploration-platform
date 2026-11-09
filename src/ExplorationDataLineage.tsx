@@ -54,7 +54,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
       <div className="ee-lineage-head-actions">
         <span className="ee-lineage-mode"><Info size={13}/> DEMO MAPPING — NOT CONNECTED</span>
         <span className="ee-lineage-count"><Database size={14}/> {sources.length} example sources</span>
-        <button className="ee-lineage-toggle" type="button" onClick={()=>setExpanded(x=>!x)} aria-expanded={expanded} aria-controls="ee-lineage-content"}>{expanded?<ChevronUp size={16}/>:<ChevronDown size={16}/>} {expanded?'Collapse':'Expand'}</button>
+        <button className="ee-lineage-toggle" type="button" onClick={()=>setExpanded(x=>!x)} aria-expanded={expanded} aria-controls="ee-lineage-content">{expanded?<ChevronUp size={16}/>:<ChevronDown size={16}/>} {expanded?'Collapse':'Expand'}</button>
       </div>
     </div>
     {expanded&&<div id="ee-lineage-content">
