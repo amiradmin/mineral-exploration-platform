@@ -390,3 +390,14 @@ class CommitteeGateDecision(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class ReserveReviewComment(models.Model):
+    """Append-only Gate 2 discussion scoped to a target and authenticated author."""
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="reserve_review_comments")
+    author = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="reserve_review_comments")
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
