@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EvidenceFactorRule",
             fields=[
-                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("factor", models.CharField(max_length=24, choices=[("P_Source", "P Source"), ("P_Pathway", "P Pathway"), ("P_Trap", "P Trap"), ("P_Timing", "P Timing")])),
                 ("metric_key", models.CharField(max_length=80, help_text="Numeric top-level key from SourceDataSnapshot.values")),
                 ("version", models.PositiveIntegerField(default=1)),
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EvidenceEvaluation",
             fields=[
-                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("algorithm_version", models.CharField(default="linear-normalization-v1", max_length=40)),
                 ("parameters", models.JSONField(default=dict)),
                 ("outputs", models.JSONField(default=dict)),
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EvidenceEvaluationInput",
             fields=[
-                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("frozen_rule", models.JSONField(default=dict)),
                 ("snapshot_sha256", models.CharField(max_length=64)),
                 ("observed_value", models.FloatField()),
