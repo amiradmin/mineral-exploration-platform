@@ -93,7 +93,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
         <button ref={closeRef} type="button" className="ee-source-close" aria-label="Close source details" onClick={onClose}><X size={19}/></button>
       </header>
       <div className="ee-source-dialog-body">
-        <div className="ee-source-demo-notice"><Info size={16}/> Source associations are illustrative. Latest data and actual protocol are shown only when a source record has been configured in Data Mine.</div>
+        <div className="ee-source-demo-notice"><Info size={16}/> {detail?.latest?.values?.simulated===true?'SIMULATED GIS FEED — Generated GeoJSON, not real ArcGIS Pro or QGIS measurements.':'Source associations are illustrative. Latest stored data and recorded protocol are displayed when configured in Data Mine.'}</div>
         <div className="ee-source-detail-grid">
           <div className="ee-source-detail-panel">
             <h3><Activity size={16}/> Latest data available</h3>
@@ -104,7 +104,8 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
               <div className="ee-source-meta"><span>Dataset</span><strong>{detail.latest.dataset}</strong></div>
               <div className="ee-source-meta"><span>Observed at source</span><strong>{dateLabel(detail.latest.observed_at)}</strong></div>
               <div className="ee-source-meta"><span>Received by Data Mine</span><strong>{dateLabel(detail.latest.received_at)}</strong></div>
-              <div className="ee-source-values">{Object.entries(detail.latest.values).slice(0,25).map(([name,value])=><div key={name}><span>{name}</span><strong>{typeof value==='object'?JSON.stringify(value):String(value)}</strong></div>)}</div>
+              <div className="ee-source-values">{Object.entries(detail.latest.values).filter(([name])=>name!=='geojson').slice(0,25).map(([name,value])=><div key={name}><span>{name.replaceAll('_',' ')}</span><strong>{typeof value==='object'?JSON.stringify(value):String(value)}</strong></div>)}</div>
+              {detail.latest.values.geojson&&typeof detail.latest.values.geojson==='object'&&'features' in detail.latest.values.geojson&&Array.isArray(detail.latest.values.geojson.features)&&<div className="ee-source-features"><h4>Received GeoJSON features</h4>{detail.latest.values.geojson.features.slice(0,10).map((feature:any,i:number)=><div key={i} className="ee-source-feature"><strong>{String(feature.properties?.name??'Feature '+(i+1))}</strong><small>{String(feature.geometry?.type??'Geometry')} · {JSON.stringify(feature.geometry?.coordinates??[])}</small></div>)}</div>}
             </>}
             <h4>Expected evidence (illustrative)</h4>
             <div className="ee-source-tags">{source.evidence.map(item=><span key={item}>{item}</span>)}</div>

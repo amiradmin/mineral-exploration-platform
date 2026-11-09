@@ -116,3 +116,72 @@ class ExplorationApiTests(APITestCase):
         self.user.is_staff = True
         self.user.save(update_fields=["is_staff"])
         self.assertEqual(self.client.get("/api/source-details/T-001/gis/").status_code, 200)
+
+
+    @staticmethod
+    def simulated_gis_payload():
+        return {
+            "target_id": "T-001",
+            "dataset": "synthetic-arcgis-qgis-structures",
+            "observed_at": timezone.now().isoformat(),
+            "geojson": {"type": "FeatureCollection", "features": [
+                {"type": "Feature", "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[54.1, 32.2], [54.2, 32.3]],
+                }, "properties": {"name": "Simulated Fault", "synthetic": True}},
+                {"type": "Feature", "geometry": {
+                    "type": "Point", "coordinates": [54.2, 32.3],
+                }, "properties": {"name": "Simulated Intersection"}},
+            ]},
+        }
+
+    def test_simulator_endpoint_requires_opt_in_and_secret(self):
+        from unittest.mock import patch
+        data = self.simulated_gis_payload()
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "false", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post("/api/simulators/gis/ingest/", data, format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40)
+            self.assertEqual(response.status_code, 403)
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post("/api/simulators/gis/ingest/", data, format="json", HTTP_X_GIS_SIMULATOR_TOKEN="wrong")
+            self.assertEqual(response.status_code, 403)
+        self.assertFalse(SourceConnection.objects.filter(target_id="T-001", software_key="gis").exists())
+
+    def test_simulator_end_to_end_appears_in_source_details(self):
+        from unittest.mock import patch
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post(
+                "/api/simulators/gis/ingest/",
+                self.simulated_gis_payload(), format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40,
+            )
+        self.assertEqual(response.status_code, 201, response.data)
+        detail = self.client.get("/api/source-details/T-001/gis/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data["protocol"], "REST API")
+        self.assertEqual(detail.data["status"], "connected")
+        self.assertEqual(detail.data["latest"]["values"]["feature_count"], 2)
+        self.assertEqual(detail.data["latest"]["values"]["fault_line_count"], 1)
+        self.assertTrue(detail.data["latest"]["values"]["simulated"])
+        self.assertIsNotNone(detail.data["last_success_at"])
+
+    def test_simulator_cannot_overwrite_customer_gis_connection(self):
+        from unittest.mock import patch
+        SourceConnection.objects.create(target=Target.objects.get(pk="T-001"), software_key="gis",
+                                        protocol="ogc", is_demo=False, status="configured")
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post(
+                "/api/simulators/gis/ingest/",
+                self.simulated_gis_payload(), format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40,
+            )
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(SourceDataSnapshot.objects.filter(connection__target_id="T-001", connection__software_key="gis").exists())
+
+    def test_simulator_rejects_invalid_geojson(self):
+        from unittest.mock import patch
+        payload = self.simulated_gis_payload()
+        payload["geojson"] = {"type": "FeatureCollection", "features": []}
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post(
+                "/api/simulators/gis/ingest/",
+                payload, format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40,
+            )
+        self.assertEqual(response.status_code, 400)
