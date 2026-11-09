@@ -15,9 +15,9 @@ jobs:
           cp .env.example .env
           docker compose config --quiet
           docker compose --profile simulation config --quiet
-          docker compose --profile simulation config --services | grep -qx gis-simulator
-      - name: Build standalone GIS simulator image
-        run: docker build -t data-mine-gis-simulator:test ./simulators/gis
           docker compose config --services | grep -qx db
           docker compose config --services | grep -qx api
           docker compose config --services | grep -qx frontend
+          docker compose --profile simulation config --services | grep -qx gis-simulator
+      - name: Build standalone GIS simulator image
+        run: docker build -t data-mine-gis-simulator:test ./simulators/gis
