@@ -564,3 +564,64 @@ class CommitteeWorkflowTests(APITestCase):
         self.sign_in(global_cp)
         self.assertEqual(self.client.get(self.url()).status_code,403)
         self.assertEqual(self.client.post(self.url("flags/"),{},format="json").status_code,403)
+
+    def test_reviewed_real_override_and_signed_memo_enable_board_go(self):
+        from .models import CommitteeGateDecision, ExpertOverride
+        approved = EvidenceEvaluation.objects.create(
+            target=self.target, status="approved", outputs={"P_Pathway":25.0},
+            algorithm_version="reviewed-scientific-v1",
+            parameters={}, provenance=[], content_sha256="c"*64,
+        )
+        self.sign_in(self.expert)
+        proposal = self.client.post(self.url("overrides/"),{
+            "factor":"P_Pathway", "delta_points":15,
+            "justification":"An independent microscopy study documents a mineralized skarn contact zone.",
+            "evidence_reference":"LAB-SKARN-001",
+            "evidence_sha256":"a"*64,
+        },format="json")
+        self.assertEqual(proposal.status_code,201,proposal.data)
+        self.sign_in(self.cp)
+        reviewed = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
+            "decision":"approved",
+            "note":"I verified the laboratory reference and documented the geological rationale."
+        },format="json")
+        self.assertEqual(reviewed.status_code,200,reviewed.data)
+        overlay = self.client.get(self.url())
+        self.assertEqual(overlay.data["latest_evaluation"]["outputs"]["P_Pathway"],25)
+        self.assertEqual(overlay.data["committee_adjusted_outputs"]["P_Pathway"],40)
+        self.assertTrue(ExpertOverride.objects.filter(status="approved").exists())
+        self.sign_in(self.expert)
+        draft = self.client.post(self.url("memos/"),{
+            "gate":1,
+            "body":"Independent reviewers have assessed the contact-zone evidence and recommend conditional progression subject to continued QA/QC.",
+        },format="json")
+        self.assertEqual(draft.status_code,201,draft.data)
+        self.sign_in(self.chair)
+        signed = self.client.post(self.url(f"memos/{draft.data['id']}/sign/"),{
+            "attestation":"I independently attest that I reviewed the latest evaluation and committee memo."
+        },format="json")
+        self.assertEqual(signed.status_code,200,signed.data)
+        self.assertEqual(signed.data["signature_type"],"authenticated_attestation_only")
+        self.sign_in(self.board)
+        decision = self.client.post(self.url("gate-decisions/"),{
+            "gate":1, "outcome":"GO",
+            "rationale":"Board has reviewed the approved evaluation, adjustment and signed memo."
+        },format="json")
+        self.assertEqual(decision.status_code,201,decision.data)
+        self.assertEqual(CommitteeGateDecision.objects.get(pk=decision.data["id"]).evaluation,approved)
+
+    def test_self_review_is_denied_even_with_two_committee_roles(self):
+        from .models import CommitteeMembership
+        CommitteeMembership.objects.create(target=self.target,user=self.expert,role="cp")
+        self.sign_in(self.expert)
+        proposal = self.client.post(self.url("overrides/"),{
+            "factor":"P_Pathway", "delta_points":5,
+            "justification":"Detailed petrographic observations require additional field verification.",
+            "evidence_reference":"LAB-REVIEW-001",
+            "evidence_sha256":"a"*64,
+        },format="json")
+        self.assertEqual(proposal.status_code,201)
+        review = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
+            "decision":"rejected","note":"I inspected the evidence and reject this adjustment."
+        },format="json")
+        self.assertEqual(review.status_code,403)
