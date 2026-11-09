@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from .views import AssayBatchViewSet, DrillholeViewSet, ElementViewSet, EvidenceFactorViewSet, OperationProgramViewSet, QAQCIssueViewSet, TargetViewSet, WorkTaskViewSet, submit_gate_decision, source_details, ingest_gis_simulator
+from .views import AssayBatchViewSet, DrillholeViewSet, ElementViewSet, EvidenceFactorViewSet, OperationProgramViewSet, QAQCIssueViewSet, TargetViewSet, WorkTaskViewSet, submit_gate_decision, source_details, source_snapshot_history, ingest_gis_simulator
 
 router = DefaultRouter()
 router.register("targets", TargetViewSet)
@@ -14,6 +14,7 @@ router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
     path("simulators/gis/ingest/", ingest_gis_simulator, name="ingest-gis-simulator"),
+    path("source-details/<str:target_id>/<slug:software_key>/snapshots/", source_snapshot_history, name="source-snapshot-history"),
     path("source-details/<str:target_id>/<slug:software_key>/", source_details, name="source-details"),
     path("programs/<int:program_id>/gate-decisions/", submit_gate_decision, name="submit-gate-decision"),
 ] + router.urls

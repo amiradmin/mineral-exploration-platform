@@ -19,3 +19,21 @@ If no connection is recorded, the popup displays **Not configured / No source da
 Demo records (`is_demo=true`) are visible without login to preserve existing demo behavior. For non-demo records, the endpoint requires an authenticated staff user until project-specific authorization is implemented. **Do not enable customer-data access for non-project-scoped staff in a multi-tenant deployment.** This is not yet a production data-integration layer.
 
 The graphical target-to-software associations are static examples. A later phase should drive those from `SourceConnection` records and link source snapshots to evaluation calculations.
+
+
+## Historical raw snapshots and time filtering
+
+The source popup includes a **Raw Data / History** panel. Its start and end date-time pickers
+filter snapshot **receipt time** (the `received_at` field) inclusively. The browser
+converts local datetime picker values into timezone-aware UTC ISO 8601 values before
+submitting them; the API rejects timezone-naive or reversed intervals.
+
+`GET /api/source-details/<target-id>/<software-key>/snapshots/?from=2026-11-09T04:00:00Z&to=2026-11-09T06:00:00Z&page=1`
+
+Response: `count`, `page`, `page_size=10`, `pages`, `time_field=received_at`, and
+`results` with `id`, `dataset`, `observed_at`, `received_at`, `values` (the stored
+unmodified JSON document). Results are newest-first and paginated in PostgreSQL.
+The API enforces the existing demo-versus-staff privacy rule for every history request.
+
+History doesn't fabricate past snapshots or query proprietary sources. The GIS
+simulator generates one new synthetic record per successful publication.

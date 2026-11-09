@@ -230,3 +230,73 @@ def ingest_gis_simulator(request):
         connection.last_success_at = now
         connection.save(update_fields=["status", "last_checked_at", "last_success_at"])
     return Response({"id": snapshot.pk, "target_id": target_id, "received": True, "simulated": True}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def source_snapshot_history(request, target_id, software_key):
+    """Paginated stored raw snapshots, filtered by received_at (UTC instants).
+
+    Uses the same connection-level read policy as source_details.
+    No vendor polling and no data mutation occurs here.
+    """
+    from django.utils.dateparse import parse_datetime
+    from django.utils import timezone
+    from .models import SourceDataSnapshot
+
+    get_object_or_404(Target, pk=target_id)
+    connection = SourceConnection.objects.filter(
+        target_id=target_id, software_key=software_key,
+    ).first()
+    if connection is not None and not connection.is_demo and not (
+        request.user.is_authenticated and request.user.is_staff
+    ):
+        return Response({"detail": "Sign-in with authorized access is required."},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        page = int(request.query_params.get("page", "1"))
+    except (TypeError, ValueError):
+        return Response({"detail": "page must be a positive integer."},
+                        status=status.HTTP_400_BAD_REQUEST)
+    if page < 1 or page > 10000:
+        return Response({"detail": "page must be between 1 and 10000."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    dates = {}
+    for param in ("from", "to"):
+        raw = request.query_params.get(param)
+        if raw is None or raw == "":
+            continue
+        dt = parse_datetime(raw)
+        if dt is None or timezone.is_naive(dt):
+            return Response({"detail": param + " must be an ISO 8601 timestamp with timezone."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        dates[param] = dt
+    if "from" in dates and "to" in dates and dates["from"] > dates["to"]:
+        return Response({"detail": "from must be earlier than or equal to to."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    queryset = SourceDataSnapshot.objects.filter(connection=connection) if connection else SourceDataSnapshot.objects.none()
+    if "from" in dates:
+        queryset = queryset.filter(received_at__gte=dates["from"])
+    if "to" in dates:
+        queryset = queryset.filter(received_at__lte=dates["to"])
+    queryset = queryset.order_by("-received_at", "-pk")
+    count = queryset.count()
+    page_size = 10
+    records = queryset[(page-1)*page_size:page*page_size]
+    return Response({
+        "count": count,
+        "page": page,
+        "page_size": page_size,
+        "pages": (count+page_size-1)//page_size,
+        "time_field": "received_at",
+        "results": [{
+            "id": snapshot.pk,
+            "dataset": snapshot.dataset,
+            "observed_at": snapshot.observed_at,
+            "received_at": snapshot.received_at,
+            "values": snapshot.values,
+        } for snapshot in records],
+    })
