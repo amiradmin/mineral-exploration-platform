@@ -570,7 +570,18 @@ const dictionary:Record<string,string>={
   "resolved": "برطرف‌شده",
   "catalyst": "فرصت ارزش‌آفرین",
   "fatal_flaw": "مانع بحرانی",
-  "prerequisite": "پیش‌شرط دروازه"
+  "prerequisite": "پیش‌شرط دروازه",
+  "Secure access to geological intelligence": "دسترسی امن به اطلاعات اکتشاف",
+  "Sign in": "ورود",
+  "Sign out": "خروج",
+  "Username": "نام کاربری",
+  "Password": "رمز عبور",
+  "Hide password": "پنهان کردن رمز عبور",
+  "Show password": "نمایش رمز عبور",
+  "Signing in…": "در حال ورود…",
+  "Unable to sign in.": "ورود ناموفق بود.",
+  "Enter your Data Mine credentials to continue to the decision dashboard.": "برای ورود به داشبورد تصمیم‌گیری، نام کاربری و رمز عبور دیتا ماین را وارد کنید.",
+  "Access is based on your assigned project roles. Contact an administrator for an account.": "سطح دسترسی بر اساس نقش شما در پروژه تعیین می‌شود. برای ایجاد حساب با مدیر سامانه تماس بگیرید."
 }
 type I18nContext={language:Language;setLanguage:(lang:Language)=>void;t:(english:string)=>string;locale:string}
 const Context=createContext<I18nContext>({language:'en',setLanguage:()=>{},t:(s)=>s,locale:'en-US'})

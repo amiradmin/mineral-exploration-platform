@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react'
 import SourceGeoJsonMap from './SourceGeoJsonMap'
 import SourceRawHistory from './SourceRawHistory'
 import {T,useI18n} from './i18n'
+import {useAuth} from './auth'
 import {Activity, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Database, FileSpreadsheet, FlaskConical, GitBranch, Info, Layers3, Map, Network, Radar, X} from 'lucide-react'
 import './ExplorationDataLineage.css'
 
@@ -60,6 +61,7 @@ const dateLabel=(value:string|null|undefined,locale='en-US')=>value?new Date(val
 
 function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targetId:string;targetName:string;onClose:()=>void}){
   const {t,locale}=useI18n()
+  const {apiFetch}=useAuth()
   const [detail,setDetail]=useState<SourceDetail|null>(null)
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
@@ -76,7 +78,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
       inFlight=true
       setRefreshing(true)
       try{
-        const response=await fetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(source.id)+'/',{
+        const response=await apiFetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(source.id)+'/',{
           signal:controller.signal,
           credentials:'same-origin',
           cache:'no-store',
@@ -100,7 +102,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
     void load()
     const timer=autoRefresh?window.setInterval(()=>{if(!document.hidden)void load()},30_000):null
     return ()=>{controller.abort();if(timer!==null)window.clearInterval(timer)}
-  },[source.id,targetId,autoRefresh,refreshSequence])
+  },[source.id,targetId,autoRefresh,refreshSequence,apiFetch])
   useEffect(()=>{
     closeRef.current?.focus()
     const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()}
@@ -159,6 +161,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
 
 export default function ExplorationDataLineage({targetId,targetName}:{targetId:string;targetName:string}){
   const {t}=useI18n()
+  const {apiFetch}=useAuth()
   const [expanded,setExpanded]=useState(true)
   const [selected,setSelected]=useState<string|null>(null)
   const [detailsFor,setDetailsFor]=useState<string|null>(null)
@@ -168,7 +171,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
     const controller=new AbortController()
     const refresh=async()=>{
       try{
-        const response=await fetch('/api/targets/'+encodeURIComponent(targetId)+'/sources/',{
+        const response=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/sources/',{
           credentials:'same-origin',signal:controller.signal,cache:'no-store',
         })
         if(!response.ok)throw new Error('Source registry unavailable (HTTP '+response.status+')')
@@ -192,7 +195,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
     void refresh()
     const handle=window.setInterval(()=>{if(!document.hidden)void refresh()},30_000)
     return ()=>{controller.abort();window.clearInterval(handle)}
-  },[targetId])
+  },[targetId,apiFetch])
   const active=sources.find(source=>source.id===selected)??null
   const modalSource=sources.find(source=>source.id===detailsFor)??null
   const covered=new Set(sources.filter(source=>source.configured).flatMap(source=>source.mappedFactors??[]))

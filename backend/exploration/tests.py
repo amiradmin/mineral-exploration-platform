@@ -625,3 +625,96 @@ class CommitteeWorkflowTests(APITestCase):
             "decision":"rejected","note":"I inspected the evidence and reject this adjustment."
         },format="json")
         self.assertEqual(review.status_code,403)
+
+class JWTLoginTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from .models import CommitteeMembership
+        call_command("seed_demo")
+        cls.user = get_user_model().objects.create_user(
+            username="jwt-expert", password="strong-test-password-28",
+        )
+        CommitteeMembership.objects.create(
+            target=Target.objects.get(pk="T-001"), user=cls.user, role="expert",
+        )
+
+    def setUp(self):
+        from django.core.cache import cache
+        from django.test import Client
+        cache.clear()
+        self.browser = Client(enforce_csrf_checks=True)
+        self.csrf = self.browser.get("/api/auth/csrf/")
+        self.token = self.browser.cookies["csrftoken"].value
+
+    def login(self):
+        return self.browser.post(
+            "/api/auth/login/",
+            data='{"username":"jwt-expert","password":"strong-test-password-28"}',
+            content_type="application/json", HTTP_X_CSRFTOKEN=self.token,
+        )
+
+    def test_login_jwt_and_role_access_without_session(self):
+        import json
+        response = self.login()
+        self.assertEqual(response.status_code, 200, response.content)
+        result = response.json()
+        self.assertIn("access", result)
+        self.assertEqual(result["user"]["username"], "jwt-expert")
+        self.assertEqual(result["user"]["memberships"], [{"target_id":"T-001","role":"expert"}])
+        self.assertTrue(response.cookies["data_mine_refresh"]["httponly"])
+        self.assertEqual(response.cookies["data_mine_refresh"]["samesite"], "Lax")
+        me = self.browser.get("/api/auth/me/", HTTP_AUTHORIZATION="Bearer "+result["access"])
+        self.assertEqual(me.status_code, 200, me.content)
+        committee = self.browser.get(
+            "/api/targets/T-001/committee/",
+            HTTP_AUTHORIZATION="Bearer "+result["access"],
+        )
+        self.assertEqual(committee.status_code, 200, committee.content)
+        self.assertEqual(self.browser.get(
+            "/api/targets/T-002/committee/",
+            HTTP_AUTHORIZATION="Bearer "+result["access"],
+        ).status_code, 403)
+
+    def test_bad_credentials_and_missing_csrf(self):
+        no_csrf = self.browser.post(
+            "/api/auth/login/",
+            data='{"username":"jwt-expert","password":"strong-test-password-28"}',
+            content_type="application/json",
+        )
+        self.assertEqual(no_csrf.status_code,403)
+        bad = self.browser.post(
+            "/api/auth/login/",
+            data='{"username":"jwt-expert","password":"invalid-password"}',
+            content_type="application/json",HTTP_X_CSRFTOKEN=self.token,
+        )
+        self.assertEqual(bad.status_code,401)
+        self.assertNotIn("access",bad.json())
+
+    def test_refresh_rotation_logout_and_csrf_required(self):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        response = self.login()
+        self.assertEqual(response.status_code,200)
+        old_token = self.browser.cookies["data_mine_refresh"].value
+        self.assertEqual(self.browser.post("/api/auth/refresh/").status_code,403)
+        refreshed = self.browser.post("/api/auth/refresh/",HTTP_X_CSRFTOKEN=self.token)
+        self.assertEqual(refreshed.status_code,200,refreshed.content)
+        new_token = self.browser.cookies["data_mine_refresh"].value
+        self.assertNotEqual(old_token,new_token)
+        with self.assertRaises(Exception):
+            RefreshToken(old_token)
+        logged_out = self.browser.post("/api/auth/logout/", HTTP_X_CSRFTOKEN=self.token)
+        self.assertEqual(logged_out.status_code,200)
+        self.assertEqual(self.browser.post("/api/auth/refresh/", HTTP_X_CSRFTOKEN=self.token).status_code,401)
+        with self.assertRaises(Exception):
+            RefreshToken(new_token)
+
+    def test_refresh_without_active_user_is_denied(self):
+        response=self.login()
+        self.assertEqual(response.status_code,200)
+        self.user.is_active=False
+        self.user.save(update_fields=["is_active"])
+        denied=self.browser.post("/api/auth/refresh/",HTTP_X_CSRFTOKEN=self.token)
+        self.assertEqual(denied.status_code,401)
+
+    def test_no_anonymous_committee_access(self):
+        self.assertEqual(self.browser.get("/api/targets/T-001/committee/").status_code,403)
