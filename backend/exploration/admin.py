@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     AssayBatch, AuditEvent, Drillhole, Element, EvidenceFactor,
-    EvidenceReadiness, GateDecision, OperationProgram, QAQCIssue, Target, WorkTask,
+    EvidenceReadiness, GateDecision, OperationProgram, QAQCIssue, SourceConnection, SourceDataSnapshot, Target, WorkTask,
 )
 
 admin.site.register([Target, Drillhole, Element, EvidenceFactor, OperationProgram, AssayBatch, QAQCIssue, WorkTask])
@@ -40,3 +40,24 @@ class GateDecisionAdmin(admin.ModelAdmin):
 @admin.register(EvidenceReadiness)
 class EvidenceReadinessAdmin(admin.ModelAdmin):
     list_display = ("program", "data_status", "detailed_exploration", "qaqc_approved", "competent_person_approved")
+
+
+class SourceDataSnapshotInline(admin.TabularInline):
+    model = SourceDataSnapshot
+    extra = 0
+    readonly_fields = ("received_at",)
+
+
+@admin.register(SourceConnection)
+class SourceConnectionAdmin(admin.ModelAdmin):
+    list_display = ("target", "software_key", "protocol", "status", "is_demo", "last_success_at")
+    list_filter = ("status", "protocol", "is_demo")
+    search_fields = ("software_key", "target__name")
+    inlines = [SourceDataSnapshotInline]
+
+
+@admin.register(SourceDataSnapshot)
+class SourceDataSnapshotAdmin(admin.ModelAdmin):
+    list_display = ("connection", "dataset", "observed_at", "received_at")
+    readonly_fields = ("received_at",)
+    list_filter = ("connection__software_key",)

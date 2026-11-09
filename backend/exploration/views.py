@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from .audit import AuditedModelViewSetMixin
 from .governance import GateApproverPermission, ReadPublicWriteRestricted, fid_blockers
-from .models import AuditEvent, AssayBatch, Drillhole, Element, EvidenceFactor, GateDecision, OperationProgram, QAQCIssue, Target, WorkTask
+from .models import AuditEvent, AssayBatch, Drillhole, Element, EvidenceFactor, GateDecision, OperationProgram, QAQCIssue, SourceConnection, Target, WorkTask
 from .serializers import AssayBatchSerializer, DrillholeSerializer, ElementSerializer, EvidenceFactorSerializer, OperationProgramSerializer, QAQCIssueSerializer, TargetSerializer, WorkTaskSerializer
 
 
@@ -102,3 +102,38 @@ def submit_gate_decision(request, program_id):
             details={"program_id": program.pk, "gate": gate, "outcome": outcome, "policy_version": decision.policy_version},
         )
     return Response({"id": decision.pk, "gate": gate, "outcome": outcome, "policy_version": decision.policy_version}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def source_details(request, target_id, software_key):
+    """Latest stored source snapshot and recorded protocol, never an invented live feed.
+
+    Non-demo source records are restricted to authenticated staff until project
+    tenancy and customer-specific access controls are available.
+    """
+    get_object_or_404(Target, pk=target_id)
+    conn = SourceConnection.objects.filter(target_id=target_id, software_key=software_key).first()
+    if conn is None:
+        return Response({
+            "configured": False, "status": "not_configured", "protocol": None,
+            "format": None, "last_checked_at": None, "last_success_at": None,
+            "latest": None,
+        })
+    if not conn.is_demo and not (request.user.is_authenticated and request.user.is_staff):
+        return Response({"detail": "Sign-in with authorized access is required."}, status=status.HTTP_403_FORBIDDEN)
+    latest = conn.snapshots.order_by("-received_at", "-pk").first()
+    return Response({
+        "configured": True,
+        "status": conn.status,
+        "protocol": conn.get_protocol_display(),
+        "format": conn.data_format or None,
+        "last_checked_at": conn.last_checked_at,
+        "last_success_at": conn.last_success_at,
+        "latest": {
+            "dataset": latest.dataset,
+            "observed_at": latest.observed_at,
+            "received_at": latest.received_at,
+            "values": latest.values,
+        } if latest else None,
+    })
