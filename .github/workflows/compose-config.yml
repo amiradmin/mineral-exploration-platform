@@ -1,0 +1,19 @@
+name: Docker Compose configuration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose interpolation and service layout
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          docker compose config --services | grep -qx db
+          docker compose config --services | grep -qx api
+          docker compose config --services | grep -qx frontend
