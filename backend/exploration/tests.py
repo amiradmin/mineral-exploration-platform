@@ -406,3 +406,34 @@ class EvidenceLineageTests(APITestCase):
         response = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
         self.assertEqual(response.data["provenance"][0]["rule_version"], 2)
         self.assertEqual(response.data["outputs"]["P_Pathway"], 50)
+
+    def test_gis_simulator_creates_linked_demo_evaluation(self):
+        from unittest.mock import patch
+        payload = self.simulated_gis_payload()
+        payload["geojson"]["features"][1]["properties"]["fracture_density_per_km2"] = 2.5
+        with patch.dict("os.environ", {"GIS_SIMULATOR_ENABLED": "true", "GIS_SIMULATOR_TOKEN": "A"*40}):
+            response = self.client.post(
+                "/api/simulators/gis/ingest/",
+                payload, format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40,
+            )
+        self.assertEqual(response.status_code, 201, response.data)
+        detail = self.client.get("/api/targets/T-001/evidence-evaluations/")
+        self.assertEqual(detail.status_code, 200, detail.data)
+        run = detail.data["latest"]
+        self.assertEqual(run["status"], "demo")
+        self.assertEqual(run["outputs"]["P_Pathway"], 50.0)
+        self.assertEqual(run["provenance"][0]["snapshot_id"], response.data["id"])
+        self.assertEqual(run["provenance"][0]["frozen_rule"]["version"], 1)
+        self.assertFalse(run["decision_grade"])
+
+    def test_public_demo_run_does_not_expose_mixed_private_source(self):
+        self._source_rule(key="gcd", factor="P_Source", demo=False)
+        self._source_rule(key="gis", factor="P_Pathway", demo=True)
+        self.client.force_authenticate(user=self.steward)
+        created = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.data["status"], "demo")
+        self.client.force_authenticate(user=None)
+        public = self.client.get("/api/targets/T-001/evidence-evaluations/")
+        self.assertEqual(public.status_code, 200)
+        self.assertEqual(public.data["results"], [])

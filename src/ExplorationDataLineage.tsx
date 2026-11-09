@@ -41,13 +41,6 @@ const catalog:Record<string,Source> = {
   dips:{id:'dips',name:'Dips (Rocscience)',format:'Stereonet data',evidence:['Discontinuity orientations'],factors:['P_Trap'],protocols:['CSV / file export']},
   geobank:{id:'geobank',name:'Datamine CCLAS / Geobank',format:'Assay / LIMS export',evidence:['Assay QA/QC results','CRM / blank / duplicate'],factors:['P_Timing'],protocols:['CSV / file export', 'API (subject to license)']},
 }
-const examples:Record<string,string[]> = {
-  'T-001':['oasis','gcd','res','gis','geobank'],
-  'T-002':['gcd','gis','rock','geobank'],
-  'T-003':['gis','dips','geobank'],
-  'T-004':['oasis','res','gis'],
-  'T-005':['gcd','rock'],
-}
 const factorLabels:Record<Factor,string> = {
   P_Source:'Source rock potential',
   P_Pathway:'Mineralizing fluid pathway',

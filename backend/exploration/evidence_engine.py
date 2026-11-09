@@ -51,7 +51,8 @@ def freeze_rule(rule):
         "factor": rule.factor, "metric_key": rule.metric_key,
         "input_min": rule.input_min, "input_max": rule.input_max,
         "output_min": rule.output_min, "output_max": rule.output_max,
-        "weight": rule.weight, "is_demonstration": rule.is_demonstration,
+        "weight": rule.weight, "is_enabled": rule.is_enabled,
+        "is_demonstration": rule.is_demonstration,
         "rationale": rule.rationale,
         "approved_by_id": rule.approved_by_id,
         "approved_at": rule.approved_at.isoformat() if rule.approved_at else None,
@@ -213,7 +214,7 @@ def verify_evaluation_unchanged(evaluation):
             return False
         if row.snapshot.values.get("simulated") is True or row.rule.is_demonstration or row.rule.connection.is_demo:
             return False
-        if row.rule.approved_by_id is None:
+        if row.rule.approved_by_id is None or not row.rule.is_enabled:
             return False
     return True
 

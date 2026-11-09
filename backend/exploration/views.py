@@ -366,7 +366,7 @@ def evidence_evaluations(request, target_id):
         return Response(serialize_evaluation(evaluation), status=status.HTTP_201_CREATED)
     queryset = EvidenceEvaluation.objects.filter(target=target)
     if not _is_staff(request):
-        queryset = queryset.filter(status="demo")
+        queryset = queryset.filter(status="demo").exclude(inputs__rule__connection__is_demo=False).distinct()
     records = list(queryset.order_by("-created_at", "-pk")[:10])
     return Response({
         "target_id": target.pk,
