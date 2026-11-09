@@ -117,7 +117,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
       <div className="ee-source-dialog-body">
         <div className="ee-source-refreshbar">
           <span className={error?'ee-source-poll-error':'ee-source-poll-ok'}>{refreshing?'Updating…':error?'Refresh failed':autoRefresh?'Auto-refresh every 30 seconds':'Auto-refresh paused'}</span>
-          <span>{lastRefreshed?'Last checked '+dateLabel(lastRefreshed):'Not checked yet'}</span>
+          <span>{lastRefreshed?'Last checked '+dateLabel(lastRefreshed,locale):'Not checked yet'}</span>
           <label><input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)}/> <T>Auto refresh</T></label>
           <button type="button" disabled={refreshing} onClick={()=>setRefreshSequence(i=>i+1)}><T>Refresh now</T></button>
         </div>
@@ -131,8 +131,8 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
             {!loading&&!error&&detail&&!detail.latest&&<div className="ee-source-empty"><Database size={23}/><strong><T>No source data received</T></strong><p><T>No imported snapshot is recorded for this project and software.</T></p></div>}
             {!loading&&!error&&detail?.latest&&<>
               <div className="ee-source-meta"><span><T>Dataset</T></span><strong>{detail.latest.dataset}</strong></div>
-              <div className="ee-source-meta"><span><T>Observed at source</T></span><strong>{dateLabel(detail.latest.observed_at)}</strong></div>
-              <div className="ee-source-meta"><span><T>Received by Data Mine</T></span><strong>{dateLabel(detail.latest.received_at)}</strong></div>
+              <div className="ee-source-meta"><span><T>Observed at source</T></span><strong>{dateLabel(detail.latest.observed_at,locale)}</strong></div>
+              <div className="ee-source-meta"><span><T>Received by Data Mine</T></span><strong>{dateLabel(detail.latest.received_at,locale)}</strong></div>
               <div className="ee-source-values">{Object.entries(detail.latest.values).filter(([name])=>name!=='geojson').slice(0,25).map(([name,value])=><div key={name}><span>{name.replaceAll('_',' ')}</span><strong>{typeof value==='object'?JSON.stringify(value):String(value)}</strong></div>)}</div>
               {detail.latest.values.geojson&&typeof detail.latest.values.geojson==='object'&&'features' in detail.latest.values.geojson&&Array.isArray(detail.latest.values.geojson.features)&&<div className="ee-source-features"><h4><T>Received GeoJSON features</T></h4>{detail.latest.values.geojson.features.slice(0,10).map((feature:any,i:number)=><div key={i} className="ee-source-feature"><strong>{String(feature.properties?.name??'Feature '+(i+1))}</strong><small>{String(feature.geometry?.type??'Geometry')} · {JSON.stringify(feature.geometry?.coordinates??[])}</small></div>)}</div>}
             </>}
@@ -144,8 +144,8 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
             <div className="ee-source-meta"><span><T>Configured protocol</T></span><strong>{loading?'Loading…':detail?.protocol||'Not configured'}</strong></div>
             <div className="ee-source-meta"><span><T>Connection state</T></span><strong className={detail?.status==='connected'?'ee-source-connected':''}>{loading?'Loading…':detail?.status?.replaceAll('_',' ')||'Not available'}</strong></div>
             <div className="ee-source-meta"><span><T>Data format</T></span><strong>{detail?.format||'Not configured'}</strong></div>
-            <div className="ee-source-meta"><span><T>Last checked</T></span><strong>{dateLabel(detail?.last_checked_at)}</strong></div>
-            <div className="ee-source-meta"><span><T>Last successful import</T></span><strong>{dateLabel(detail?.last_success_at)}</strong></div>
+            <div className="ee-source-meta"><span><T>Last checked</T></span><strong>{dateLabel(detail?.last_checked_at,locale)}</strong></div>
+            <div className="ee-source-meta"><span><T>Last successful import</T></span><strong>{dateLabel(detail?.last_success_at,locale)}</strong></div>
             <h4><T>Possible integration methods (not verified)</T></h4>
             <div className="ee-source-tags">{source.protocols.map(method=><span key={method}>{t(method)}</span>)}</div>
             <p className="ee-source-method-note">API, CSV, socket and file transfers are transport options. A method is considered active only after an integration is configured and tested; this page does not initiate vendor connections.</p>
