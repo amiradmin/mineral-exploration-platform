@@ -86,18 +86,21 @@ export default function App(){
 }
 
 function Title({eyebrow,title,sub,actions=true}:{eyebrow:string,title:string,sub:string,actions?:boolean}){
+  const {t}=useI18n()
   return <div className="title">
-    <div><small>{eyebrow}</small><h1>{title}</h1><p>{sub}</p></div>
+    <div><small>{t(eyebrow)}</small><h1>{t(title)}</h1><p>{t(sub)}</p></div>
     {actions&&<div className="title-actions"><button className="secondary" data-action="export"><Database size={15}/> Export Snapshot</button><button className="primary" data-action="brief"><Sparkles size={15}/> Generate Brief</button></div>}
   </div>
 }
 
 function PanelTitle({title,sub,action}:{title:string,sub:string,action?:React.ReactNode}){
-  return <div className="panel-title"><div><h3>{title}</h3><p>{sub}</p></div>{action}</div>
+  const {t}=useI18n()
+  return <div className="panel-title"><div><h3>{t(title)}</h3><p>{t(sub)}</p></div>{action}</div>
 }
 
 function Kpi({label,value,note,icon}:{label:string,value:string,note:string,icon:any}){
-  return <div className="kpi"><div className="kpi-icon">{icon}</div><div><span>{label}</span><b>{value}</b><small>{note}</small></div></div>
+  const {t}=useI18n()
+  return <div className="kpi"><div className="kpi-icon">{icon}</div><div><span>{t(label)}</span><b>{value}</b><small>{t(note)}</small></div></div>
 }
 
 function Overview({openTarget}:{openTarget:(t:any)=>void}){
@@ -149,7 +152,8 @@ function Overview({openTarget}:{openTarget:(t:any)=>void}){
 }
 
 function Signal({icon,title,text,tag}:{icon:any,title:string,text:string,tag:string}){
- return <div className="signal"><div className="signal-icon">{icon}</div><div><b>{title}</b><p>{text}</p></div><span>{tag}</span></div>
+  const {t}=useI18n()
+ return <div className="signal"><div className="signal-icon">{icon}</div><div><b>{t(title)}</b><p>{t(text)}</p></div><span>{tag}</span></div>
 }
 
 function MapPanel({onSelect,layers,selectedId}:{onSelect?:(t:any)=>void,layers?:Record<string,boolean>,selectedId?:string}){
@@ -184,7 +188,8 @@ function ExplorationMap({selected,setSelected}:{selected:any,setSelected:(x:any)
 }
 
 function Score({label,value}:{label:string,value:number}){
- return <div className="scoreline"><div><span>{label}</span><b>{value}%</b></div><div className="bar"><i style={{width:value+'%'}}/></div></div>
+  const {t}=useI18n()
+ return <div className="scoreline"><div><span>{t(label)}</span><b>{value}%</b></div><div className="bar"><i style={{width:value+'%'}}/></div></div>
 }
 
 function TargetIntelligence({selected,setSelected}:{selected:any,setSelected:(x:any)=>void}){
