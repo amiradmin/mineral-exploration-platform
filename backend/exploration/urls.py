@@ -1,5 +1,6 @@
 from django.urls import path
 from .reserve_reviews import reserve_review_comments
+from .reserve_sources import reserve_source_readiness
 from .user_admin import users, user_status, assign_membership, revoke_membership
 from .committee import committee_overview, propose_override, review_override, create_flag, resolve_flag, create_memo, sign_memo, committee_gate_decision
 from rest_framework.routers import DefaultRouter
@@ -20,6 +21,7 @@ urlpatterns = [
     path("admin-access/users/<int:user_id>/", user_status, name="admin-access-user-status"),
     path("admin-access/users/<int:user_id>/memberships/", assign_membership, name="admin-access-membership-grant"),
     path("admin-access/memberships/<int:membership_id>/", revoke_membership, name="admin-access-membership-revoke"),
+    path("targets/<str:target_id>/reserve-sources/", reserve_source_readiness, name="reserve-source-readiness"),
     path("targets/<str:target_id>/reserve-reviews/comments/", reserve_review_comments, name="reserve-review-comments"),
     path("targets/<str:target_id>/committee/", committee_overview, name="committee-overview"),
     path("targets/<str:target_id>/committee/overrides/", propose_override, name="committee-override-propose"),
