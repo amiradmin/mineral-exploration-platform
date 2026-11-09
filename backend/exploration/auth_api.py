@@ -9,6 +9,8 @@ from django.contrib.auth import authenticate, get_user_model
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
+from rest_framework.authentication import CSRFCheck
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -21,6 +23,16 @@ from .models import CommitteeMembership
 
 
 COOKIE_NAME = "data_mine_refresh"
+
+
+def _require_csrf(request):
+    """DRF api_view is csrf_exempt; explicitly enforce CSRF for cookie flows."""
+    checker = CSRFCheck(lambda _request: None)
+    checker.process_request(request._request)
+    reason = checker.process_view(request._request, lambda _request: None, (), {})
+    if reason:
+        raise PermissionDenied("CSRF Failed: " + reason)
+
 
 
 class LoginThrottle(SimpleRateThrottle):
@@ -65,6 +77,7 @@ def csrf_bootstrap(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginThrottle])
 def login(request):
+    _require_csrf(request)
     username = request.data.get("username")
     password = request.data.get("password")
     if not isinstance(username, str) or not isinstance(password, str) or not username or not password:
@@ -84,6 +97,7 @@ def login(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def refresh(request):
+    _require_csrf(request)
     raw = request.COOKIES.get(COOKIE_NAME)
     if not raw:
         return Response({"detail": "No refresh session."}, status=401)
@@ -108,6 +122,7 @@ def refresh(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def logout(request):
+    _require_csrf(request)
     raw = request.COOKIES.get(COOKIE_NAME)
     if raw:
         try:
