@@ -116,3 +116,45 @@ class WorkTask(models.Model):
 
     class Meta:
         ordering = ["priority", "name"]
+
+
+class EvidenceReadiness(models.Model):
+    """Conservative evidence attestation for investment gate eligibility."""
+    VERIFIED = "verified"
+    STATUS_CHOICES = [("demo", "Demo"), ("unverified", "Unverified"), (VERIFIED, "Verified")]
+    program = models.OneToOneField(OperationProgram, on_delete=models.PROTECT, related_name="readiness")
+    data_status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="demo")
+    detailed_exploration = models.BooleanField(default=False)
+    qaqc_approved = models.BooleanField(default=False)
+    competent_person_approved = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.program}: {self.data_status}"
+
+
+class GateDecision(models.Model):
+    GATES = [(1, "Screening"), (2, "Drilling"), (3, "Feasibility"), (4, "FID")]
+    program = models.ForeignKey(OperationProgram, on_delete=models.PROTECT, related_name="gate_decisions")
+    gate = models.PositiveSmallIntegerField(choices=GATES)
+    outcome = models.CharField(max_length=16, choices=[("GO", "GO"), ("HOLD", "HOLD"), ("REVIEW", "REVIEW")])
+    rationale = models.TextField()
+    approver = models.ForeignKey("auth.User", on_delete=models.PROTECT)
+    policy_version = models.CharField(max_length=24, default="p0-v1")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class AuditEvent(models.Model):
+    """Append-only from application API; protect database credentials separately."""
+    actor = models.ForeignKey("auth.User", null=True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=64)
+    entity_type = models.CharField(max_length=100)
+    entity_id = models.CharField(max_length=100)
+    details = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]

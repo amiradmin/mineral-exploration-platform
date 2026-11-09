@@ -1,4 +1,19 @@
 services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-data_mine}
+      POSTGRES_USER: ${POSTGRES_USER:-data_mine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-data_mine} -d ${POSTGRES_DB:-data_mine}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
   api:
     build:
       context: ./backend
@@ -6,13 +21,20 @@ services:
     container_name: mineral-exploration-api
     environment:
       DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,api"
       CORS_ALLOWED_ORIGINS: "http://localhost:4173,http://localhost:8085"
-      SQLITE_PATH: /app/data/db.sqlite3
+      DB_ENGINE: postgresql
+      POSTGRES_DB: ${POSTGRES_DB:-data_mine}
+      POSTGRES_USER: ${POSTGRES_USER:-data_mine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_HOST: db
+      SEED_DEMO: "true"  # Existing presentation only; set false when importing real data.
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    volumes:
-      - api_data:/app/data
     restart: unless-stopped
 
   frontend:
@@ -27,4 +49,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  api_data:
+  postgres_data:
