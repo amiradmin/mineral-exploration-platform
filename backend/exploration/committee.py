@@ -94,6 +94,24 @@ def memo_json(obj):
     }
 
 
+def adjusted_factor_scores(target, evaluation):
+    """Committee overlay derived only from independently approved overrides.
+
+    Original immutable evaluation outputs remain unchanged. One approved
+    override per factor per evaluation is allowed by the review endpoint.
+    """
+    if not evaluation:
+        return {}
+    outputs = dict(evaluation.outputs)
+    if evaluation.status != "approved":
+        return outputs
+    for entry in ExpertOverride.objects.filter(
+        target=target, evaluation=evaluation, status="approved",
+    ).order_by("id"):
+        outputs[entry.factor] = entry.adjusted_score
+    return outputs
+
+
 def blockers(target, gate, evaluation, memo):
     problems = []
     if evaluation is None or evaluation.status != "approved":
@@ -126,6 +144,7 @@ def committee_overview(request, target_id):
     return Response({
         "target_id": target.pk, "roles": sorted(member_roles),
         "latest_evaluation": {"id": latest.pk, "status": latest.status, "outputs": latest.outputs} if latest else None,
+        "committee_adjusted_outputs": adjusted_factor_scores(target, latest),
         "overrides": [override_json(x) for x in overrides],
         "flags": [flag_json(x) for x in flags],
         "memos": [memo_json(x) for x in memos],
@@ -196,6 +215,11 @@ def review_override(request, target_id, override_id):
         if obj.proposed_by_id == request.user.pk:
             return Response({"detail": "Independent reviewer required."}, status=403)
         if decision == "approved":
+            if ExpertOverride.objects.filter(
+                target=target, evaluation=obj.evaluation, factor=obj.factor,
+                status="approved",
+            ).exclude(pk=obj.pk).exists():
+                return Response({"detail": "Only one approved override per evaluation factor is allowed."}, status=409)
             if obj.evaluation.status != "approved" or current_evaluation(target).pk != obj.evaluation_id:
                 return Response({"detail": "Only current, approved, non-demo evaluations may receive approved overrides."}, status=409)
             if abs(obj.evaluation.outputs.get(obj.factor, float("nan"))-obj.base_score) > 1e-6:
