@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity, BarChart3, Beaker, Bot, Boxes, CircleDot, Database, FlaskConical,
   Layers3, Map, Mountain, Orbit, Radar, Search, Settings2, ShieldCheck, Sparkles,
@@ -28,7 +28,27 @@ const nav=[
 export default function App(){
   const {t,language,setLanguage}=useI18n()
   const {user,logout}=useAuth()
-  const [page,setPage]=useState<Page>('decision-center')
+  // Keep the selected workspace in the URL so reloads and shared links work.
+  const allowedPages:readonly Page[]=['decision-center','admin-access','geologist','executive','operations','overview','map','targets','drillholes','subsurface','geoscience','ai','qaqc',...decisionModules.map(m=>m.id)]
+  const pageFromUrl=useCallback(():Page=>{
+    const slug=decodeURIComponent(window.location.pathname.replace(/^\\/+|\\/+$/g,''))
+    if(!slug||slug==='dashboard')return 'decision-center'
+    return allowedPages.includes(slug as Page)?slug as Page:'decision-center'
+  },[])
+  const [page,setActivePage]=useState<Page>(pageFromUrl)
+  const setPage=useCallback((next:Page)=>{
+    const path=next==='decision-center'?'/':'/'+next
+    if(window.location.pathname!==path)window.history.pushState({page:next},'',path)
+    setActivePage(next)
+  },[])
+  useEffect(()=>{
+    const onPopState=()=>setActivePage(pageFromUrl())
+    window.addEventListener('popstate',onPopState)
+    return ()=>window.removeEventListener('popstate',onPopState)
+  },[pageFromUrl])
+  useEffect(()=>{
+    if(page==='admin-access'&&!user?.is_superuser)setPage('decision-center')
+  },[page,user?.is_superuser,setPage])
   const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
   const [query,setQuery]=useState('')
