@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 
 from .audit import AuditedModelViewSetMixin
@@ -137,3 +137,96 @@ def source_details(request, target_id, software_key):
             "values": latest.values,
         } if latest else None,
     })
+
+
+# Simulator ingestion is deliberately isolated from the real source connectors.
+# The shared token is accepted ONLY on this route, with explicit opt-in in .env.
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([permissions.AllowAny])
+def ingest_gis_simulator(request):
+    import hmac
+    import os
+    from datetime import timedelta
+    from django.utils import timezone as dj_timezone
+    from rest_framework import serializers
+    from .models import SourceDataSnapshot
+
+    secret = os.environ.get("GIS_SIMULATOR_TOKEN", "")
+    enabled = os.environ.get("GIS_SIMULATOR_ENABLED", "").lower() == "true"
+    token = request.headers.get("X-GIS-Simulator-Token", "")
+    if not enabled or len(secret) < 24 or not token or not hmac.compare_digest(secret, token):
+        return Response({"detail": "Simulator ingestion not authorized."}, status=status.HTTP_403_FORBIDDEN)
+
+    class GisPayload(serializers.Serializer):
+        target_id = serializers.CharField(max_length=16)
+        dataset = serializers.CharField(max_length=120)
+        observed_at = serializers.DateTimeField()
+        geojson = serializers.JSONField()
+
+        def validate_geojson(self, value):
+            if not isinstance(value, dict) or value.get("type") != "FeatureCollection":
+                raise serializers.ValidationError("Expected GeoJSON FeatureCollection.")
+            features = value.get("features")
+            if not isinstance(features, list) or not 1 <= len(features) <= 20:
+                raise serializers.ValidationError("Expected between 1 and 20 features.")
+            for feature in features:
+                if not isinstance(feature, dict) or feature.get("type") != "Feature":
+                    raise serializers.ValidationError("Each item must be a GeoJSON Feature.")
+                geom = feature.get("geometry")
+                if not isinstance(geom, dict) or geom.get("type") not in ("Point", "LineString", "Polygon"):
+                    raise serializers.ValidationError("Only Point, LineString and Polygon geometry are supported.")
+                if not isinstance(feature.get("properties"), dict):
+                    raise serializers.ValidationError("Feature properties must be objects.")
+            return value
+
+    if len(request.body) > 20_000:
+        return Response({"detail": "Payload exceeds 20 KB."}, status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+    payload = GisPayload(data=request.data)
+    payload.is_valid(raise_exception=True)
+    values = payload.validated_data
+    target_id = values["target_id"]
+    if target_id not in ("T-001", "T-002", "T-003", "T-004"):
+        return Response({"detail": "Unknown demo simulator target."}, status=status.HTTP_400_BAD_REQUEST)
+    target = Target.objects.filter(pk=target_id).first()
+    if target is None:
+        return Response({"detail": "Target not seeded yet."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    observed_at = values["observed_at"]
+    now = dj_timezone.now()
+    if observed_at > now + timedelta(minutes=5) or observed_at < now - timedelta(days=2):
+        return Response({"detail": "Invalid observation timestamp."}, status=status.HTTP_400_BAD_REQUEST)
+    collection = values["geojson"]
+    counts = {"Point": 0, "LineString": 0, "Polygon": 0}
+    for feature in collection["features"]:
+        counts[feature["geometry"]["type"]] += 1
+    with transaction.atomic():
+        # Never convert a real customer's GIS connection into a demo simulator.
+        connection, created = SourceConnection.objects.select_for_update().get_or_create(
+            target=target, software_key="gis",
+            defaults={"protocol": "api", "data_format": "GeoJSON", "status": "connected", "is_demo": True},
+        )
+        if not connection.is_demo:
+            return Response({"detail": "A non-demo GIS connection already exists."}, status=status.HTTP_409_CONFLICT)
+        if connection.protocol != "api" or connection.data_format != "GeoJSON":
+            return Response({"detail": "The GIS demo connection uses a different protocol."}, status=status.HTTP_409_CONFLICT)
+        # The snapshot always carries an explicit synthetic label. It is not decision-grade.
+        snapshot = SourceDataSnapshot.objects.create(
+            connection=connection,
+            dataset=values["dataset"],
+            observed_at=observed_at,
+            values={
+                "origin": "Synthetic ArcGIS Pro / QGIS simulator",
+                "simulated": True,
+                "feature_count": len(collection["features"]),
+                "point_count": counts["Point"],
+                "fault_line_count": counts["LineString"],
+                "zone_polygon_count": counts["Polygon"],
+                "geojson": collection,
+            },
+        )
+        connection.status = "connected"
+        connection.last_checked_at = now
+        connection.last_success_at = now
+        connection.save(update_fields=["status", "last_checked_at", "last_success_at"])
+    return Response({"id": snapshot.pk, "target_id": target_id, "received": True, "simulated": True}, status=status.HTTP_201_CREATED)

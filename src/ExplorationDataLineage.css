@@ -80,3 +80,8 @@
 .ee-source-values span{color:#a3c1ce;overflow-wrap:anywhere}
 .ee-source-values strong{color:#e6f8f6;text-align:right;overflow-wrap:anywhere;max-width:65%}
 @media(max-width:650px){.ee-source-detail-grid{grid-template-columns:1fr}.ee-source-dialog-body,.ee-source-dialog-header{padding:12px}.ee-source-dialog-header h2{font-size:16px}}
+
+.ee-source-features{margin-top:15px;display:flex;flex-direction:column;gap:6px}
+.ee-source-feature{border:1px solid #396d75;background:#143843;border-radius:6px;padding:9px}
+.ee-source-feature strong,.ee-source-feature small{display:block}
+.ee-source-feature small{color:#a6cbd0;overflow-wrap:anywhere;margin-top:5px;font-size:10px}
