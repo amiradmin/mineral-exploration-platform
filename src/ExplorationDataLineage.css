@@ -110,3 +110,7 @@
 .ee-gis-map-legend .ee-gis-legend-point{background:#48dfb8;width:9px;height:9px;border:1px solid #e5faff;border-radius:50%}
 .ee-gis-map-legend small{margin-left:auto;color:#8bafbd;font-size:10px}
 @media(max-width:650px){.ee-gis-map{height:230px}.ee-source-refreshbar{justify-content:flex-start}}
+
+.ee-lineage-status{font-size:9px;color:#cbb99f;padding:4px 5px;border:1px solid #5e5b48;border-radius:5px;white-space:nowrap;max-width:82px;overflow:hidden;text-overflow:ellipsis}
+.ee-lineage-status.ee-lineage-registered{border-color:#3b897d;color:#69eed1}
+.ee-lineage-registry-error{font-size:11px;color:#ffb799;padding:8px 10px;border:1px solid #85513d;border-radius:6px}

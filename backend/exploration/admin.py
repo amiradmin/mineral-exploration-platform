@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     AssayBatch, AuditEvent, Drillhole, Element, EvidenceFactor,
-    EvidenceReadiness, GateDecision, OperationProgram, QAQCIssue, SourceConnection, SourceDataSnapshot, Target, WorkTask,
+    EvidenceReadiness, GateDecision, OperationProgram, QAQCIssue, SourceConnection, SourceDataSnapshot, EvidenceFactorRule, EvidenceEvaluation, EvidenceEvaluationInput, Target, WorkTask,
 )
 
 admin.site.register([Target, Drillhole, Element, EvidenceFactor, OperationProgram, AssayBatch, QAQCIssue, WorkTask])
@@ -61,3 +61,63 @@ class SourceDataSnapshotAdmin(admin.ModelAdmin):
     list_display = ("connection", "dataset", "observed_at", "received_at")
     readonly_fields = ("received_at",)
     list_filter = ("connection__software_key",)
+
+
+@admin.register(EvidenceFactorRule)
+class EvidenceFactorRuleAdmin(admin.ModelAdmin):
+    list_display = ("connection", "factor", "metric_key", "version", "is_demonstration", "is_enabled", "approved_by")
+    list_filter = ("factor", "is_demonstration", "is_enabled")
+    readonly_fields = ("approved_by", "approved_at", "created_at")
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return [field.name for field in self.model._meta.fields]
+        return super().get_readonly_fields(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class EvaluationInputInline(admin.TabularInline):
+    model = EvidenceEvaluationInput
+    extra = 0
+    can_delete = False
+    readonly_fields = ("snapshot", "rule", "frozen_rule", "snapshot_sha256",
+                       "observed_value", "normalized_score", "weighted_score")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EvidenceEvaluation)
+class EvidenceEvaluationAdmin(admin.ModelAdmin):
+    list_display = ("id", "target", "algorithm_version", "status", "content_sha256", "created_at", "approved_by")
+    list_filter = ("status", "target")
+    readonly_fields = ("target", "algorithm_version", "parameters", "outputs", "provenance",
+                       "content_sha256", "status", "created_by", "created_at", "approved_by", "approved_at")
+    inlines = [EvaluationInputInline]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EvidenceEvaluationInput)
+class EvidenceEvaluationInputAdmin(admin.ModelAdmin):
+    list_display = ("evaluation", "snapshot", "rule", "observed_value", "weighted_score")
+    readonly_fields = ("evaluation", "snapshot", "rule", "frozen_rule", "snapshot_sha256",
+                       "observed_value", "normalized_score", "weighted_score")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, SourceConnection, SourceDataSnapshot, Target, WorkTask
+from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, SourceConnection, SourceDataSnapshot, EvidenceFactorRule, EvidenceEvaluation, Target, WorkTask
 
 
 class ExplorationApiTests(APITestCase):
@@ -269,3 +269,140 @@ class ExplorationApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 0)
         self.assertEqual(response.data["results"], [])
+
+
+class EvidenceLineageTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_demo")
+        cls.target = Target.objects.get(pk="T-001")
+        cls.steward = get_user_model().objects.create_user(username="lineage-steward", password="test-password")
+        cls.cp = get_user_model().objects.create_user(username="lineage-cp", password="test-password")
+        Group.objects.get_or_create(name="data_steward")[0].user_set.add(cls.steward)
+        Group.objects.get_or_create(name="competent_person")[0].user_set.add(cls.cp)
+
+    def _source_rule(self, key="gis", factor="P_Pathway", metric="density", demo=True):
+        connection, _ = SourceConnection.objects.get_or_create(
+            target=self.target, software_key=key,
+            defaults={"protocol": "api", "data_format": "GeoJSON", "is_demo": demo},
+        )
+        rule = EvidenceFactorRule.objects.create(
+            connection=connection, factor=factor, metric_key=metric,
+            input_min=0, input_max=10, output_min=0, output_max=100,
+            weight=1, is_demonstration=demo,
+            rationale="Synthetic linear normalization" if demo else "Methodology pending specialist approval",
+        )
+        snapshot = SourceDataSnapshot.objects.create(
+            connection=connection, dataset="test-" + factor,
+            observed_at=timezone.now(),
+            values={metric: 2.5, "simulated": demo},
+        )
+        return connection, rule, snapshot
+
+    def test_registry_uses_real_connections_not_hardcoded_per_target(self):
+        response = self.client.get("/api/targets/T-001/sources/")
+        self.assertEqual(response.status_code, 200)
+        index = {item["key"]: item for item in response.data["sources"]}
+        self.assertFalse(index["gis"]["configured"])
+        self.assertFalse(index["gcd"]["configured"])
+        self._source_rule()
+        response = self.client.get("/api/targets/T-001/sources/")
+        index = {item["key"]: item for item in response.data["sources"]}
+        self.assertTrue(index["gis"]["configured"])
+        self.assertEqual(index["gis"]["mapped_factors"], ["P_Pathway"])
+        self.assertFalse(index["gcd"]["configured"])
+
+    def test_simulated_rule_has_frozen_lineage_and_cannot_be_approved(self):
+        connection, rule, snapshot = self._source_rule()
+        self.client.force_authenticate(user=self.steward)
+        response = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        run = EvidenceEvaluation.objects.get(pk=response.data["id"])
+        self.assertEqual(run.status, "demo")
+        self.assertEqual(run.outputs["P_Pathway"], 25.0)
+        self.assertEqual(run.parameters["missing_factors"], ["P_Source", "P_Trap", "P_Timing"])
+        self.assertEqual(run.inputs.get().snapshot_id, snapshot.pk)
+        self.assertEqual(run.inputs.get().rule_id, rule.pk)
+        self.assertEqual(run.inputs.get().frozen_rule["version"], 1)
+        self.assertEqual(len(run.content_sha256), 64)
+        self.assertFalse(response.data["decision_grade"])
+        self.assertTrue(AuditEvent.objects.filter(action="evidence_evaluation_created", entity_id=str(run.pk)).exists())
+        self.client.force_authenticate(user=self.cp)
+        self.assertEqual(self.client.post(
+            f"/api/targets/T-001/evidence-evaluations/{run.pk}/approve/", {},
+            format="json",
+        ).status_code, 409)
+        self.assertEqual(self.client.post(
+            f"/api/evidence/rules/{rule.pk}/approve/", {},
+            format="json",
+        ).status_code, 409)
+
+    def test_non_demo_source_and_runs_are_not_public(self):
+        self._source_rule(demo=False)
+        anon_registry = self.client.get("/api/targets/T-001/sources/")
+        self.assertFalse(next(row for row in anon_registry.data["sources"] if row["key"] == "gis")["configured"])
+        self.client.force_authenticate(user=self.steward)
+        run = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(run.status_code, 201)
+        self.client.force_authenticate(user=None)
+        public_runs = self.client.get("/api/targets/T-001/evidence-evaluations/")
+        self.assertEqual(public_runs.data["results"], [])
+        self.assertEqual(self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json").status_code, 403)
+
+    def test_reviewed_four_factor_run_is_approvable_only_by_cp(self):
+        for factor, key in zip(("P_Source","P_Pathway","P_Trap","P_Timing"), ("gcd","gis","rock","geobank")):
+            _, rule, _ = self._source_rule(key=key, factor=factor, demo=False)
+            self.client.force_authenticate(user=self.cp)
+            response = self.client.post(f"/api/evidence/rules/{rule.pk}/approve/", {}, format="json")
+            self.assertEqual(response.status_code, 200, response.data)
+        self.client.force_authenticate(user=self.steward)
+        response = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], "pending")
+        self.assertEqual(len(response.data["provenance"]), 4)
+        run_id = response.data["id"]
+        self.assertEqual(self.client.post(
+            f"/api/targets/T-001/evidence-evaluations/{run_id}/approve/", {},
+            format="json",
+        ).status_code, 403)
+        self.client.force_authenticate(user=self.cp)
+        approved = self.client.post(
+            f"/api/targets/T-001/evidence-evaluations/{run_id}/approve/", {},
+            format="json",
+        )
+        self.assertEqual(approved.status_code, 200, approved.data)
+        self.assertEqual(approved.data["status"], "approved")
+        self.assertTrue(approved.data["decision_grade"])
+        self.assertTrue(AuditEvent.objects.filter(
+            action="evidence_evaluation_approved", entity_id=str(run_id),
+        ).exists())
+
+    def test_snapshot_tampering_blocks_approval(self):
+        for factor, key in zip(("P_Source","P_Pathway","P_Trap","P_Timing"), ("gcd","gis","rock","geobank")):
+            _, rule, _ = self._source_rule(key=key, factor=factor, demo=False)
+            rule.approved_by = self.cp
+            rule.approved_at = timezone.now()
+            rule.save()
+        self.client.force_authenticate(user=self.steward)
+        response = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(response.data["status"], "pending")
+        snapshot = SourceDataSnapshot.objects.get(pk=response.data["provenance"][0]["snapshot_id"])
+        snapshot.values = {"density": 9.9, "simulated": False}
+        snapshot.save(update_fields=["values"])
+        self.client.force_authenticate(user=self.cp)
+        self.assertEqual(self.client.post(
+            f"/api/targets/T-001/evidence-evaluations/{response.data['id']}/approve/", {},
+            format="json",
+        ).status_code, 409)
+
+    def test_new_rule_version_can_be_traced_independently(self):
+        connection, rule, _ = self._source_rule()
+        EvidenceFactorRule.objects.create(
+            connection=connection, factor="P_Pathway", metric_key="density", version=2,
+            input_min=0, input_max=5, weight=1, is_demonstration=True,
+            rationale="New demo normalization scale",
+        )
+        self.client.force_authenticate(user=self.steward)
+        response = self.client.post("/api/targets/T-001/evidence-evaluations/", {}, format="json")
+        self.assertEqual(response.data["provenance"][0]["rule_version"], 2)
+        self.assertEqual(response.data["outputs"]["P_Pathway"], 50)

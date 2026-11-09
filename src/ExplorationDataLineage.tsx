@@ -12,6 +12,10 @@ type Source = {
   evidence:string[]
   factors:Factor[]
   protocols:string[]
+  configured?:boolean
+  status?:string
+  isDemo?:boolean
+  mappedFactors?:Factor[]
 }
 type Snapshot = {
   dataset: string
@@ -162,23 +166,54 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
   const [expanded,setExpanded]=useState(true)
   const [selected,setSelected]=useState<string|null>(null)
   const [detailsFor,setDetailsFor]=useState<string|null>(null)
-  const sources=(examples[targetId]??[]).map(id=>catalog[id]).filter((value):value is Source=>Boolean(value))
+  const [sources,setSources]=useState<Source[]>([])
+  const [registryError,setRegistryError]=useState('')
+  useEffect(()=>{
+    const controller=new AbortController()
+    const refresh=async()=>{
+      try{
+        const response=await fetch('/api/targets/'+encodeURIComponent(targetId)+'/sources/',{
+          credentials:'same-origin',signal:controller.signal,cache:'no-store',
+        })
+        if(!response.ok)throw new Error('Source registry unavailable (HTTP '+response.status+')')
+        const data:{sources:Array<{key:string;name:string;expected_format:string;potential_factors:Factor[];mapped_factors:Factor[];configured:boolean;status:string;is_demo:boolean|null}>}=await response.json()
+        if(controller.signal.aborted)return
+        setSources(data.sources.map(item=>({
+          ...(catalog[item.key]??{
+            id:item.key,name:item.name,format:item.expected_format,
+            factors:item.potential_factors,evidence:[],protocols:[],
+          }),
+          name:item.name,
+          factors:item.mapped_factors.length?item.mapped_factors:item.potential_factors,
+          configured:item.configured,
+          mappedFactors:item.mapped_factors,
+          isDemo:item.is_demo===true,
+          status:item.status,
+        })))
+        setRegistryError('')
+      }catch(err){if(!controller.signal.aborted){setSources([]);setRegistryError(err instanceof Error?err.message:'Source registry unavailable')}}
+    }
+    void refresh()
+    const handle=window.setInterval(()=>{if(!document.hidden)void refresh()},30_000)
+    return ()=>{controller.abort();window.clearInterval(handle)}
+  },[targetId])
   const active=sources.find(source=>source.id===selected)??null
   const modalSource=sources.find(source=>source.id===detailsFor)??null
-  const covered=new Set(sources.flatMap(source=>source.factors))
+  const covered=new Set(sources.filter(source=>source.configured).flatMap(source=>source.mappedFactors??[]))
   return <section className="ee-lineage ee-panel" aria-label="Data source lineage">
     <div className="ee-lineage-head">
       <div className="ee-lineage-heading"><span className="ee-lineage-heading-icon"><GitBranch size={18}/></span>
         <div><h2>DATA SOURCE LINEAGE</h2><p>Conceptual evidence flow · {targetName}</p></div>
       </div>
       <div className="ee-lineage-head-actions">
-        <span className="ee-lineage-mode"><Info size={13}/> ILLUSTRATIVE SOURCE MAP</span>
-        <span className="ee-lineage-count"><Database size={14}/> {sources.length} example sources</span>
+        <span className="ee-lineage-mode"><Info size={13}/> SOURCE REGISTRY · POTENTIAL MAPPINGS LABELLED</span>
+        <span className="ee-lineage-count"><Database size={14}/> {sources.filter(source=>source.configured).length} configured / {sources.length} listed</span>
         <button className="ee-lineage-toggle" type="button" onClick={()=>setExpanded(x=>!x)} aria-expanded={expanded} aria-controls="ee-lineage-content">{expanded?<ChevronUp size={16}/>:<ChevronDown size={16}/>} {expanded?'Collapse':'Expand'}</button>
       </div>
     </div>
     {expanded&&<div id="ee-lineage-content">
-      <div className="ee-lineage-subtitle">Select a source to highlight its evidence. Click its information icon to view recorded data, connection status and protocol.</div>
+      <div className="ee-lineage-subtitle">Configured sources come from Django/PostgreSQL. Other entries are available catalog options; their proposed evidence paths are not calculation lineage.</div>
+      {registryError&&<p className="ee-lineage-registry-error" role="alert">{registryError}</p>}
       <div className="ee-lineage-columns">
         <div className="ee-lineage-column">
           <div className="ee-lineage-column-heading"><Database size={15}/> SOFTWARE SOURCES <span>{sources.length}</span></div>
@@ -188,6 +223,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
                 <span className="ee-lineage-node-icon">{iconFor(source.id)}</span>
                 <span className="ee-lineage-source-copy"><strong>{source.name}</strong><small>{source.format}</small></span>
               </button>
+              <span className={'ee-lineage-status'+(source.configured?' ee-lineage-registered':'')}>{source.configured?(source.isDemo?'DEMO ': '')+source.status?.replaceAll('_',' '):'NOT SET'}</span>
               <button type="button" className="ee-lineage-info-button" title={'View latest data and protocol for '+source.name} aria-label={'View details for '+source.name} onClick={()=>setDetailsFor(source.id)}><Info size={18}/></button>
             </div>)}
           </div>
@@ -204,7 +240,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
           <div className="ee-lineage-column-heading"><GitBranch size={15}/> EVALUATION FACTORS</div>
           <div className="ee-lineage-factor-list">
             {factorOrder.map(factor=><div key={factor} className={'ee-lineage-factor'+(active&&!active.factors.includes(factor)?' ee-lineage-muted':'')+(active?.factors.includes(factor)?' ee-lineage-selected':'')}>
-              <span className="ee-lineage-factor-connector" aria-hidden="true"/><span><strong>{factor}</strong><small>{factorLabels[factor]}</small></span>{covered.has(factor)?<CheckCircle2 size={16}/>:<span className="ee-lineage-empty">No example</span>}
+              <span className="ee-lineage-factor-connector" aria-hidden="true"/><span><strong>{factor}</strong><small>{factorLabels[factor]}</small></span>{covered.has(factor)?<CheckCircle2 size={16}/>:<span className="ee-lineage-empty">No mapping</span>}
             </div>)}
           </div>
           <div className="ee-lineage-score"><span>EXPLORATION EVALUATION</span><strong>Source → Evidence → Factor</strong><small>Illustrative mapping only. Does not recalculate the Gate 1 score.</small></div>
@@ -213,7 +249,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
       <div className="ee-lineage-foot">
         <span><span className="ee-lineage-legend-dot"/> Mapped in example</span>
         <span>Source selection: <strong>{active?active.name:'All sources'}</strong></span>
-        <span>Actual protocol and data appear only when configured in the backend.</span>
+        <span>Only registered rules and stored snapshots contribute to evaluation runs. Unconfigured sources are catalog possibilities.</span>
       </div>
     </div>}
     {modalSource&&<SourceDetails key={targetId+'-'+modalSource.id} source={modalSource} targetId={targetId} targetName={targetName} onClose={()=>setDetailsFor(null)}/>}
