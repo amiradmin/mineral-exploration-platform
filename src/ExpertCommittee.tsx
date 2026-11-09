@@ -8,7 +8,7 @@ type Override = {id:number;evaluation_id:number;factor:string;base_score:number;
 type Flag = {id:number;kind:string;title:string;rationale:string;evidence_reference:string;gate:number;status:string;created_by:number}
 type Memo = {id:number;gate:number;version:number;evaluation_id:number;body:string;body_sha256:string;signed_by:number|null;signed_at:string|null;signature_type:string|null}
 type Decision = {id:number;gate:number;outcome:string;rationale:string;created_at:string}
-type Committee = {target_id:string;roles:string[];latest_evaluation:Eval|null;overrides:Override[];flags:Flag[];memos:Memo[];decisions:Decision[];gate_1_blockers:string[]}
+type Committee = {target_id:string;roles:string[];latest_evaluation:Eval|null;committee_adjusted_outputs:Record<string,number>;overrides:Override[];flags:Flag[];memos:Memo[];decisions:Decision[];gate_1_blockers:string[]}
 const factorKeys=['P_Source','P_Pathway','P_Trap','P_Timing']
 const csrf=()=>document.cookie.split('; ').find(s=>s.startsWith('csrftoken='))?.slice(10)??''
 const fmt=(n:number)=>n.toFixed(2)
@@ -79,6 +79,7 @@ export default function ExpertCommittee({targetId}:{targetId:string}){
       <span>{t('Your roles')}: <strong>{roles.join(', ')}</strong></span>
       <span>{t('Latest evaluation')}: <strong>#{latest?.id??'—'} · {latest?.status??'—'}</strong></span>
       <span>{t('Gate 1 blockers')}: <strong>{committee.gate_1_blockers.length}</strong></span>
+      <span>{t('Committee-adjusted outputs')}: <strong>{Object.entries(committee.committee_adjusted_outputs??{}).map(([key,value])=>key+' '+fmt(value)).join(' · ')||'—'}</strong></span>
     </div>
     <div className="committee-grid">
      <article className="committee-card">
