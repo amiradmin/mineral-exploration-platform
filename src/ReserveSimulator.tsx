@@ -1,5 +1,6 @@
 import {T} from './i18n'
 import React, {useMemo, useState} from 'react'
+import ReserveReviewComments from './ReserveReviewComments'
 import {ArrowRight, CheckCircle2, Database, RotateCcw, ZoomIn, ZoomOut, ShieldCheck, Lock, Box, SlidersHorizontal} from 'lucide-react'
 import {targets, drillholes} from './mockData'
 import type {DecisionContext, Scenario} from './decisionPipeline'
@@ -84,6 +85,7 @@ export default function ReserveSimulator({context,onContext,onNavigate}:{context
    <section className="rs-panel rs-analytics"><div className="rs-panel-label"><T>PROBABILISTIC RESERVE DISTRIBUTION &amp; SENSITIVITY</T></div><Distribution values={estimates.map(x=>x.volume)}/><div className="rs-mini-grid"><MiniCurve mode="grade" cutoff={input.cutoff} variability={input.variability}/><MiniCurve mode="metal" cutoff={input.cutoff} variability={input.variability}/></div><div className="rs-analytics-note"><T>Scenario envelope only · not statistically calibrated quantiles</T></div></section></div>
   <div className="rs-bottom"><div className="rs-signoff"><strong><T>Digital sign-off</T></strong><label><input type="checkbox" checked={geoSigned} onChange={e=>{setGeoSigned(e.target.checked);setReviewNote('')}}/><span><T>Chief Geologist</T> <small>{geoSigned?'Acknowledged':'Awaiting review'}</small></span></label><label><input type="checkbox" checked={qaSigned} onChange={e=>{setQaSigned(e.target.checked);setReviewNote('')}}/><span><T>QA/QC Lead</T> <small>{qaSigned?'Acknowledged':'Awaiting review'}</small></span></label></div><button className="rs-approve" disabled={!pass} onClick={()=>setReviewNote('Gate 3 review prepared.')} >{pass?'[ Prepare Gate 3 Review ]':'[ Awaiting sign-offs ]'} <ArrowRight size={18}/></button></div>
   {reviewNote&&<div className="rs-review-note" role="status">{reviewNote} <button onClick={exportData}><T>Export review JSON</T></button></div>}
+  <ReserveReviewComments targetId={target.id}/>
 
  </div>
 }
