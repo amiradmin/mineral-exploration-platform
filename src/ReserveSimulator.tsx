@@ -1,5 +1,6 @@
 import {T} from './i18n'
 import React, {useMemo, useState} from 'react'
+import {useAuth} from './auth'
 import ReserveReviewComments from './ReserveReviewComments'
 import {ArrowRight, CheckCircle2, Database, RotateCcw, ZoomIn, ZoomOut, ShieldCheck, Lock, Box, SlidersHorizontal} from 'lucide-react'
 import {targets, drillholes} from './mockData'
@@ -62,6 +63,12 @@ export default function ReserveSimulator({context,onContext,onNavigate}:{context
  const [geoSigned,setGeoSigned]=useState(false)
  const [qaSigned,setQaSigned]=useState(false)
  const [reviewNote,setReviewNote]=useState('')
+ const [commentDraft,setCommentDraft]=useState('')
+ const [canComment,setCanComment]=useState(false)
+ const [commentBusy,setCommentBusy]=useState(false)
+ const [commentError,setCommentError]=useState('')
+ const [commentsRefresh,setCommentsRefresh]=useState(0)
+ const {apiFetch}=useAuth()
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
  const input=perTarget[target.id]??initial
  const change=(key:keyof Inputs,n:number)=>{setPerTarget(prev=>({...prev,[target.id]:{...input,[key]:n}}));setGeoSigned(false);setQaSigned(false);setReviewNote('')}
@@ -74,6 +81,26 @@ export default function ReserveSimulator({context,onContext,onNavigate}:{context
  },[input,target,context.scenario])
  const confidence=clamp(91+(input.holes-18)*.36-(input.variability-25)*.18+(input.continuity-75)*.12,55,99)
  const pass=geoSigned&&qaSigned
+ const prepareGate3=async()=>{
+  if(!pass||!canComment||commentBusy)return
+  const text=commentDraft.trim()
+  if(text.length<3||text.length>4000){setCommentError('Enter a review comment between 3 and 4000 characters.');return}
+  setCommentBusy(true);setCommentError('');setReviewNote('')
+  try{
+   const csrf=document.cookie.split('; ').find(v=>v.startsWith('csrftoken='))?.slice(10)
+   const response=await apiFetch('/api/targets/'+encodeURIComponent(target.id)+'/reserve-reviews/comments/',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',...(csrf?{'X-CSRFToken':decodeURIComponent(csrf)}:{})},
+    body:JSON.stringify({body:text}),
+   })
+   const result=await response.json().catch(()=>({}))
+   if(!response.ok)throw new Error(result.detail||'Could not save review comment.')
+   setCommentDraft('')
+   setCommentsRefresh(v=>v+1)
+   setReviewNote('Review comment saved. Gate 3 review package is ready to export; formal approval is still separate.')
+  }catch(e){setCommentError(e instanceof Error?e.message:String(e))}
+  finally{setCommentBusy(false)}
+ }
  const controls=[{key:'holes' as const,label:'Drillholes',min:4,max:40,step:1,unit:''},{key:'variability' as const,label:'Grade variability',min:5,max:60,step:1,unit:'%'},{key:'continuity' as const,label:'Orebody continuity',min:35,max:95,step:1,unit:'%'},{key:'density' as const,label:'Bulk density',min:1.8,max:4,step:.05,unit:' t/m³'},{key:'cutoff' as const,label:'Cut-off grade',min:.2,max:1.1,step:.05,unit:'% Cu'}]
  const exportData=()=>{const blob=new Blob([JSON.stringify({target:target.id,scenario:context.scenario,input,estimates,confidence,reviewNote},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='gate2-'+target.id+'.json';a.click();URL.revokeObjectURL(u)}
  return <div className="rs-gate">
@@ -83,9 +110,10 @@ export default function ReserveSimulator({context,onContext,onNavigate}:{context
   <div className="rs-workspace"><section className="rs-panel rs-params"><div className="rs-panel-label"><T>DRILLHOLE PARAMETERS</T></div>{controls.map(c=><label className="rs-slider" key={c.key}><div>{c.label}<span>{Number(input[c.key].toFixed(2))}{c.unit}</span></div><input type="range" min={c.min} max={c.max} step={c.step} value={input[c.key]} onChange={e=>change(c.key,Number(e.target.value))}/></label>)}<div className="rs-quick-links"><button onClick={()=>onNavigate('drillholes')}><T>Drillhole Manager</T> <ArrowRight size={13}/></button><button onClick={()=>onNavigate('qaqc')}><T>QA/QC workspace</T> <ArrowRight size={13}/></button></div><small>{drillholes.length} drillhole records</small></section>
    <section className="rs-panel rs-model"><div className="rs-panel-label"><T>EMBEDDED OREBODY BLOCK MODEL VIEWER</T> <Box size={14}/></div><Orebody holes={input.holes} continuity={input.continuity} cutoff={input.cutoff}/></section>
    <section className="rs-panel rs-analytics"><div className="rs-panel-label"><T>PROBABILISTIC RESERVE DISTRIBUTION &amp; SENSITIVITY</T></div><Distribution values={estimates.map(x=>x.volume)}/><div className="rs-mini-grid"><MiniCurve mode="grade" cutoff={input.cutoff} variability={input.variability}/><MiniCurve mode="metal" cutoff={input.cutoff} variability={input.variability}/></div><div className="rs-analytics-note"><T>Scenario envelope only · not statistically calibrated quantiles</T></div></section></div>
-  <div className="rs-bottom"><div className="rs-signoff"><strong><T>Digital sign-off</T></strong><label><input type="checkbox" checked={geoSigned} onChange={e=>{setGeoSigned(e.target.checked);setReviewNote('')}}/><span><T>Chief Geologist</T> <small>{geoSigned?'Acknowledged':'Awaiting review'}</small></span></label><label><input type="checkbox" checked={qaSigned} onChange={e=>{setQaSigned(e.target.checked);setReviewNote('')}}/><span><T>QA/QC Lead</T> <small>{qaSigned?'Acknowledged':'Awaiting review'}</small></span></label></div><button className="rs-approve" disabled={!pass} onClick={()=>setReviewNote('Gate 3 review prepared.')} >{pass?'[ Prepare Gate 3 Review ]':'[ Awaiting sign-offs ]'} <ArrowRight size={18}/></button></div>
+  <div className="rs-bottom"><div className="rs-signoff"><strong><T>Digital sign-off</T></strong><label><input type="checkbox" checked={geoSigned} onChange={e=>{setGeoSigned(e.target.checked);setReviewNote('')}}/><span><T>Chief Geologist</T> <small>{geoSigned?'Acknowledged':'Awaiting review'}</small></span></label><label><input type="checkbox" checked={qaSigned} onChange={e=>{setQaSigned(e.target.checked);setReviewNote('')}}/><span><T>QA/QC Lead</T> <small>{qaSigned?'Acknowledged':'Awaiting review'}</small></span></label></div><button className="rs-approve" disabled={!pass||!canComment||commentBusy||commentDraft.trim().length<3} onClick={()=>void prepareGate3()} >{commentBusy?'[ Saving Review… ]':!pass?'[ Awaiting sign-offs ]':!canComment?'[ Reviewer Access Required ]':commentDraft.trim().length<3?'[ Comment Required ]':'[ Prepare Gate 3 Review ]'} <ArrowRight size={18}/></button></div>
   {reviewNote&&<div className="rs-review-note" role="status">{reviewNote} <button onClick={exportData}><T>Export review JSON</T></button></div>}
-  <ReserveReviewComments targetId={target.id}/>
+  {commentError&&<p className="rs-comments-error" role="alert">{commentError}</p>}
+  <ReserveReviewComments targetId={target.id} draft={commentDraft} onDraftChange={setCommentDraft} onAccessChange={setCanComment} refreshKey={commentsRefresh}/>
 
  </div>
 }
