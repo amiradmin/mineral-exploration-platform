@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react'
 import SourceGeoJsonMap from './SourceGeoJsonMap'
+import SourceRawHistory from './SourceRawHistory'
 import {Activity, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Database, FileSpreadsheet, FlaskConical, GitBranch, Info, Layers3, Map, Network, Radar, X} from 'lucide-react'
 import './ExplorationDataLineage.css'
 
@@ -151,6 +152,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
             <p className="ee-source-method-note">API, CSV, socket and file transfers are transport options. A method is considered active only after an integration is configured and tested; this page does not initiate vendor connections.</p>
           </div>
         </div>
+        <SourceRawHistory targetId={targetId} softwareKey={source.id}/>
       </div>
     </section>
   </div>

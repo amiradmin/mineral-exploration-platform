@@ -185,3 +185,87 @@ class ExplorationApiTests(APITestCase):
                 payload, format="json", HTTP_X_GIS_SIMULATOR_TOKEN="A"*40,
             )
         self.assertEqual(response.status_code, 400)
+
+    def test_snapshot_history_filters_received_at_inclusive(self):
+        from datetime import timedelta
+        connection = SourceConnection.objects.create(
+            target=Target.objects.get(pk="T-001"), software_key="gis",
+            protocol="api", is_demo=True,
+        )
+        now = timezone.now()
+        first = SourceDataSnapshot.objects.create(
+            connection=connection, dataset="old", observed_at=now,
+            values={"feature_count": 1, "geojson": {"type": "FeatureCollection", "features": []}},
+        )
+        middle = SourceDataSnapshot.objects.create(
+            connection=connection, dataset="middle", observed_at=now,
+            values={"feature_count": 2},
+        )
+        last = SourceDataSnapshot.objects.create(
+            connection=connection, dataset="new", observed_at=now,
+            values={"feature_count": 3},
+        )
+        SourceDataSnapshot.objects.filter(pk=first.pk).update(received_at=now-timedelta(hours=2))
+        SourceDataSnapshot.objects.filter(pk=middle.pk).update(received_at=now-timedelta(minutes=30))
+        SourceDataSnapshot.objects.filter(pk=last.pk).update(received_at=now)
+        url = "/api/source-details/T-001/gis/snapshots/"
+        result = self.client.get(url, {
+            "from": (now-timedelta(hours=1)).isoformat(),
+            "to": now.isoformat(),
+        })
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.data["count"], 2)
+        self.assertEqual([row["dataset"] for row in result.data["results"]], ["new", "middle"])
+        self.assertEqual(result.data["results"][0]["values"]["feature_count"], 3)
+        self.assertEqual(result.data["time_field"], "received_at")
+
+    def test_snapshot_history_pagination_and_bad_query(self):
+        connection = SourceConnection.objects.create(
+            target=Target.objects.get(pk="T-001"), software_key="gis",
+            protocol="api", is_demo=True,
+        )
+        for i in range(12):
+            SourceDataSnapshot.objects.create(
+                connection=connection, dataset=f"snapshot-{i:02d}",
+                observed_at=timezone.now(), values={"index": i},
+            )
+        url = "/api/source-details/T-001/gis/snapshots/"
+        response = self.client.get(url, {"page": 2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 12)
+        self.assertEqual(response.data["pages"], 2)
+        self.assertEqual(len(response.data["results"]), 2)
+        self.assertEqual(response.data["results"][0]["values"]["index"], 1)
+        for params in (
+            {"from": "2026-11-09T12:00:00"},
+            {"to": "not-a-date"},
+            {"from": "2026-11-09T12:00:00Z", "to": "2026-11-08T12:00:00Z"},
+            {"page": "-1"},
+        ):
+            self.assertEqual(self.client.get(url, params).status_code, 400)
+        self.assertEqual(self.client.get(url, {"page": 3}).data["results"], [])
+
+    def test_snapshot_history_protects_private_source(self):
+        connection = SourceConnection.objects.create(
+            target=Target.objects.get(pk="T-001"), software_key="gis",
+            protocol="api", is_demo=False,
+        )
+        SourceDataSnapshot.objects.create(
+            connection=connection, dataset="customer-private",
+            observed_at=timezone.now(), values={"sensitive": "do not disclose"},
+        )
+        url = "/api/source-details/T-001/gis/snapshots/"
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.client.force_authenticate(user=self.user)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["results"][0]["dataset"], "customer-private")
+
+    def test_snapshot_history_no_source_returns_empty(self):
+        response = self.client.get("/api/source-details/T-001/gis/snapshots/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.data["results"], [])
