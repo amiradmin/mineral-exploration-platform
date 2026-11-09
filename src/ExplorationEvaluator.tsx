@@ -70,6 +70,7 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
  const [yMetric,setYMetric]=useState<AnomalyMetric>('Geophysical Anomaly')
  const [compareMetric,setCompareMetric]=useState<AnomalyMetric>('Structural Anomaly')
  const [threshold,setThreshold]=useState(65)
+ const [section,setSection]=useState<'lineage'|'committee'>('lineage')
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
  const factors=factorByTarget[target.id]??defaults
  const verified=checksByTarget[target.id]??[true,true,true,true]
@@ -94,9 +95,12 @@ export default function ExplorationEvaluator({context,onContext,onNavigate}:{con
    <section className="ee-panel ee-stat"><div className="ee-panel-title"><T>ADJUSTED PROBABILITY OF SUCCESS (PoS)</T></div><div className="ee-big">{(result.pos*100).toFixed(2)}% <TrendingUp size={22}/></div><small><T>Combined assumption score</T></small></section>
    <section className="ee-panel ee-stat ee-emv"><div className="ee-panel-title"><T>EXPECTED MONETARY VALUE (EMV)</T></div><div className="ee-big">{currency(result.emv)}</div><small><T>Based on input parameters</T></small></section>
   </div>
-  <ExplorationDataLineage targetId={target.id} targetName={target.name}/>
-  <EvidenceAuditPanel targetId={target.id}/>
-  <ExpertCommittee targetId={target.id}/>
+  <nav className="ee-section-nav" aria-label={t('Exploration Evaluation Sections')}>
+    <button type="button" className={section==='lineage'?'active':''} aria-current={section==='lineage'?'page':undefined} onClick={()=>setSection('lineage')}><span>01</span>{t('Data Lineage & Software Ingestion Hub')}</button>
+    <button type="button" className={section==='committee'?'active':''} aria-current={section==='committee'?'page':undefined} onClick={()=>setSection('committee')}><span>02</span>{t('Expert Committee & Peer Review')}</button>
+  </nav>
+  {section==='lineage'&&<div className="ee-section-content"><ExplorationDataLineage targetId={target.id} targetName={target.name}/><EvidenceAuditPanel targetId={target.id}/></div>}
+  {section==='committee'&&<div className="ee-section-content"><ExpertCommittee targetId={target.id}/></div>}
   <div className="ee-main">
    <section className="ee-panel ee-geological"><div className="ee-panel-title"><T>GEOLOGICAL FACTORS</T></div>
     {labels.map(([heading,title],i)=><div className="ee-factor" key={heading}><div className="ee-factor-heading">{heading}</div><div className="ee-factor-label"><span>{t(title)}</span><b>{factors[i]}%</b></div><input type="range" min="0" max="100" aria-label={title} style={{'--fill':factors[i]+'%'} as React.CSSProperties} value={factors[i]} onChange={e=>updateFactor(i,Number(e.target.value))}/><button onClick={()=>toggleVerified(i)} className={'ee-check '+(verified[i]?'verified':'')}>{t(verified[i]?'Verified QA/QC':'Needs verification')}</button></div>)}

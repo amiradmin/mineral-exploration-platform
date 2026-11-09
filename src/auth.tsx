@@ -1,6 +1,6 @@
 import React,{createContext,useCallback,useContext,useEffect,useRef,useState} from 'react'
 
-export type AuthUser={id:number;username:string;display_name:string;is_staff:boolean;memberships:Array<{target_id:string;role:string}>}
+export type AuthUser={id:number;username:string;display_name:string;is_staff:boolean;is_superuser:boolean;memberships:Array<{target_id:string;role:string}>}
 type AuthState={user:AuthUser|null;loading:boolean;login:(username:string,password:string)=>Promise<void>;logout:()=>Promise<void>;apiFetch:(url:string,init?:RequestInit)=>Promise<Response>}
 const AuthContext=createContext<AuthState|null>(null)
 type Credentials={access:string;user:AuthUser}
