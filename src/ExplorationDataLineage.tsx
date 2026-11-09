@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react'
+import SourceGeoJsonMap from './SourceGeoJsonMap'
 import {Activity, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Database, FileSpreadsheet, FlaskConical, GitBranch, Info, Layers3, Map, Network, Radar, X} from 'lucide-react'
 import './ExplorationDataLineage.css'
 
@@ -63,22 +64,43 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
   const closeRef=useRef<HTMLButtonElement|null>(null)
+  const [lastRefreshed,setLastRefreshed]=useState<string|null>(null)
+  const [refreshing,setRefreshing]=useState(false)
+  const [autoRefresh,setAutoRefresh]=useState(true)
+  const [refreshSequence,setRefreshSequence]=useState(0)
   useEffect(()=>{
     const controller=new AbortController()
-    setLoading(true)
-    setDetail(null)
-    setError('')
-    fetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(source.id)+'/',{
-      signal:controller.signal,
-      credentials:'same-origin',
-    }).then(async response=>{
-      if(!response.ok)throw new Error(response.status===403||response.status===401?'Sign-in is required to view this source.':'Source details could not be loaded.')
-      return response.json()
-    }).then((data:SourceDetail)=>{if(!controller.signal.aborted)setDetail(data)})
-      .catch((err:Error)=>{if(!controller.signal.aborted)setError(err.message)})
-      .finally(()=>{if(!controller.signal.aborted)setLoading(false)})
-    return ()=>controller.abort()
-  },[source.id,targetId])
+    let inFlight=false
+    const load=async()=>{
+      if(inFlight || controller.signal.aborted) return
+      inFlight=true
+      setRefreshing(true)
+      try{
+        const response=await fetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(source.id)+'/',{
+          signal:controller.signal,
+          credentials:'same-origin',
+          cache:'no-store',
+        })
+        if(!response.ok) throw new Error(response.status===403||response.status===401?'Sign-in is required to view this source.':'Source details could not be loaded.')
+        const data:SourceDetail=await response.json()
+        if(!controller.signal.aborted){
+          setDetail(data)
+          setError('')
+          setLastRefreshed(new Date().toISOString())
+        }
+      }catch(err){
+        if(!controller.signal.aborted){
+          setError(err instanceof Error?err.message:'Unable to read source data.')
+        }
+      }finally{
+        inFlight=false
+        if(!controller.signal.aborted){setLoading(false);setRefreshing(false)}
+      }
+    }
+    void load()
+    const timer=autoRefresh?window.setInterval(()=>{if(!document.hidden)void load()},30_000):null
+    return ()=>{controller.abort();if(timer!==null)window.clearInterval(timer)}
+  },[source.id,targetId,autoRefresh,refreshSequence])
   useEffect(()=>{
     closeRef.current?.focus()
     const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()}
@@ -93,7 +115,14 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
         <button ref={closeRef} type="button" className="ee-source-close" aria-label="Close source details" onClick={onClose}><X size={19}/></button>
       </header>
       <div className="ee-source-dialog-body">
+        <div className="ee-source-refreshbar">
+          <span className={error?'ee-source-poll-error':'ee-source-poll-ok'}>{refreshing?'Updating…':error?'Refresh failed':autoRefresh?'Auto-refresh every 30 seconds':'Auto-refresh paused'}</span>
+          <span>{lastRefreshed?'Last checked '+dateLabel(lastRefreshed):'Not checked yet'}</span>
+          <label><input type="checkbox" checked={autoRefresh} onChange={e=>setAutoRefresh(e.target.checked)}/> Auto refresh</label>
+          <button type="button" disabled={refreshing} onClick={()=>setRefreshSequence(i=>i+1)}>Refresh now</button>
+        </div>
         <div className="ee-source-demo-notice"><Info size={16}/> {detail?.latest?.values?.simulated===true?'SIMULATED GIS FEED — Generated GeoJSON, not real ArcGIS Pro or QGIS measurements.':'Source associations are illustrative. Latest stored data and recorded protocol are displayed when configured in Data Mine.'}</div>
+        {source.id==='gis'&&detail?.latest?.values?.geojson&&<SourceGeoJsonMap geojson={detail.latest.values.geojson} observedAt={detail.latest.observed_at}/>}
         <div className="ee-source-detail-grid">
           <div className="ee-source-detail-panel">
             <h3><Activity size={16}/> Latest data available</h3>

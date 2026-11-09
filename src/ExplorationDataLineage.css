@@ -85,3 +85,28 @@
 .ee-source-feature{border:1px solid #396d75;background:#143843;border-radius:6px;padding:9px}
 .ee-source-feature strong,.ee-source-feature small{display:block}
 .ee-source-feature small{color:#a6cbd0;overflow-wrap:anywhere;margin-top:5px;font-size:10px}
+
+/* Live GIS source inspector */
+.ee-source-dialog{width:min(1100px,100%);max-height:min(92vh,930px)}
+.ee-source-refreshbar{display:flex;gap:10px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:0 0 12px;color:#afc9d5;font-size:11px}
+.ee-source-refreshbar label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.ee-source-refreshbar input{accent-color:#41e1bb}
+.ee-source-refreshbar button{padding:7px 11px;background:#153e48;color:#d4fff5;border:1px solid #3b7f84;border-radius:6px;cursor:pointer}
+.ee-source-refreshbar button:disabled{opacity:.45;cursor:default}
+.ee-source-poll-ok{color:#65eac4}
+.ee-source-poll-error{color:#ffb59e}
+.ee-gis-map-panel{border:1px solid #376071;border-radius:10px;background:#0d2836;padding:12px;margin-bottom:15px}
+.ee-gis-map-heading{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.ee-gis-map-heading div{display:flex;flex-direction:column;gap:3px}
+.ee-gis-map-heading strong{color:#e6fbf9;font-size:12px;letter-spacing:.06em}
+.ee-gis-map-heading span{font-size:10px;color:#a5c3d1}
+.ee-gis-map-demo{color:#ffce91!important;border:1px solid #81623c;border-radius:4px;padding:5px 7px;font-weight:800}
+.ee-gis-map{height:300px;width:100%;background:radial-gradient(ellipse,#1b4954,#091f2e);border:1px solid #375969;border-radius:6px;z-index:0}
+.ee-gis-map-legend{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font-size:10px;color:#c6dfe5;padding-top:10px}
+.ee-gis-map-legend span{display:inline-flex;align-items:center;gap:6px}
+.ee-gis-map-legend i{width:17px;height:3px;display:inline-block;border-radius:2px}
+.ee-gis-legend-fault{background:#ffbd70}
+.ee-gis-legend-fracture{background:#62e6e1}
+.ee-gis-map-legend .ee-gis-legend-point{background:#48dfb8;width:9px;height:9px;border:1px solid #e5faff;border-radius:50%}
+.ee-gis-map-legend small{margin-left:auto;color:#8bafbd;font-size:10px}
+@media(max-width:650px){.ee-gis-map{height:230px}.ee-source-refreshbar{justify-content:flex-start}}
