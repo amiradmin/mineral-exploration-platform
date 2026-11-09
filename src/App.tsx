@@ -31,7 +31,7 @@ export default function App(){
   // Keep the selected workspace in the URL so reloads and shared links work.
   const allowedPages:readonly Page[]=['decision-center','admin-access','geologist','executive','operations','overview','map','targets','drillholes','subsurface','geoscience','ai','qaqc',...decisionModules.map(m=>m.id)]
   const pageFromUrl=useCallback(():Page=>{
-    const slug=decodeURIComponent(window.location.pathname.replace(/^\\/+|\\/+$/g,''))
+    const slug=decodeURIComponent(window.location.pathname.split('/').filter(Boolean).join('/'))
     if(!slug||slug==='dashboard')return 'decision-center'
     return allowedPages.includes(slug as Page)?slug as Page:'decision-center'
   },[])
