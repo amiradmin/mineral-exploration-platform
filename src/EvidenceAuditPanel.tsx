@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react'
 import {Activity, CheckCircle2, Database, FileCheck2, GitBranch, LockKeyhole, RefreshCw, ShieldAlert} from 'lucide-react'
 import './EvidenceAuditPanel.css'
 import {T,useI18n} from './i18n'
+import {useAuth} from './auth'
 
 type Provenance = {
   source_connection_id:number
@@ -37,6 +38,7 @@ const pretty=(date:string,locale:string)=>new Date(date).toLocaleString(locale)
 
 export default function EvidenceAuditPanel({targetId}:{targetId:string}){
   const {t,locale}=useI18n()
+  const {apiFetch}=useAuth()
   const [runs,setRuns]=useState<Run[]>([])
   const [expanded,setExpanded]=useState(true)
   const [busy,setBusy]=useState(false)
@@ -44,7 +46,7 @@ export default function EvidenceAuditPanel({targetId}:{targetId:string}){
   const [selected,setSelected]=useState<number|null>(null)
   const shown=runs.find(item=>item.id===selected)??runs[0]??null
   const fetchRuns=async(signal?:AbortSignal)=>{
-    const response=await fetch('/api/targets/'+encodeURIComponent(targetId)+'/evidence-evaluations/',{
+    const response=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/evidence-evaluations/',{
       credentials:'same-origin',cache:'no-store',signal,
     })
     if(!response.ok)throw new Error('Unable to load evaluation provenance (HTTP '+response.status+').')
@@ -57,12 +59,12 @@ export default function EvidenceAuditPanel({targetId}:{targetId:string}){
     void fetchRuns(controller.signal).catch(err=>{if(!controller.signal.aborted)setError(String(err))})
     const timer=window.setInterval(()=>{if(!document.hidden)void fetchRuns(controller.signal).catch(err=>{if(!controller.signal.aborted)setError(String(err))})},30_000)
     return ()=>{controller.abort();window.clearInterval(timer)}
-  },[targetId])
+  },[targetId,apiFetch])
   const act=async(path:string)=>{
     setBusy(true);setError('')
     try{
       const csrf=document.cookie.split('; ').find(item=>item.startsWith('csrftoken='))?.split('=')[1]??''
-      const response=await fetch(path,{method:'POST',credentials:'same-origin',headers:csrf?{'X-CSRFToken':decodeURIComponent(csrf)}:{}})
+      const response=await apiFetch(path,{method:'POST',credentials:'same-origin',headers:csrf?{'X-CSRFToken':decodeURIComponent(csrf)}:{}})
       if(!response.ok){
         const body=await response.json().catch(()=>null)
         throw new Error(typeof body?.detail==='string'?body.detail:'Request rejected (HTTP '+response.status+').')

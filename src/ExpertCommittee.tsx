@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useState} from 'react'
 import {ClipboardCheck,Flag,FileSignature,ShieldAlert,Users,RefreshCw} from 'lucide-react'
 import {useI18n} from './i18n'
+import {useAuth} from './auth'
 import './ExpertCommittee.css'
 
 type Eval = {id:number;status:string;outputs:Record<string,number>}
@@ -14,6 +15,7 @@ const csrf=()=>document.cookie.split('; ').find(s=>s.startsWith('csrftoken='))?.
 const fmt=(n:number)=>n.toFixed(2)
 export default function ExpertCommittee({targetId}:{targetId:string}){
  const {t,locale}=useI18n()
+ const {apiFetch}=useAuth()
  const [expanded,setExpanded]=useState(true)
  const [committee,setCommittee]=useState<Committee|null>(null)
  const [error,setError]=useState('')
@@ -34,11 +36,11 @@ export default function ExpertCommittee({targetId}:{targetId:string}){
  const [gateReason,setGateReason]=useState('')
  const base='/api/targets/'+encodeURIComponent(targetId)+'/committee/'
  const load=useCallback(async(signal?:AbortSignal)=>{
-  const resp=await fetch(base,{credentials:'same-origin',signal,cache:'no-store'})
+  const resp=await apiFetch(base,{credentials:'same-origin',signal,cache:'no-store'})
   const data=await resp.json()
   if(!resp.ok)throw new Error(data.detail||'Cannot read the committee record.')
   if(!signal?.aborted){setCommittee(data);setError('')}
- },[base])
+ },[base,apiFetch])
  useEffect(()=>{
   const controller=new AbortController()
   setCommittee(null);setError('');setMessage('')
@@ -49,7 +51,7 @@ export default function ExpertCommittee({targetId}:{targetId:string}){
  const act=async(endpoint:string,payload:Record<string,unknown>)=>{
   setBusy(true);setError('');setMessage('')
   try{
-   const resp=await fetch(base+endpoint,{method:'POST',credentials:'same-origin',
+   const resp=await apiFetch(base+endpoint,{method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json',...(csrf()?{'X-CSRFToken':decodeURIComponent(csrf())}:{})},
     body:JSON.stringify(payload)})
    const data=await resp.json()

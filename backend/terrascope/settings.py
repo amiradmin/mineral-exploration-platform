@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,7 +13,8 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "loc
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
-    "corsheaders", "rest_framework", "rest_framework.authtoken", "exploration",
+    "corsheaders", "rest_framework", "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist", "exploration",
 ]
 
 MIDDLEWARE = [
@@ -61,6 +63,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:4173,http://localhost:8085").split(",")]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ],
@@ -69,3 +72,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 100,
 }
+
+# Access tokens live only in browser memory; rotating refresh tokens are HttpOnly.
+# For internet-facing HTTPS deployments, set JWT_COOKIE_SECURE=true and CSRF_COOKIE_SECURE=true.
+JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "false").lower() == "true"
+CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "false").lower() == "true"
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+}
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {"auth_login": "5/min"}

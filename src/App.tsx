@@ -8,6 +8,8 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
 import GeoMap from './GeoMap'
 import {T,useI18n} from './i18n'
+import {useAuth} from './auth'
+import './AuthExtras.css'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
@@ -24,6 +26,7 @@ const nav=[
 
 export default function App(){
   const {t,language,setLanguage}=useI18n()
+  const {user,logout}=useAuth()
   const [page,setPage]=useState<Page>('decision-center')
   const [decisionContext,setDecisionContext]=useState<DecisionContext>({targetId:targets[0].id,scenario:'base'})
   const [selected,setSelected]=useState(targets[0])
@@ -60,7 +63,11 @@ export default function App(){
           <button type="button" aria-pressed={language==='en'} className={language==='en'?'active':''} onClick={()=>setLanguage('en')}>EN</button>
           <button type="button" aria-pressed={language==='fa'} className={language==='fa'?'active':''} onClick={()=>setLanguage('fa')}>فا</button>
         </div>
-        <div className="avatar">GA</div>
+        <button type="button" className="dm-account-logout" title={t('Sign out')} onClick={()=>void logout()}>
+        <span className="dm-account-name">{user?.display_name}</span>
+        <span>{t('Sign out')}</span>
+        </button>
+        <div className="avatar">{(user?.username??'DM').slice(0,2).toUpperCase()}</div>
       </header>
 
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}

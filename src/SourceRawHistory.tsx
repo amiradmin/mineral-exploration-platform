@@ -2,6 +2,7 @@ import {useEffect, useMemo, useState} from 'react'
 import {CalendarClock, ChevronLeft, ChevronRight, Code2, Download, Database, RefreshCw} from 'lucide-react'
 import './SourceRawHistory.css'
 import {T,useI18n} from './i18n'
+import {useAuth} from './auth'
 
 type Snapshot = {
   id:number
@@ -35,6 +36,7 @@ const downloadJson=(filename:string,content:string)=>{
 
 export default function SourceRawHistory({targetId,softwareKey}:{targetId:string;softwareKey:string}){
   const {t,locale}=useI18n()
+  const {apiFetch}=useAuth()
   const [fromDraft,setFromDraft]=useState('')
   const [toDraft,setToDraft]=useState('')
   const [applied,setApplied]=useState<{from:string;to:string}>({from:'',to:''})
@@ -55,7 +57,7 @@ export default function SourceRawHistory({targetId,softwareKey}:{targetId:string
     if(applied.to)query.set('to',applied.to)
     setLoading(true)
     setError('')
-    fetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(softwareKey)+'/snapshots/?'+query,{
+    apiFetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(softwareKey)+'/snapshots/?'+query,{
       signal:controller.signal,
       credentials:'same-origin',
       cache:'no-store',
@@ -71,7 +73,7 @@ export default function SourceRawHistory({targetId,softwareKey}:{targetId:string
       if(!controller.signal.aborted){setError(reason.message);setData(null)}
     }).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
     return ()=>controller.abort()
-  },[targetId,softwareKey,applied,page,revision])
+  },[targetId,softwareKey,applied,page,revision,apiFetch])
 
   const apply=()=>{
     if(invalidDate||invalidRange)return
