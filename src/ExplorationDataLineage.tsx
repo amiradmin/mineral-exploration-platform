@@ -1,11 +1,7 @@
-import React, {useState} from 'react'
-import {Activity, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Database, GitBranch, Info, Layers3} from 'lucide-react'
+import React, {useEffect, useRef, useState} from 'react'
+import {Activity, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Database, FileSpreadsheet, FlaskConical, GitBranch, Info, Layers3, Map, Network, Radar, X} from 'lucide-react'
 import './ExplorationDataLineage.css'
 
-/**
- * Customer-requested conceptual integration graph. The catalog describes export
- * possibilities, NOT real connected products, sync jobs or validated input data.
- */
 type Factor = 'P_Source' | 'P_Pathway' | 'P_Trap' | 'P_Timing'
 type Source = {
   id:string
@@ -13,15 +9,31 @@ type Source = {
   format:string
   evidence:string[]
   factors:Factor[]
+  protocols:string[]
+}
+type Snapshot = {
+  dataset: string
+  observed_at: string
+  received_at: string
+  values: Record<string, unknown>
+}
+type SourceDetail = {
+  configured:boolean
+  status:string
+  protocol:string|null
+  format:string|null
+  last_checked_at:string|null
+  last_success_at:string|null
+  latest:Snapshot|null
 }
 const catalog:Record<string,Source> = {
-  oasis:{id:'oasis',name:'Oasis montaj',format:'Geosoft Grid',evidence:['Magnetic / gravity anomaly','Radiometric K, Th, U'],factors:['P_Source']},
-  gcd:{id:'gcd',name:'GCDkit / IgPet',format:'Structured assay / CSV',evidence:['REE signatures','Sr/Y and V/Sc ratios'],factors:['P_Source']},
-  res:{id:'res',name:'RES2DINV / RES3DINV',format:'Inversion tomography',evidence:['Resistivity sections','IP chargeability'],factors:['P_Pathway']},
-  gis:{id:'gis',name:'ArcGIS Pro / QGIS',format:'GeoJSON / Shapefile',evidence:['Fault / fracture density','Tectonic structures'],factors:['P_Pathway','P_Trap']},
-  rock:{id:'rock',name:'RockWorks',format:'Striplog / borehole data',evidence:['Lithology logs','Hydrothermal alteration'],factors:['P_Trap']},
-  dips:{id:'dips',name:'Dips (Rocscience)',format:'Stereonet data',evidence:['Discontinuity orientations'],factors:['P_Trap']},
-  geobank:{id:'geobank',name:'Datamine CCLAS / Geobank',format:'Assay / LIMS export',evidence:['Assay QA/QC results','CRM / blank / duplicate'],factors:['P_Timing']},
+  oasis:{id:'oasis',name:'Oasis montaj',format:'Geosoft Grid',evidence:['Magnetic / gravity anomaly','Radiometric K, Th, U'],factors:['P_Source'],protocols:['File import (Grid / CSV)']},
+  gcd:{id:'gcd',name:'GCDkit / IgPet',format:'Structured assay / CSV',evidence:['REE signatures','Sr/Y and V/Sc ratios'],factors:['P_Source'],protocols:['CSV', 'File export']},
+  res:{id:'res',name:'RES2DINV / RES3DINV',format:'Inversion tomography',evidence:['Resistivity sections','IP chargeability'],factors:['P_Pathway'],protocols:['File export', 'CSV']},
+  gis:{id:'gis',name:'ArcGIS Pro / QGIS',format:'GeoJSON / Shapefile',evidence:['Fault / fracture density','Tectonic structures'],factors:['P_Pathway','P_Trap'],protocols:['REST API (when available)', 'GeoJSON / Shapefile', 'OGC services']},
+  rock:{id:'rock',name:'RockWorks',format:'Striplog / borehole data',evidence:['Lithology logs','Hydrothermal alteration'],factors:['P_Trap'],protocols:['CSV / file export']},
+  dips:{id:'dips',name:'Dips (Rocscience)',format:'Stereonet data',evidence:['Discontinuity orientations'],factors:['P_Trap'],protocols:['CSV / file export']},
+  geobank:{id:'geobank',name:'Datamine CCLAS / Geobank',format:'Assay / LIMS export',evidence:['Assay QA/QC results','CRM / blank / duplicate'],factors:['P_Timing'],protocols:['CSV / file export', 'API (subject to license)']},
 }
 const examples:Record<string,string[]> = {
   'T-001':['oasis','gcd','res','gis','geobank'],
@@ -37,41 +49,121 @@ const factorLabels:Record<Factor,string> = {
   P_Timing:'Mineralization timing',
 }
 const factorOrder:Factor[]=['P_Source','P_Pathway','P_Trap','P_Timing']
+const iconFor=(id:string)=>{
+  if(id==='gcd'||id==='geobank')return <FlaskConical size={17}/>
+  if(id==='res'||id==='oasis')return <Radar size={17}/>
+  if(id==='gis')return <Map size={17}/>
+  if(id==='dips')return <Network size={17}/>
+  return <Layers3 size={17}/>
+}
+const dateLabel=(value:string|null|undefined)=>value?new Date(value).toLocaleString():'Not available'
+
+function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targetId:string;targetName:string;onClose:()=>void}){
+  const [detail,setDetail]=useState<SourceDetail|null>(null)
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  const closeRef=useRef<HTMLButtonElement|null>(null)
+  useEffect(()=>{
+    const controller=new AbortController()
+    setLoading(true)
+    setDetail(null)
+    setError('')
+    fetch('/api/source-details/'+encodeURIComponent(targetId)+'/'+encodeURIComponent(source.id)+'/',{
+      signal:controller.signal,
+      credentials:'same-origin',
+    }).then(async response=>{
+      if(!response.ok)throw new Error(response.status===403||response.status===401?'Sign-in is required to view this source.':'Source details could not be loaded.')
+      return response.json()
+    }).then((data:SourceDetail)=>{if(!controller.signal.aborted)setDetail(data)})
+      .catch((err:Error)=>{if(!controller.signal.aborted)setError(err.message)})
+      .finally(()=>{if(!controller.signal.aborted)setLoading(false)})
+    return ()=>controller.abort()
+  },[source.id,targetId])
+  useEffect(()=>{
+    closeRef.current?.focus()
+    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')onClose()}
+    document.addEventListener('keydown',onKey)
+    return ()=>document.removeEventListener('keydown',onKey)
+  },[onClose])
+  return <div className="ee-source-overlay" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <section className="ee-source-dialog" role="dialog" aria-modal="true" aria-label={source.name+' source details'}>
+      <header className="ee-source-dialog-header">
+        <span className="ee-source-dialog-icon">{iconFor(source.id)}</span>
+        <div><small>EXPLORATION DATA SOURCE · {targetId}</small><h2>{source.name}</h2><p>{targetName}</p></div>
+        <button ref={closeRef} type="button" className="ee-source-close" aria-label="Close source details" onClick={onClose}><X size={19}/></button>
+      </header>
+      <div className="ee-source-dialog-body">
+        <div className="ee-source-demo-notice"><Info size={16}/> Source associations are illustrative. Latest data and actual protocol are shown only when a source record has been configured in Data Mine.</div>
+        <div className="ee-source-detail-grid">
+          <div className="ee-source-detail-panel">
+            <h3><Activity size={16}/> Latest data available</h3>
+            {loading&&<p role="status">Reading Data Mine source records…</p>}
+            {error&&<p role="alert">{error}</p>}
+            {!loading&&!error&&detail&&!detail.latest&&<div className="ee-source-empty"><Database size={23}/><strong>No source data received</strong><p>No imported snapshot is recorded for this project and software.</p></div>}
+            {!loading&&!error&&detail?.latest&&<>
+              <div className="ee-source-meta"><span>Dataset</span><strong>{detail.latest.dataset}</strong></div>
+              <div className="ee-source-meta"><span>Observed at source</span><strong>{dateLabel(detail.latest.observed_at)}</strong></div>
+              <div className="ee-source-meta"><span>Received by Data Mine</span><strong>{dateLabel(detail.latest.received_at)}</strong></div>
+              <div className="ee-source-values">{Object.entries(detail.latest.values).slice(0,25).map(([name,value])=><div key={name}><span>{name}</span><strong>{typeof value==='object'?JSON.stringify(value):String(value)}</strong></div>)}</div>
+            </>}
+            <h4>Expected evidence (illustrative)</h4>
+            <div className="ee-source-tags">{source.evidence.map(item=><span key={item}>{item}</span>)}</div>
+          </div>
+          <div className="ee-source-detail-panel">
+            <h3><Network size={16}/> Connection protocol</h3>
+            <div className="ee-source-meta"><span>Configured protocol</span><strong>{loading?'Loading…':detail?.protocol||'Not configured'}</strong></div>
+            <div className="ee-source-meta"><span>Connection state</span><strong className={detail?.status==='connected'?'ee-source-connected':''}>{loading?'Loading…':detail?.status?.replaceAll('_',' ')||'Not available'}</strong></div>
+            <div className="ee-source-meta"><span>Data format</span><strong>{detail?.format||'Not configured'}</strong></div>
+            <div className="ee-source-meta"><span>Last checked</span><strong>{dateLabel(detail?.last_checked_at)}</strong></div>
+            <div className="ee-source-meta"><span>Last successful import</span><strong>{dateLabel(detail?.last_success_at)}</strong></div>
+            <h4>Possible integration methods (not verified)</h4>
+            <div className="ee-source-tags">{source.protocols.map(method=><span key={method}>{method}</span>)}</div>
+            <p className="ee-source-method-note">API, CSV, socket and file transfers are transport options. A method is considered active only after an integration is configured and tested; this page does not initiate vendor connections.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+}
 
 export default function ExplorationDataLineage({targetId,targetName}:{targetId:string;targetName:string}){
   const [expanded,setExpanded]=useState(true)
   const [selected,setSelected]=useState<string|null>(null)
+  const [detailsFor,setDetailsFor]=useState<string|null>(null)
   const sources=(examples[targetId]??[]).map(id=>catalog[id]).filter((value):value is Source=>Boolean(value))
   const active=sources.find(source=>source.id===selected)??null
-  const effective=active??null
+  const modalSource=sources.find(source=>source.id===detailsFor)??null
   const covered=new Set(sources.flatMap(source=>source.factors))
-
   return <section className="ee-lineage ee-panel" aria-label="Data source lineage">
     <div className="ee-lineage-head">
       <div className="ee-lineage-heading"><span className="ee-lineage-heading-icon"><GitBranch size={18}/></span>
         <div><h2>DATA SOURCE LINEAGE</h2><p>Conceptual evidence flow · {targetName}</p></div>
       </div>
       <div className="ee-lineage-head-actions">
-        <span className="ee-lineage-mode"><Info size={13}/> DEMO MAPPING — NOT CONNECTED</span>
+        <span className="ee-lineage-mode"><Info size={13}/> ILLUSTRATIVE SOURCE MAP</span>
         <span className="ee-lineage-count"><Database size={14}/> {sources.length} example sources</span>
         <button className="ee-lineage-toggle" type="button" onClick={()=>setExpanded(x=>!x)} aria-expanded={expanded} aria-controls="ee-lineage-content">{expanded?<ChevronUp size={16}/>:<ChevronDown size={16}/>} {expanded?'Collapse':'Expand'}</button>
       </div>
     </div>
     {expanded&&<div id="ee-lineage-content">
-      <div className="ee-lineage-subtitle">Select a source to highlight its mapped evidence and evaluation factors. These are illustrative source associations, not real integrations or validated calculations.</div>
+      <div className="ee-lineage-subtitle">Select a source to highlight its evidence. Click its information icon to view recorded data, connection status and protocol.</div>
       <div className="ee-lineage-columns">
         <div className="ee-lineage-column">
           <div className="ee-lineage-column-heading"><Database size={15}/> SOFTWARE SOURCES <span>{sources.length}</span></div>
           <div className="ee-lineage-source-list">
-            {sources.map(source=><button key={source.id} type="button" className={'ee-lineage-source'+(selected===source.id?' ee-lineage-selected':'')+(selected!==null&&selected!==source.id?' ee-lineage-muted':'')} onClick={()=>setSelected(old=>old===source.id?null:source.id)} aria-pressed={selected===source.id}>
-              <span className="ee-lineage-node-icon"><Layers3 size={17}/></span><span className="ee-lineage-source-copy"><strong>{source.name}</strong><small>{source.format}</small></span><span className="ee-lineage-source-end"><span>Example</span><ArrowRight size={15}/></span>
-            </button>)}
+            {sources.map(source=><div key={source.id} className={'ee-lineage-source'+(selected===source.id?' ee-lineage-selected':'')+(selected!==null&&selected!==source.id?' ee-lineage-muted':'')}>
+              <button type="button" className="ee-lineage-select-source" onClick={()=>setSelected(old=>old===source.id?null:source.id)} aria-pressed={selected===source.id}>
+                <span className="ee-lineage-node-icon">{iconFor(source.id)}</span>
+                <span className="ee-lineage-source-copy"><strong>{source.name}</strong><small>{source.format}</small></span>
+              </button>
+              <button type="button" className="ee-lineage-info-button" title={'View latest data and protocol for '+source.name} aria-label={'View details for '+source.name} onClick={()=>setDetailsFor(source.id)}><Info size={18}/></button>
+            </div>)}
           </div>
         </div>
         <div className="ee-lineage-column ee-lineage-evidence">
           <div className="ee-lineage-column-heading"><Activity size={15}/> EXTRACTED EVIDENCE</div>
           <div className="ee-lineage-evidence-list">
-            {sources.flatMap(source=>source.evidence.map((item,index)=>({source,item,key:source.id+'-'+index}))).map(({source,item,key})=><div key={key} className={'ee-lineage-evidence-node'+(effective&&effective.id!==source.id?' ee-lineage-muted':'')+(effective?.id===source.id?' ee-lineage-selected':'')}>
+            {sources.flatMap(source=>source.evidence.map((item,index)=>({source,item,key:source.id+'-'+index}))).map(({source,item,key})=><div key={key} className={'ee-lineage-evidence-node'+(active&&active.id!==source.id?' ee-lineage-muted':'')+(active?.id===source.id?' ee-lineage-selected':'')}>
               <span className="ee-lineage-connector" aria-hidden="true"/><span className="ee-lineage-small-dot"/><span>{item}</span>
             </div>)}
           </div>
@@ -79,7 +171,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
         <div className="ee-lineage-column ee-lineage-factors">
           <div className="ee-lineage-column-heading"><GitBranch size={15}/> EVALUATION FACTORS</div>
           <div className="ee-lineage-factor-list">
-            {factorOrder.map(factor=><div key={factor} className={'ee-lineage-factor'+(effective&&!effective.factors.includes(factor)?' ee-lineage-muted':'')+((effective?.factors.includes(factor))?' ee-lineage-selected':'')}>
+            {factorOrder.map(factor=><div key={factor} className={'ee-lineage-factor'+(active&&!active.factors.includes(factor)?' ee-lineage-muted':'')+(active?.factors.includes(factor)?' ee-lineage-selected':'')}>
               <span className="ee-lineage-factor-connector" aria-hidden="true"/><span><strong>{factor}</strong><small>{factorLabels[factor]}</small></span>{covered.has(factor)?<CheckCircle2 size={16}/>:<span className="ee-lineage-empty">No example</span>}
             </div>)}
           </div>
@@ -88,9 +180,10 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
       </div>
       <div className="ee-lineage-foot">
         <span><span className="ee-lineage-legend-dot"/> Mapped in example</span>
-        <span>Source selection: <strong>{effective?effective.name:'All sources'}</strong></span>
-        <span>Actual source status, import timestamps and lineage require Phase 1 ingestion APIs.</span>
+        <span>Source selection: <strong>{active?active.name:'All sources'}</strong></span>
+        <span>Actual protocol and data appear only when configured in the backend.</span>
       </div>
     </div>}
+    {modalSource&&<SourceDetails key={targetId+'-'+modalSource.id} source={modalSource} targetId={targetId} targetName={targetName} onClose={()=>setDetailsFor(null)}/>}
   </section>
 }

@@ -158,3 +158,49 @@ class AuditEvent(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class SourceConnection(models.Model):
+    """Recorded (not automatically polled) software integration for an exploration target."""
+    PROTOCOLS = [
+        ("api", "REST API"), ("csv", "CSV import"),
+        ("socket", "Socket"), ("file", "File import"),
+        ("ogc", "OGC GIS service"), ("other", "Other"),
+    ]
+    STATUSES = [
+        ("configured", "Configured; not verified"),
+        ("connected", "Connected (reported by integrator)"),
+        ("error", "Connection error"), ("disabled", "Disabled"),
+    ]
+    target = models.ForeignKey(Target, on_delete=models.CASCADE, related_name="source_connections")
+    software_key = models.CharField(max_length=32)
+    protocol = models.CharField(max_length=16, choices=PROTOCOLS)
+    data_format = models.CharField(max_length=80, blank=True)
+    status = models.CharField(max_length=16, choices=STATUSES, default="configured")
+    is_demo = models.BooleanField(default=False, help_text="Only marked demo sources can be read anonymously.")
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["target", "software_key"], name="unique_target_software_source"),
+        ]
+        ordering = ["target_id", "software_key"]
+
+    def __str__(self):
+        return f"{self.target_id} / {self.software_key}"
+
+
+class SourceDataSnapshot(models.Model):
+    """Data actually stored in Data Mine; no assumed vendor live-polling."""
+    connection = models.ForeignKey(SourceConnection, on_delete=models.CASCADE, related_name="snapshots")
+    dataset = models.CharField(max_length=120)
+    observed_at = models.DateTimeField(help_text="Timestamp reported by originating source")
+    received_at = models.DateTimeField(auto_now_add=True)
+    values = models.JSONField(default=dict, help_text="Safe, sanitized JSON summary; never store credentials")
+
+    class Meta:
+        ordering = ["-received_at", "-pk"]
+
+    def __str__(self):
+        return f"{self.connection}: {self.dataset}"

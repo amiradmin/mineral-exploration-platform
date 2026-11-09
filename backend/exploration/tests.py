@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, WorkTask
+from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, SourceConnection, SourceDataSnapshot, Target, WorkTask
 
 
 class ExplorationApiTests(APITestCase):
@@ -75,3 +76,43 @@ class ExplorationApiTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(GateDecision.objects.get(pk=response.data["id"]).approver, self.approver)
         self.assertTrue(AuditEvent.objects.filter(action="gate_decision", entity_id=str(response.data["id"])).exists())
+
+
+    def test_source_details_without_connection_is_not_reported_as_live(self):
+        response = self.client.get("/api/source-details/T-001/gis/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "not_configured")
+        self.assertIsNone(response.data["latest"])
+        self.assertIsNone(response.data["protocol"])
+
+    def test_source_details_return_latest_recorded_snapshot(self):
+        connection = SourceConnection.objects.create(
+            target=Target.objects.get(pk="T-001"), software_key="gis",
+            protocol="csv", data_format="GeoJSON", status="configured", is_demo=True,
+        )
+        SourceDataSnapshot.objects.create(
+            connection=connection, dataset="faults-older",
+            observed_at=timezone.now(), values={"features": 3},
+        )
+        newest = SourceDataSnapshot.objects.create(
+            connection=connection, dataset="faults-newer",
+            observed_at=timezone.now(), values={"features": 6},
+        )
+        response = self.client.get("/api/source-details/T-001/gis/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["protocol"], "CSV import")
+        self.assertEqual(response.data["latest"]["dataset"], newest.dataset)
+        self.assertEqual(response.data["latest"]["values"]["features"], 6)
+
+    def test_real_customer_source_is_not_public(self):
+        SourceConnection.objects.create(
+            target=Target.objects.get(pk="T-001"), software_key="gis",
+            protocol="api", status="configured", is_demo=False,
+        )
+        response = self.client.get("/api/source-details/T-001/gis/")
+        self.assertEqual(response.status_code, 403)
+        self.client.force_authenticate(user=self.user)
+        self.assertEqual(self.client.get("/api/source-details/T-001/gis/").status_code, 403)
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        self.assertEqual(self.client.get("/api/source-details/T-001/gis/").status_code, 200)
