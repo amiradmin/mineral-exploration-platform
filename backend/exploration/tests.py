@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, SourceConnection, SourceDataSnapshot, EvidenceFactorRule, EvidenceEvaluation, Target, WorkTask
+from .models import AuditEvent, EvidenceReadiness, GateDecision, OperationProgram, SourceConnection, SourceDataSnapshot, EvidenceFactorRule, EvidenceEvaluation, Target, WorkTask, DataScaleProfile, ProgramTarget, EngineeringEvidence
 
 
 class ExplorationApiTests(APITestCase):
@@ -72,11 +72,69 @@ class ExplorationApiTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.assertEqual(self.client.post(url, payload, format="json").status_code, 403)
         self.client.force_authenticate(user=self.approver)
+        missing = self.client.post(url, payload, format="json")
+        self.assertEqual(missing.status_code, 409)
+        self.assertIn("program_target_data_scale_link_missing", missing.data["blockers"])
+        target = Target.objects.get(pk="T-001")
+        ProgramTarget.objects.create(program=program, target=target)
+        DataScaleProfile.objects.create(target=target, phase="detailed", map_scale_denominator=1000,
+            sample_count=200, lab_method="ICP-MS", drillhole_count=10, ddh_metres=1500,
+            rc_metres=0, grid_spacing_x=50, grid_spacing_y=50,
+            core_recovery_pct=95, rqd_pct=80, verified=True)
+        for source, metrics in [
+            ("alastri", {"stripping_ratio":2.8, "overall_pit_slope_deg":42}),
+            ("datamine", {"annual_ore_tonnes":4000000, "annual_plant_feed_tonnes":3900000}),
+            ("rocscience", {"static_fos":1.45}),
+        ]:
+            EngineeringEvidence.objects.create(target=target, source=source,
+                source_filename=source+".csv", source_format="csv",
+                source_sha256="a"*64, analysis_date=timezone.localdate(),
+                model_version="v1", metrics=metrics, verified=True,
+                reviewed_by=self.approver, reviewed_at=timezone.now())
         response = self.client.post(url, payload, format="json")
         self.assertEqual(response.status_code, 201)
         self.assertEqual(GateDecision.objects.get(pk=response.data["id"]).approver, self.approver)
         self.assertTrue(AuditEvent.objects.filter(action="gate_decision", entity_id=str(response.data["id"])).exists())
 
+
+    def test_engineering_evidence_registration_review_and_permissions(self):
+        target = Target.objects.get(pk="T-001")
+        url = f"/api/targets/{target.pk}/engineering-evidence/"
+        payload = {"source":"rocscience","source_filename":"slope.csv","source_format":"csv",
+            "source_sha256":"a"*64,"analysis_date":str(timezone.localdate()),
+            "model_version":"run-1","metrics":{"static_fos":1.41}}
+        self.assertIn(self.client.post(url, payload, format="json").status_code,(401,403))
+        self.client.force_authenticate(user=self.user)
+        invalid={**payload,"metrics":{"static_fos":-1}}
+        self.assertEqual(self.client.post(url, invalid, format="json").status_code,400)
+        created=self.client.post(url,payload,format="json")
+        self.assertEqual(created.status_code,201)
+        evidence_id=created.data["id"]
+        review_url=f"/api/targets/{target.pk}/engineering-evidence/{evidence_id}/review/"
+        self.assertEqual(self.client.post(review_url,{"decision":"approve","rationale":"ok"},format="json").status_code,403)
+        self.client.force_authenticate(user=self.approver)
+        self.assertEqual(self.client.post(review_url,{"decision":"approve","rationale":"Model checked"},format="json").status_code,403)
+        Group.objects.get_or_create(name="competent_person")[0].user_set.add(self.approver)
+        self.assertEqual(self.client.post(review_url,{"decision":"approve","rationale":"Model checked"},format="json").status_code,200)
+        self.assertTrue(EngineeringEvidence.objects.get(pk=evidence_id).verified)
+
+    def test_data_scale_steward_cannot_self_verify(self):
+        target=Target.objects.get(pk="T-001")
+        url=f"/api/targets/{target.pk}/data-scale/"
+        payload={"phase":"detailed","map_scale_denominator":1000,"sample_count":100,
+            "lab_method":"ICP-MS","drillhole_count":4,"ddh_metres":600,
+            "rc_metres":0,"grid_spacing_x":50,"grid_spacing_y":50,
+            "core_recovery_pct":96,"rqd_pct":80,"verified":True}
+        self.client.force_authenticate(user=self.user)
+        response=self.client.put(url,payload,format="json")
+        self.assertEqual(response.status_code,200)
+        self.assertFalse(DataScaleProfile.objects.get(target=target).verified)
+        self.assertFalse(response.data["policy"]["fid_allowed"])
+        Group.objects.get_or_create(name="competent_person")[0].user_set.add(self.approver)
+        self.client.force_authenticate(user=self.approver)
+        response=self.client.post(url+"review/",{"decision":"approve","rationale":"Reviewed core and assay logs"},format="json")
+        self.assertEqual(response.status_code,200)
+        self.assertTrue(DataScaleProfile.objects.get(target=target).verified)
 
     def test_source_details_without_connection_is_not_reported_as_live(self):
         response = self.client.get("/api/source-details/T-001/gis/")
