@@ -448,3 +448,16 @@ class EngineeringEvidence(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at","-id"]
+
+
+class BudgetAuthorization(models.Model):
+    """Immutable authorization record; construction spending requires FID evidence."""
+    CATEGORIES = [("exploration","Exploration / infill drilling"),("construction","Construction / development CAPEX")]
+    program = models.ForeignKey(OperationProgram,on_delete=models.PROTECT,related_name="budget_authorizations")
+    category = models.CharField(max_length=20,choices=CATEGORIES)
+    amount_usd = models.DecimalField(max_digits=18,decimal_places=2)
+    rationale = models.TextField()
+    approver = models.ForeignKey("auth.User",on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at","-id"]
