@@ -2,6 +2,20 @@ import React, {createContext, useContext, useEffect, useState} from 'react'
 
 export type Language='en'|'fa'
 const dictionary:Record<string,string>={
+  "Investment Dashboard": "داشبورد سرمایه‌گذاری",
+  "DECISION CENTER": "مرکز تصمیم‌گیری",
+  "GATE 1 · SCREENING": "دروازه ۱ · غربالگری",
+  "GATE 2 · RESOURCE EVIDENCE": "دروازه ۲ · شواهد ذخیره",
+  "GATE 3 · PRE-FEASIBILITY": "دروازه ۳ · پیش‌امکان‌سنجی",
+  "GATE 4 · INVESTMENT": "دروازه ۴ · سرمایه‌گذاری",
+  "CROSS-GATE GOVERNANCE": "حاکمیت بین‌دروازه‌ای",
+  "Legal & Commercial AI Hub": "هاب هوشمند حقوقی و بازرگانی",
+  "4 Gates · 6 Analytical Modules · Module 7 Governance": "چهار دروازه · شش ماژول تحلیلی · حاکمیت ماژول هفت",
+  "Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.": "یک ماژول را برای ورود انتخاب کنید. حاکمیت ESG، داوری تخصصی، کیفیت داده و امور حقوقی در هر چهار دروازه حضور دارند.",
+  "Shared target and scenario across six analytical modules": "هدف و سناریوی مشترک در شش ماژول تحلیلی",
+  "Source traceability": "ردیابی منابع",
+  "Hide provenance": "پنهان کردن تبارشناسی",
+
   "Dashboard": "داشبورد",
   "Exploration Evaluator": "ارزیابی اکتشاف",
   "Reserve Simulator": "شبیه‌ساز ذخیره",
