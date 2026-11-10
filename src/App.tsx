@@ -10,6 +10,7 @@ import GeoMap from './GeoMap'
 import {T,useI18n} from './i18n'
 import {useAuth} from './auth'
 import './AuthExtras.css'
+import DataScaleBadge from './DataScaleBadge'
 import UserAccessManagement from './UserAccessManagement'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
@@ -94,6 +95,7 @@ export default function App(){
 
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
+      <DataScaleBadge targetId={decisionContext.targetId}/>
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
