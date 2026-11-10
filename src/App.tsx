@@ -13,6 +13,8 @@ import './AuthExtras.css'
 import DataScaleBadge from './DataScaleBadge'
 import UserAccessManagement from './UserAccessManagement'
 import LegalCommercialHub from './LegalCommercialHub'
+import ModuleLineageHub from './ModuleLineageHub'
+import {moduleArchitecture,type ModuleKey} from './moduleArchitecture'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
@@ -20,12 +22,18 @@ import type { DecisionContext } from './decisionPipeline'
 
 type Page=DecisionModuleId|'legal-commercial'|'admin-access'|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
-// Keep the primary navigation focused: one dashboard and the six decision modules.
-// Existing specialist screens remain accessible from their module workspaces.
-const nav=[
-  {id:'decision-center',label:'Dashboard',icon:Layers3},
-  ...decisionModules.map(m=>({id:m.id,label:m.name,icon:m.icon})),
-  {id:'legal-commercial',label:'Legal & Commercial AI Hub',icon:Scale},
+// Four decision gates, six analytical modules, plus cross-gate legal extension.
+// Specialist workbenches stay linked inside their corresponding modules.
+const navGroups=[
+  {title:'DECISION CENTER',items:[{id:'decision-center',label:'Investment Dashboard',icon:Layers3}]},
+  {title:'GATE 1 · SCREENING',items:decisionModules.filter(m=>m.id==='exploration-evaluator')},
+  {title:'GATE 2 · RESOURCE EVIDENCE',items:decisionModules.filter(m=>m.id==='reserve-simulator')},
+  {title:'GATE 3 · PRE-FEASIBILITY',items:decisionModules.filter(m=>m.id==='economics-engine'||m.id==='risk-scenarios')},
+  {title:'GATE 4 · INVESTMENT',items:decisionModules.filter(m=>m.id==='financial-valuator')},
+  {title:'CROSS-GATE GOVERNANCE',items:[
+    ...decisionModules.filter(m=>m.id==='esg-governance'),
+    {id:'legal-commercial',label:'Legal & Commercial AI Hub',icon:Scale},
+  ]},
 ] as const
 
 export default function App(){
@@ -66,8 +74,12 @@ export default function App(){
         <div><b>Data Mine</b><span>{t('Mineral Exploration Platform')}</span></div>
       </div>
 
-      <div className="nav-group-label">{t("COMMAND CENTER")}</div>
-      <nav>{nav.map(n=>{const Icon=n.icon;return <button key={n.id} className={page===n.id?'nav active':'nav'} onClick={()=>setPage(n.id as Page)}><Icon size={17}/><span>{t(n.label)}</span></button>})}</nav>
+      <nav className="dm-module-navigation" aria-label="Mining platform modules and decision gates">
+        {navGroups.map(group=><section className="dm-nav-group" key={group.title}>
+          <div className="nav-group-label">{t(group.title)}</div>
+          {group.items.map(n=>{const Icon=n.icon;const meta=moduleArchitecture[n.id as ModuleKey];return <button type="button" key={n.id} aria-current={page===n.id?'page':undefined} className={page===n.id?'nav active':'nav'} title={meta?meta.function:n.label} onClick={()=>setPage(n.id as Page)}><Icon size={18}/><span className="dm-nav-label"><strong>{t(n.label)}</strong>{meta&&<small>MODULE {meta.number} · {meta.function}</small>}</span></button>})}
+        </section>)}
+      </nav>
       {user?.is_superuser&&<div className="ua-navigation"><div className="nav-group-label">{t('ADMINISTRATION')}</div><button type="button" className={page==='admin-access'?'nav active':'nav'} onClick={()=>setPage('admin-access')}><Settings2 size={17}/><span>{t('User Access Management')}</span></button></div>}
 
       <div className="sidebar-foot">
@@ -98,6 +110,7 @@ export default function App(){
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
       <DataScaleBadge targetId={decisionContext.targetId}/>
+      {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ModuleLineageHub module={page as ModuleKey} targetId={decisionContext.targetId}/>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}
         {page==='legal-commercial'&&<LegalCommercialHub initialTargetId={decisionContext.targetId}/>}
