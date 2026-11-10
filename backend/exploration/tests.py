@@ -177,7 +177,7 @@ class ExplorationApiTests(APITestCase):
     def test_engineering_csv_upload_requires_review(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
         from hashlib import sha256
-        data=b"analysis_date,model_version,static_fos\\n2026-10-01,v2,1.42\\n"
+        data=b"analysis_date,model_version,static_fos\n2026-10-01,v2,1.42\n"
         self.client.force_authenticate(user=self.user)
         url="/api/targets/T-001/engineering-evidence/upload/"
         response=self.client.post(url,{"source":"rocscience",
@@ -185,7 +185,7 @@ class ExplorationApiTests(APITestCase):
         self.assertEqual(response.status_code,201)
         self.assertEqual(response.data["source_sha256"],sha256(data).hexdigest())
         self.assertFalse(response.data["verified"])
-        bad=b"analysis_date,model_version,static_fos\\n2026-10-01,v2,-3\\n"
+        bad=b"analysis_date,model_version,static_fos\n2026-10-01,v2,-3\n"
         self.assertEqual(self.client.post(url,{"source":"rocscience",
             "file":SimpleUploadedFile("invalid.csv",bad,content_type="text/csv")},format="multipart").status_code,400)
 
