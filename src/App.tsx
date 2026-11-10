@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity, BarChart3, Beaker, Bot, Boxes, CircleDot, Database, FlaskConical,
   Layers3, Map, Mountain, Orbit, Radar, Search, Settings2, ShieldCheck, Sparkles,
-  Target, Waves
+  Target, Waves, Scale
 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { drillholes, elements, evidenceFactors, targets } from './mockData'
@@ -12,25 +12,27 @@ import {useAuth} from './auth'
 import './AuthExtras.css'
 import DataScaleBadge from './DataScaleBadge'
 import UserAccessManagement from './UserAccessManagement'
+import LegalCommercialHub from './LegalCommercialHub'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
 import { StageGateDashboard, DecisionModulePage, decisionModules, type DecisionModuleId } from './StageGate'
 import type { DecisionContext } from './decisionPipeline'
 
-type Page=DecisionModuleId|'admin-access'|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
+type Page=DecisionModuleId|'legal-commercial'|'admin-access'|'decision-center'|'geologist'|'executive'|'operations'|'overview'|'map'|'targets'|'drillholes'|'subsurface'|'geoscience'|'ai'|'qaqc'
 
 // Keep the primary navigation focused: one dashboard and the six decision modules.
 // Existing specialist screens remain accessible from their module workspaces.
 const nav=[
   {id:'decision-center',label:'Dashboard',icon:Layers3},
   ...decisionModules.map(m=>({id:m.id,label:m.name,icon:m.icon})),
+  {id:'legal-commercial',label:'Legal & Commercial AI Hub',icon:Scale},
 ] as const
 
 export default function App(){
   const {t,language,setLanguage}=useI18n()
   const {user,logout}=useAuth()
   // Keep the selected workspace in the URL so reloads and shared links work.
-  const allowedPages:readonly Page[]=['decision-center','admin-access','geologist','executive','operations','overview','map','targets','drillholes','subsurface','geoscience','ai','qaqc',...decisionModules.map(m=>m.id)]
+  const allowedPages:readonly Page[]=['legal-commercial','decision-center','admin-access','geologist','executive','operations','overview','map','targets','drillholes','subsurface','geoscience','ai','qaqc',...decisionModules.map(m=>m.id)]
   const pageFromUrl=useCallback(():Page=>{
     const slug=decodeURIComponent(window.location.pathname.split('/').filter(Boolean).join('/'))
     if(!slug||slug==='dashboard')return 'decision-center'
@@ -98,6 +100,7 @@ export default function App(){
       <DataScaleBadge targetId={decisionContext.targetId}/>
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}
+        {page==='legal-commercial'&&<LegalCommercialHub initialTargetId={decisionContext.targetId}/>}
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
         {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)} context={decisionContext} onContext={setDecisionContext}/>}
         {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
