@@ -1,3 +1,5 @@
+from .legal_contracts import contract_registry, contract_detail, contract_review
+from .commercial_partnership import commercial_comparison, scenario_history
 from .financial_sources import financial_sources, review_financial_source
 from .risk_sources import risk_sources, risk_source_review, risk_stress
 from .strategic_scenarios import strategic_scenario
@@ -23,6 +25,11 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path("targets/<str:target_id>/legal-contracts/",contract_registry,name="legal-contracts"),
+    path("targets/<str:target_id>/legal-contracts/<int:contract_id>/",contract_detail,name="legal-contract-detail"),
+    path("targets/<str:target_id>/legal-contracts/<int:contract_id>/review/",contract_review,name="legal-contract-review"),
+    path("targets/<str:target_id>/commercial-scenarios/",commercial_comparison,name="commercial-comparison"),
+    path("targets/<str:target_id>/commercial-scenarios/history/",scenario_history,name="commercial-history"),
     path("strategic-scenarios/fleet/",strategic_scenario,name="strategic-scenarios-fleet"),
     path("targets/<str:target_id>/financial-sources/",financial_sources,name="financial-sources"),
     path("targets/<str:target_id>/financial-sources/<int:snapshot_id>/review/",review_financial_source,name="financial-source-review"),
