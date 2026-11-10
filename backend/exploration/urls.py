@@ -1,5 +1,5 @@
 from .program_readiness import program_evidence_readiness
-from .engineering_evidence import engineering_evidence, review_engineering_evidence, program_targets, investment_readiness, budget_authorizations
+from .engineering_evidence import engineering_evidence, review_engineering_evidence, program_targets, investment_readiness, budget_authorizations, upload_engineering_export
 from .data_scale import data_scale_profile, verify_data_scale
 from django.urls import path
 from .reserve_reviews import reserve_review_comments
@@ -20,6 +20,7 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path("targets/<str:target_id>/engineering-evidence/upload/",upload_engineering_export,name="engineering-export-upload"),
     path("programs/<int:program_id>/evidence-readiness/",program_evidence_readiness,name="program-evidence-readiness"),
     path("programs/<int:program_id>/budget-authorizations/",budget_authorizations,name="budget-authorizations"),
     path("targets/<str:target_id>/data-scale/review/",verify_data_scale,name="verify-data-scale"),
