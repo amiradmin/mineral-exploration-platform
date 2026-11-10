@@ -1,3 +1,4 @@
+from .data_scale import data_scale_profile
 from django.urls import path
 from .reserve_reviews import reserve_review_comments
 from .reserve_sources import reserve_source_readiness
@@ -17,6 +18,7 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path("targets/<str:target_id>/data-scale/", data_scale_profile, name="data-scale-profile"),
     path("admin-access/users/", users, name="admin-access-users"),
     path("admin-access/users/<int:user_id>/", user_status, name="admin-access-user-status"),
     path("admin-access/users/<int:user_id>/memberships/", assign_membership, name="admin-access-membership-grant"),
