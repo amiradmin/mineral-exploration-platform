@@ -1,3 +1,4 @@
+from .executive_brief import executive_brief
 from .legal_contracts import contract_registry, contract_detail, contract_review
 from .commercial_partnership import commercial_comparison, scenario_history
 from .financial_sources import financial_sources, review_financial_source
@@ -25,6 +26,7 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path('targets/<str:target_id>/executive-brief/',executive_brief,name='executive-brief'),
     path("targets/<str:target_id>/legal-contracts/",contract_registry,name="legal-contracts"),
     path("targets/<str:target_id>/legal-contracts/<int:contract_id>/",contract_detail,name="legal-contract-detail"),
     path("targets/<str:target_id>/legal-contracts/<int:contract_id>/review/",contract_review,name="legal-contract-review"),
