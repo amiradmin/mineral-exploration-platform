@@ -148,6 +148,47 @@ class ExplorationApiTests(APITestCase):
         self.assertTrue(response.data["blockers"])
         self.assertEqual(self.client.post(url,{**payload,"category":"exploration"},format="json").status_code,201)
 
+    def test_program_readiness_lifecycle_and_role_separation(self):
+        program=OperationProgram.objects.get(name="Central Porphyry")
+        url=f"/api/programs/{program.pk}/evidence-readiness/"
+        self.client.force_authenticate(user=self.user)
+        response=self.client.post(url,{"action":"submit","detailed_exploration":True,
+            "rationale":"Core logging package delivered"},format="json")
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.data["data_status"],"unverified")
+        self.assertFalse(response.data["qaqc_approved"])
+        self.client.force_authenticate(user=self.approver)
+        response=self.client.post(url,{"action":"qaqc_approve","rationale":"Lab blanks and standards checked"},format="json")
+        self.assertEqual(response.status_code,403)
+        Group.objects.get_or_create(name="qaqc_reviewer")[0].user_set.add(self.approver)
+        self.assertEqual(self.client.post(url,{"action":"qaqc_approve",
+            "rationale":"Lab blanks and standards checked"},format="json").status_code,200)
+        self.assertEqual(self.client.post(url,{"action":"cp_approve",
+            "rationale":"Geological model checked"},format="json").status_code,403)
+        Group.objects.get_or_create(name="competent_person")[0].user_set.add(self.approver)
+        self.assertEqual(self.client.post(url,{"action":"cp_approve",
+            "rationale":"Geological model checked"},format="json").status_code,200)
+        self.client.force_authenticate(user=self.user)
+        result=self.client.post(url,{"action":"submit","detailed_exploration":False,
+            "rationale":"New drilling information received"},format="json")
+        self.assertEqual(result.status_code,200)
+        self.assertFalse(result.data["competent_person_approved"])
+
+    def test_engineering_csv_upload_requires_review(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from hashlib import sha256
+        data=b"analysis_date,model_version,static_fos\\n2026-10-01,v2,1.42\\n"
+        self.client.force_authenticate(user=self.user)
+        url="/api/targets/T-001/engineering-evidence/upload/"
+        response=self.client.post(url,{"source":"rocscience",
+            "file":SimpleUploadedFile("slope.csv",data,content_type="text/csv")},format="multipart")
+        self.assertEqual(response.status_code,201)
+        self.assertEqual(response.data["source_sha256"],sha256(data).hexdigest())
+        self.assertFalse(response.data["verified"])
+        bad=b"analysis_date,model_version,static_fos\\n2026-10-01,v2,-3\\n"
+        self.assertEqual(self.client.post(url,{"source":"rocscience",
+            "file":SimpleUploadedFile("invalid.csv",bad,content_type="text/csv")},format="multipart").status_code,400)
+
     def test_source_details_without_connection_is_not_reported_as_live(self):
         response = self.client.get("/api/source-details/T-001/gis/")
         self.assertEqual(response.status_code, 200)
