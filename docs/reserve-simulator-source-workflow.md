@@ -23,7 +23,7 @@ Requires authentication and active target-specific committee membership (or supe
 
 ## Gate interpretation
 
-The current block viewer is a **conceptual interactive SVG model**. Numeric P95/P50/P10 cards, DCI proxy and sensitivity plots are *illustrative only*. Their values do not derive from the source API, and they are **not** independently verified grade-tonnage quantiles, a calibrated confidence metric, classified mineral resources or ore reserves. UI checkboxes are local acknowledgements, not identity-bound or legally recognized signatures.
+The current block viewer is an **interactive 3D-projected SVG voxel model** with orbit rotation, zoom, x-axis clipping sections, drillhole traces, grade bins and voxel inspection; all geometry and grades are deterministic synthetic examples. It does not render imported vendor geometry or implement WebGL. Numeric P95/P50/P10 cards, DCI proxy and sensitivity plots are *illustrative only*. Their values do not derive from the source API, and they are **not** independently verified grade-tonnage quantiles, a calibrated confidence metric, classified mineral resources or ore reserves. UI checkboxes are local acknowledgements, not identity-bound or legally recognized signatures.
 
 The existing `Prepare Gate 3 Review` button submits the target-scoped comment through the authenticated, audited comments API and then enables the illustrative package export. It **does not** record a geological certification or a formal Gate 3 vote.
 
@@ -32,7 +32,7 @@ The existing `Prepare Gate 3 Review` button submits the target-scoped comment th
 1. Implement licensed vendor-specific file adapters and an approved normalized model schema with per-record provenance and checksums. Preserve source files under secure object storage.
 2. Validate drillhole interval integrity, survey coordinates, density, block coordinates, units, compositing and geostatistical QA/QC.
 3. Run uncertainty estimation using properly documented conditional simulation or equivalent statistical methodology. Record seeds, methodology, model versions and realizations.
-4. Render validated imported block geometries in a true 3D scene (e.g. Three.js/WebGL with clipping, picking and section planes), not synthetic colored blocks.
+4. Render validated imported block geometries in a scalable WebGL scene (e.g. Three.js/WebGL with clipping, picking and section planes), not synthetic colored blocks.
 5. Design and calibrate geological confidence measures with a CP/QP. Do not equate core RQD with resource confidence.
 6. Add backend-attested review decisions and approved gates; keep separate Mineral Resource and Ore Reserve classifications, including modifying-factor assessments.
 
