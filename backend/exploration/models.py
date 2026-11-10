@@ -462,3 +462,20 @@ class BudgetAuthorization(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at","-id"]
+
+
+class FinancialSourceSnapshot(models.Model):
+    """Versioned MineTrust LOM or ERP/EPC CAPEX evidence; never a live integration claim."""
+    id = models.BigAutoField(primary_key=True)
+    SOURCE_CHOICES = [("minetrust","Datamine MineTrust LOM"),("erp_epc","ERP / EPC Ledger")]
+    target = models.ForeignKey(Target,on_delete=models.PROTECT,related_name="financial_sources")
+    source = models.CharField(max_length=20,choices=SOURCE_CHOICES)
+    source_filename = models.CharField(max_length=240)
+    source_sha256 = models.CharField(max_length=64)
+    model_version = models.CharField(max_length=100)
+    rows = models.JSONField(default=list)
+    reviewed_by = models.ForeignKey("auth.User",null=True,blank=True,on_delete=models.PROTECT,related_name="reviewed_financial_sources")
+    reviewed_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at","-id"]
