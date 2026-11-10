@@ -23,7 +23,7 @@ export default function EngineeringEvidencePanel({targetId}:{targetId:string}){
  const [reload,setReload]=useState(0)
  const [reviewId,setReviewId]=useState<number|null>(null)
  const [rationale,setRationale]=useState('')
- const [scope,setScope]=useState('')
+ const [upload,setUpload]=useState<File|null>(null)
  const canEdit=Boolean(user?.is_superuser||user?.memberships?.some(m=>m.role==='data_steward'))
  const canReview=Boolean(user?.is_superuser||user?.memberships?.some(m=>m.role==='competent_person'))
  const load=useCallback(async()=>{
@@ -42,13 +42,15 @@ export default function EngineeringEvidencePanel({targetId}:{targetId:string}){
   if(!response.ok)throw Error(JSON.stringify(body))
   setFilename('');setHash('');setValues({});setReload(x=>x+1)
  }catch(e){setError(String(e))}}
+ const uploadExport=async()=>{if(!upload)return;try{setError('');const form=new FormData();form.append('source',source);form.append('file',upload);const r=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/engineering-evidence/upload/',{method:'POST',body:form});const body=await r.json();if(!r.ok)throw Error(body.detail||JSON.stringify(body));setUpload(null);setReload(x=>x+1)}catch(e){setError(String(e))}}
  const review=async(decision:'approve'|'reject')=>{if(!reviewId)return;try{setError('');const r=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/engineering-evidence/'+reviewId+'/review/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision,rationale})});const b=await r.json();if(!r.ok)throw Error(JSON.stringify(b));setReviewId(null);setRationale('');setReload(x=>x+1)}catch(e){setError(String(e))}}
  return <section className="eng-panel">
   <div className="eng-head"><div><h2>Engineering Evidence &amp; Mine Design Inputs</h2><p>Gate 3 · registered file extracts; no live vendor synchronization</p></div><span className={data?.policy.eligible?'eng-ok':'eng-hold'}>{data?.policy.eligible?'Engineering evidence reviewed':'Investment inputs restricted'}</span></div>
   <div className="eng-sources">{(Object.keys(specs) as Source[]).map(key=><article key={key}><strong>{specs[key].label}</strong><span>{data?.policy.sources[key]?.status||'Not loaded'}</span><small>{specs[key].formats}</small><dl>{Object.entries(data?.policy.sources[key]?.metrics||{}).map(([k,v])=><div key={k}><dt>{k.replaceAll('_',' ')}</dt><dd>{v.toLocaleString()}</dd></div>)}</dl></article>)}</div>
   <p className="eng-notice">Stripping ratio, LOM feed and static slope FOS require verified source provenance. A static FOS is not a universal pass/fail threshold: design criteria are site-specific.</p>
   {error&&<p className="eng-error" role="alert">{error}</p>}
-  {canEdit&&<details className="eng-entry"><summary>Register engineering export / extracted result</summary><p>Provide the SHA-256 fingerprint of the actual source file. DXF geometry is not parsed here; numeric results must be extracted and reviewed separately.</p>
+  {canEdit&&<details className="eng-entry"><summary>Import engineering evidence (CSV / JSON / XML)</summary><p>Upload a flat summary export with fields analysis_date, model_version and source-specific metrics. The server validates and hashes it. Native DXF geometry and proprietary mine-model files require a dedicated parser and are not accepted.</p><div className="eng-upload"><label>Software<select value={source} onChange={e=>{setSource(e.target.value as Source);setValues({})}}>{(Object.keys(specs) as Source[]).map(k=><option key={k} value={k}>{specs[k].label}</option>)}</select></label><label>Summary export<input type="file" accept=".csv,.json,.xml" onChange={e=>setUpload(e.target.files?.[0]??null)}/></label><button type="button" disabled={!upload} onClick={()=>void uploadExport()}>Upload and register for review</button></div></details>}
+  {canEdit&&<details className="eng-entry"><summary>Enter engineering metrics manually</summary><p>Use a SHA-256 fingerprint of the source document; values are pending review until independently approved.</p>
    <div className="eng-fields">
     <label>Software<select value={source} onChange={e=>{setSource(e.target.value as Source);setValues({})}}>{(Object.keys(specs) as Source[]).map(k=><option key={k} value={k}>{specs[k].label}</option>)}</select></label>
     <label>Export type<select value={format} onChange={e=>setFormat(e.target.value)}>{['csv','dxf','xml','json','report'].map(f=><option key={f} value={f}>{f.toUpperCase()}</option>)}</select></label>
