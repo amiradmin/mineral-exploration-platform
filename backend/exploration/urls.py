@@ -1,3 +1,4 @@
+from .engineering_evidence import engineering_evidence, review_engineering_evidence, program_targets, investment_readiness
 from .data_scale import data_scale_profile
 from django.urls import path
 from .reserve_reviews import reserve_review_comments
@@ -18,6 +19,10 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path("targets/<str:target_id>/engineering-evidence/", engineering_evidence, name="engineering-evidence"),
+    path("targets/<str:target_id>/engineering-evidence/<int:evidence_id>/review/", review_engineering_evidence, name="engineering-evidence-review"),
+    path("programs/<int:program_id>/target-scope/", program_targets, name="program-target-scope"),
+    path("programs/<int:program_id>/investment-readiness/", investment_readiness, name="investment-readiness"),
     path("targets/<str:target_id>/data-scale/", data_scale_profile, name="data-scale-profile"),
     path("admin-access/users/", users, name="admin-access-users"),
     path("admin-access/users/<int:user_id>/", user_status, name="admin-access-user-status"),
