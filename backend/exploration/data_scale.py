@@ -45,7 +45,23 @@ def data_scale_profile(request,target_id):
         serializer.is_valid(raise_exception=True)
         from django.db import transaction
         with transaction.atomic():
-            profile,_=DataScaleProfile.objects.update_or_create(target=target,defaults=serializer.validated_data)
+            profile,_=DataScaleProfile.objects.update_or_create(target=target,defaults={**serializer.validated_data,"verified":False})
             AuditEvent.objects.create(actor=user,action="data_scale_updated",entity_type="DataScaleProfile",entity_id=target_id,details={"phase":profile.phase,"verified":profile.verified})
     values={key:getattr(profile,key) for key in ["phase","map_scale_denominator","sample_count","lab_method","drillhole_count","ddh_metres","rc_metres","grid_spacing_x","grid_spacing_y","core_recovery_pct","rqd_pct","verified"]} if profile else None
     return Response({"target_id":target_id,"profile":values,"policy":evaluate(profile)})
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def verify_data_scale(request,target_id):
+    from .engineering_evidence import is_reviewer
+    if not is_reviewer(request.user):
+        return Response({"detail":"Competent person permission required"},status=403)
+    profile=get_object_or_404(DataScaleProfile,target_id=target_id)
+    if request.data.get("decision") not in ("approve","reject") or not str(request.data.get("rationale","")).strip():
+        return Response({"detail":"Decision and rationale required"},status=400)
+    from django.db import transaction
+    with transaction.atomic():
+        profile.verified=request.data["decision"]=="approve"
+        profile.save(update_fields=["verified","updated_at"])
+        AuditEvent.objects.create(actor=request.user,action="data_scale_review",entity_type="DataScaleProfile",entity_id=target_id,details={"decision":request.data["decision"],"rationale":request.data["rationale"]})
+    return Response({"target_id":target_id,"policy":evaluate(profile)})
