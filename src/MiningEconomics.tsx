@@ -105,8 +105,8 @@ export default function MiningEconomics({context,onContext,onNavigate}:{context:
  const eligible=engineer&&metallurgist&&simulated
  return <div className="me-gate">
   <div className="me-ribbon"><T>Module 3: Mining Economics Engine (Gate 3: Pre-Feasibility Screening)</T></div>
-  <div className="me-topline"><label><T>Target:</T> <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setEngineer(false);setMetallurgist(false);setSimulated(false)}}>{targets.map(t=><option value={t.id} key={t.id}>{t.id} {t.name}</option>)}</select></label><div className="me-status"><CheckCircle2 size={18}/> GATE 3: {eligible?'READY FOR REVIEW':'REVIEW REQUIRED'}</div></div>
-  <div className="me-connections"><span><Activity size={16}/> ALASTRI EXPORT REGISTRY</span><span>♧ DATAMINE SOURCE REGISTRY</span><span>⚙ ENGINEERING EVIDENCE: <b>REVIEW REQUIRED</b><i/></span></div>
+  <div className="me-topline"><label><T>Target:</T> <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setEngineer(false);setMetallurgist(false);setSimulated(false)}}>{targets.map(t=><option value={t.id} key={t.id}>{t.id} {t.name}</option>)}</select></label><div className="me-status"><CheckCircle2 size={18}/> GATE 3: {eligible?'SCENARIO CHECKLIST COMPLETE':'SCENARIO REVIEW REQUIRED'}</div></div>
+  <div className="me-connections"><span><Activity size={16}/> ALASTRI EXPORT REGISTRY</span><span>♧ DATAMINE SOURCE REGISTRY</span><span>⚙ ENGINEERING EVIDENCE: <b>SEE SOURCE REGISTRY</b><i/></span></div>
   <EngineeringEvidencePanel targetId={target.id}/>
   <ProgramInvestmentPanel targetId={target.id}/>
   <div className="me-workspace">
