@@ -10,6 +10,7 @@ import MiningEconomics from './MiningEconomics'
 import RiskScenario from './RiskScenario'
 import FinancialValuator from './FinancialValuator'
 import ESGGovernance from './ESGGovernance'
+import ExecutiveDecisionDashboard from './ExecutiveDecisionDashboard'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -45,6 +46,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  </button>}
  return <div className="sg-wrap sg-reference">
    <div className="sg-heading"><div><span className="sg-eyebrow"><T>EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</T></span><h1><T>Stage-Gate Decision Center</T></h1><p><T>From raw geological evidence to boardroom-ready financial scenarios.</T></p></div></div>
+   <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
    <section className="sg-architecture" aria-label="Four stage gates, six analytical modules and legal commercial governance">
     <div className="sg-art-title"><h2><T>4 Gates · 6 Analytical Modules · Module 7 Governance</T></h2><p><T>Transforming raw geological inputs into boardroom computational outputs.</T></p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
