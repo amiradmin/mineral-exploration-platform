@@ -14,6 +14,7 @@ import DataScaleBadge from './DataScaleBadge'
 import UserAccessManagement from './UserAccessManagement'
 import LegalCommercialHub from './LegalCommercialHub'
 import ModuleLineageHub from './ModuleLineageHub'
+import ProjectStrategicFlags from './ProjectStrategicFlags'
 import {moduleArchitecture,type ModuleKey} from './moduleArchitecture'
 import Operations from './Operations'
 import RoleDashboard from './RoleDashboard'
@@ -110,10 +111,11 @@ export default function App(){
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
       <DataScaleBadge targetId={decisionContext.targetId}/>
+      {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ProjectStrategicFlags targetId={decisionContext.targetId} onOpenCommittee={()=>setPage('exploration-evaluator')}/>}
       {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ModuleLineageHub module={page as ModuleKey} targetId={decisionContext.targetId}/>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}
-        {page==='legal-commercial'&&<LegalCommercialHub initialTargetId={decisionContext.targetId}/>}
+        {page==='legal-commercial'&&<LegalCommercialHub initialTargetId={decisionContext.targetId} onTargetChange={id=>setDecisionContext(c=>({...c,targetId:id}))}/>}
         {page==='decision-center'&&<StageGateDashboard onOpen={setPage} context={decisionContext} onContext={setDecisionContext}/>}
         {decisionModules.some(m=>m.id===page)&&<DecisionModulePage id={page as DecisionModuleId} onBack={()=>setPage('decision-center')} onNavigate={p=>setPage(p as Page)} context={decisionContext} onContext={setDecisionContext}/>}
         {page==='geologist'&&<RoleDashboard role="geologist" onTarget={t=>{setSelected(t);setPage('targets')}} onNavigate={setPage}/>}
