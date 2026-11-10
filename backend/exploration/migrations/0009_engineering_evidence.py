@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             ("source",models.CharField(max_length=24,choices=[("alastri","Alastri / Beyond"),("datamine","Datamine Strategic Planners"),("rocscience","Rocscience Slide2 / Slide3")])),
             ("source_filename",models.CharField(max_length=240)),
             ("source_format",models.CharField(max_length=16,choices=[("csv","CSV"),("dxf","DXF"),("xml","XML"),("json","JSON"),("report","Report")])),
-            ("source_sha256",models.CharField(max_length=64)),
+            ("source_sha256",models.CharField(max_length=64,help_text="SHA-256 fingerprint of the originating file")),
             ("analysis_date",models.DateField()),
             ("model_version",models.CharField(max_length=100)),
             ("metrics",models.JSONField(default=dict)),
