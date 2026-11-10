@@ -6,11 +6,11 @@ type Result={id:string;name:string;initial_capex:number;lom_net_capex:number;mai
 type Output={policy_version:string;calculation_mode:string;source_mode?:string;source_refs?:Record<string,{snapshot_id:number;sha256:string}>;verified_project_economics:boolean;translator:{intent:string;confidence:string;changes:Record<string,number|boolean>;warnings:string[]};assumptions:Record<string,number>;results:Result[];best_npv:string;fastest_payback:string|null;npv_spread:number;recommendation:string;disclaimer:string}
 const cash=(x:number)=> (x<0?'−':'')+'$'+Math.abs(x).toLocaleString('en-US',{maximumFractionDigits:2})+'M'
 const example='Compare used premium mining equipment with a new Caterpillar fleet and new economy machines replaced every 2 years. Mine life 11 years, discount rate 10%.'
-const fields=[['mine_life','Mine life (years)',3,30,1],['discount_rate','Discount rate (%)',0,40,.5],['annual_contribution','Annual operating contribution ($M/year)',0,10000,1],['revenue_at_risk','Annual revenue at risk ($M/year)',0,10000,1],['tax_rate','Effective tax rate (%)',0,60,1]] as const
+const fields=[['mine_life','Mine life (years)',3,30,1],['discount_rate','Discount rate (%)',0,40,.5],['annual_contribution','Annual operating contribution ($M/year)',0,10000,1],['revenue_at_risk','Annual revenue at risk ($M/year)',0,10000,1],['tax_rate','Effective tax rate (%)',0,60,1],['commodity_price_usd_per_t','Copper price ($/t metal)',0,1000000,50],['metal_recovery_pct','Metal recovery (%)',0,100,1],['cost_per_ore_t_usd','Ore operating cost ($/t)',0,1000000,1]] as const
 export default function StrategicScenarioCopilot({targetId}:{targetId:string}){
  const {apiFetch}=useAuth()
  const [prompt,setPrompt]=useState(example)
- const [assumptions,setAssumptions]=useState<Record<string,number>>({mine_life:11,discount_rate:10,annual_contribution:60,revenue_at_risk:40,tax_rate:25})
+ const [assumptions,setAssumptions]=useState<Record<string,number>>({mine_life:11,discount_rate:10,annual_contribution:60,revenue_at_risk:40,tax_rate:25,commodity_price_usd_per_t:9200,metal_recovery_pct:87,cost_per_ore_t_usd:55})
  const [useReviewed,setUseReviewed]=useState(false)
  const [output,setOutput]=useState<Output|null>(null)
  const [error,setError]=useState('')
