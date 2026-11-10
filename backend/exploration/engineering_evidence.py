@@ -114,3 +114,28 @@ def investment_readiness(request,program_id):
     from .governance import fid_blockers
     targets=Target.objects.filter(program_links__program=program).distinct()
     return Response({"program_id":program_id,"fid_allowed":not fid_blockers(program),"blockers":fid_blockers(program),"targets":[{"id":t.pk,"sample_support":evaluate(getattr(t,"data_scale",None)),"engineering":engineering_policy(t)} for t in targets]})
+
+@api_view(["GET","POST"])
+@permission_classes([IsAuthenticated])
+def budget_authorizations(request,program_id):
+    from decimal import Decimal
+    from .models import BudgetAuthorization
+    from .governance import fid_blockers
+    program=get_object_or_404(OperationProgram,pk=program_id)
+    if request.method=="GET":
+        return Response({"program_id":program_id,"fid_blockers":fid_blockers(program),"records":[{"id":r.pk,"category":r.category,"amount_usd":str(r.amount_usd),"created_at":r.created_at} for r in BudgetAuthorization.objects.filter(program=program)[:50]]})
+    user=request.user
+    if not (user.is_superuser or user.groups.filter(name="board_approver").exists()):
+        return Response({"detail":"Board approver permission required"},status=403)
+    class BudgetPayload(serializers.Serializer):
+        category=serializers.ChoiceField(choices=["exploration","construction"])
+        amount_usd=serializers.DecimalField(max_digits=18,decimal_places=2,min_value=Decimal("0.01"))
+        rationale=serializers.CharField(min_length=12,max_length=4000)
+    payload=BudgetPayload(data=request.data)
+    payload.is_valid(raise_exception=True)
+    blockers=fid_blockers(program) if payload.validated_data["category"]=="construction" else []
+    if blockers: return Response({"detail":"Construction CAPEX authorization blocked by evidence gates","blockers":blockers},status=409)
+    with transaction.atomic():
+        record=BudgetAuthorization.objects.create(program=program,approver=user,**payload.validated_data)
+        AuditEvent.objects.create(actor=user,action="budget_authorization",entity_type="BudgetAuthorization",entity_id=str(record.pk),details={"program_id":program.pk,"category":record.category,"amount_usd":str(record.amount_usd)})
+    return Response({"id":record.pk,"category":record.category,"amount_usd":str(record.amount_usd)},status=201)
