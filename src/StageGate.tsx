@@ -33,7 +33,7 @@ function ModuleArtwork({id}:{id:DecisionModuleId}){
   {id==='esg-governance'&&<g {...shared}><circle cx="40" cy="37" r="30" stroke="url(#sg-copper)" strokeWidth="4"/><ellipse cx="40" cy="37" rx="14" ry="30" stroke="url(#sg-copper)" strokeWidth="3"/><path d="M10 37h60M17 19h46M17 55h46M40 7v60" stroke="url(#sg-copper)" strokeWidth="2"/><path d="M46 65Q46 42 82 35Q83 69 58 70Q51 70 46 65Z" fill="#bc9c6c" stroke="#604c35" strokeWidth="2"/><path d="M50 68l24-25M61 56l-1-12M61 56l12 3" stroke="#3b624f" strokeWidth="2"/></g>}
  </svg>
 }
-export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:DecisionModuleId)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
+export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:DecisionModuleId|'legal-commercial')=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
  const {t}=useI18n()
  const snapshot=createDecisionSnapshot(context)
  const upper=decisionModules.slice(0,3)
@@ -45,8 +45,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  </button>}
  return <div className="sg-wrap sg-reference">
    <div className="sg-heading"><div><span className="sg-eyebrow"><T>EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</T></span><h1><T>Stage-Gate Decision Center</T></h1><p><T>From raw geological evidence to boardroom-ready financial scenarios.</T></p></div></div>
-   <section className="sg-architecture" aria-label="Six module stage-gate decision architecture">
-    <div className="sg-art-title"><h2><T>The 6-Module Stage-Gate Decision Architecture</T></h2><p><T>Transforming raw geological inputs into boardroom computational outputs.</T></p></div>
+   <section className="sg-architecture" aria-label="Four stage gates, six analytical modules and legal commercial governance">
+    <div className="sg-art-title"><h2><T>4 Gates · 6 Analytical Modules · Module 7 Governance</T></h2><p><T>Transforming raw geological inputs into boardroom computational outputs.</T></p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
     <div className="sg-art-flow">
       <div className="sg-art-raw"><span><T>Raw</T><br/><T>Geological</T><br/><T>Inputs</T></span></div>
@@ -61,15 +61,29 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
       <div className="sg-art-result"><span><T>Financial</T><br/><T>Value</T></span></div>
     </div>
     <div className="sg-art-bottom">{lower.map(card)}</div>
-    <p className="sg-art-hint"><T>Select a module to open its decision workspace. ESG and governance span all four gates.</T></p>
+    <p className="sg-art-hint"><T>Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.</T></p>
    </section>
-   <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared inputs across all six modules</T></span></div>
+   <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared target and scenario across six analytical modules</T></span></div>
    <div className="sg-summary">
-      <div><span><T>Decision modules</T></span><strong>06</strong><small><T>Connected workspaces</T></small></div>
+      <div><span><T>Decision modules</T></span><strong>06 + 01</strong><small>Six analytical modules + Legal Hub</small></div>
       <div><span><T>Stage gates</T></span><strong>04</strong><small><T>Screening to feasibility</T></small></div>
       <div><span><T>Portfolio targets</T></span><strong>24</strong><small><T>Target records</T></small></div>
       <div><span><T>Governance scope</T></span><strong><T>All gates</T></strong><small><T>Continuous oversight</T></small></div>
    </div>
+   <section className="sg-strategy-upgrades" aria-label="Five platform-wide strategic capabilities">
+      <div><strong>Five strategic governance upgrades</strong><small>Shared capabilities extend the existing stage-gate analysis; they are not extra investment gates.</small></div>
+      <div className="sg-upgrade-grid">
+       <button onClick={()=>onOpen('exploration-evaluator')}><b>01 · Data lineage</b><span>Expand the per-module ingestion console; source, protocol, timestamp and destination factor</span></button>
+       <button onClick={()=>onOpen('exploration-evaluator')}><b>02 · Expert committee</b><span>Evidence-backed overrides, strategic flags and formal committee memos</span></button>
+       <button onClick={()=>onOpen('reserve-simulator')}><b>03 · Data scale support</b><span>Sampling density, drill quality and FID protection across modules</span></button>
+       <button onClick={()=>onOpen('financial-valuator')}><b>04 · Strategic co-pilot</b><span>Natural-language fleet scenarios with deterministic Python DCF</span></button>
+       <button onClick={()=>onOpen('legal-commercial')}><b>05 · Legal & commercial</b><span>Contract clause screening and investment partnership optimization</span></button>
+      </div>
+   </section>
+   <section className="sg-extension">
+      <div><small>CROSS-GATE GOVERNANCE · MODULE 7</small><h2>Legal &amp; Commercial AI Hub</h2><p>Audit mining contracts and compare royalty structures with reviewed MineTrust and ERP/EPC inputs. Contract review does not replace legal counsel.</p></div>
+      <button type="button" onClick={()=>onOpen('legal-commercial')}>Open Module 7 <ArrowRight size={17}/></button>
+   </section>
    <div className="sg-section-title sg-modules-heading"><h2><T>Module quick access</T></h2><p><T>Detailed indicators and links to existing geoscience workspaces.</T></p></div>
    <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{t(m.gate)}</span></div><h3>{t(m.name)}</h3><p>{t(m.summary)}</p><div className="sg-mini-stats">{<><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.value}</strong><small>{t(snapshot.records.find(r=>r.stage===m.id)?.label??'')}</small></span><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.verdict}</strong><small><T>Gate signal</T></small></span></>}</div><span className="sg-open"><T>Open decision workspace</T> <ArrowRight size={15}/></span></button>})}</div>
 
