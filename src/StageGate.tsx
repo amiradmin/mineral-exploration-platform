@@ -11,6 +11,7 @@ import RiskScenario from './RiskScenario'
 import FinancialValuator from './FinancialValuator'
 import ESGGovernance from './ESGGovernance'
 import ExecutiveDecisionDashboard from './ExecutiveDecisionDashboard'
+import DataScaleBadge from './DataScaleBadge'
 
 export type DecisionModuleId = 'exploration-evaluator' | 'reserve-simulator' | 'economics-engine' | 'risk-scenarios' | 'financial-valuator' | 'esg-governance'
 export const decisionModules = [
@@ -64,6 +65,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
     <div className="sg-art-bottom">{lower.map(card)}</div>
     <p className="sg-art-hint"><T>Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.</T></p>
    </section>
+   <DataScaleBadge targetId={context.targetId}/>
    <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
    <div className="sg-technical-reference" aria-label="Interactive stage-gate architecture and module map">
    <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared target and scenario across six analytical modules</T></span></div>
