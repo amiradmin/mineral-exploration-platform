@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react'
 import {useAuth} from './auth'
 import './ProgramReadinessChecklist.css'
-type Record={exists:boolean;data_status:string;detailed_exploration:boolean;qaqc_approved:boolean;competent_person_approved:boolean}
+type ReadinessRecord={exists:boolean;data_status:string;detailed_exploration:boolean;qaqc_approved:boolean;competent_person_approved:boolean}
 const names:Record<string,string>={
  evidence_snapshot_missing:'Create the program evidence-readiness record',
  evidence_unverified:'Complete QA/QC and competent-person verification',
@@ -27,7 +27,7 @@ export const explainBlocker=(value:string)=>{
 }
 export default function ProgramReadinessChecklist({programId,blockers,onUpdated}:{programId:string;blockers:string[];onUpdated:()=>void}){
  const {apiFetch,user}=useAuth()
- const [record,setRecord]=useState<Record|null>(null)
+ const [record,setRecord]=useState<ReadinessRecord|null>(null)
  const [error,setError]=useState('')
  const [rationale,setRationale]=useState('')
  const [detailed,setDetailed]=useState(false)
