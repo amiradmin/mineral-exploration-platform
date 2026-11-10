@@ -6,6 +6,7 @@ import './ModuleLineageHub.css'
 type RowState={status:string;protocol?:string;observed?:string|null;received?:string|null;reference?:string;detail?:string}
 type SourceDetail={status?:string;protocol?:string;is_demo?:boolean;latest?:{observed_at?:string;received_at?:string;dataset?:string}|null}
 const unavailable:RowState={status:'Not configured'}
+const planned:RowState={status:'Planned — no importer'}
 const nice=(value?:string|null)=>value?new Date(value).toLocaleString():'—'
 const stateFromReview=(status?:string,record?:{id?:number;created_at?:string;source_filename?:string}):RowState=>({
  status:status==='reviewed'||status==='verified'?'Reviewed evidence':status==='pending_review'||status==='missing_or_pending'?'Pending / unavailable':'Not configured',
@@ -66,13 +67,14 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
    }
    if(module==='reserve-simulator'){
     const data=await request(root+'/reserve-sources/')
-    return Object.fromEntries((data.sources||[]).map((row:{key:string;is_demo:boolean;status:string;protocol:string|null;snapshot:{observed_at:string;received_at:string;dataset:string}|null})=>[
+    return {'leapfrog-geo':planned,...Object.fromEntries((data.sources||[]).map((row:{key:string;is_demo:boolean;status:string;protocol:string|null;snapshot:{observed_at:string;received_at:string;dataset:string}|null})=>[
      row.key,{status:row.is_demo?'Simulated source':row.snapshot?'Recorded snapshot':row.status==='not_configured'?'Not configured':'Configured / no data',
-       protocol:row.protocol,observed:row.snapshot?.observed_at,received:row.snapshot?.received_at,detail:row.snapshot?.dataset}]))
+       protocol:row.protocol,observed:row.snapshot?.observed_at,received:row.snapshot?.received_at,detail:row.snapshot?.dataset}]))}
    }
    if(module==='economics-engine'){
     const data=await request(root+'/engineering-evidence/')
     const states=mapRecords(Object.fromEntries(Object.entries(data.policy?.sources||{}).map(([key,value])=>[key,{status:(value as {status?:string}).status,snapshot_id:(value as {evidence_id?:number}).evidence_id}])),data.records||[])
+    states.rs2=planned
     return states
    }
    if(module==='risk-scenarios'||module==='financial-valuator'){
@@ -90,7 +92,7 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
     }else result.contracts={status:'Unavailable / restricted'}
     return result
    }
-   return {} // ESG vendor connectors: planned, do not invent records or timestamps.
+   return Object.fromEntries(architecture.sources.map(source=>[source.key,planned])) // ESG connectors are not implemented.
   }
   void resolve().then(value=>{if(alive)setRows(value)}).catch(e=>{if(alive){setRows({});setError(e instanceof Error?e.message:String(e))}}).finally(()=>{if(alive)setLoading(false)})
   return()=>{alive=false}
