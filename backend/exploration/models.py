@@ -496,3 +496,36 @@ class RiskSourceSnapshot(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at","-id"]
+
+
+class LegalContract(models.Model):
+    """Contract text and risk findings: confidential, target-scoped and unaudited until reviewed."""
+    id = models.BigAutoField(primary_key=True)
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="legal_contracts")
+    filename = models.CharField(max_length=240)
+    sha256 = models.CharField(max_length=64)
+    extracted_text = models.TextField(help_text="Text extraction only; image-only PDFs require external OCR.")
+    findings = models.JSONField(default=list)
+    clauses_checked = models.JSONField(default=list)
+    status = models.CharField(max_length=16, choices=[("draft","Draft"),("reviewed","Reviewed")],default="draft")
+    created_by = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="uploaded_legal_contracts")
+    reviewed_by = models.ForeignKey("auth.User",null=True,blank=True,on_delete=models.PROTECT,related_name="reviewed_legal_contracts")
+    reviewed_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at","-id"]
+
+
+class CommercialScenarioRun(models.Model):
+    """Immutable snapshots of non-authorizing partnership model comparisons."""
+    id = models.BigAutoField(primary_key=True)
+    target = models.ForeignKey(Target,on_delete=models.PROTECT,related_name="commercial_scenarios")
+    created_by = models.ForeignKey("auth.User",on_delete=models.PROTECT)
+    assumptions = models.JSONField(default=dict)
+    source_refs = models.JSONField(default=dict)
+    result = models.JSONField(default=dict)
+    is_illustrative = models.BooleanField(default=True)
+    model_version = models.CharField(max_length=48,default="partnership-dcf-v1")
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at","-id"]
