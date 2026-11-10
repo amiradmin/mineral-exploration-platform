@@ -5,6 +5,7 @@ import {Line, LineChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tool
 import {targets} from './mockData'
 import type {DecisionContext,Scenario} from './decisionPipeline'
 import './MiningEconomics.css'
+import EngineeringEvidencePanel from './EngineeringEvidencePanel'
 
 type Assumptions={cost:number;recovery:number;price:number;mining:number;strip:number;capex:number;annualOre:number}
 const initial:Assumptions={cost:41,recovery:87,price:9200,mining:2.5,strip:2.8,capex:450,annualOre:4}
@@ -104,7 +105,8 @@ export default function MiningEconomics({context,onContext,onNavigate}:{context:
  return <div className="me-gate">
   <div className="me-ribbon"><T>Module 3: Mining Economics Engine (Gate 3: Pre-Feasibility Screening)</T></div>
   <div className="me-topline"><label><T>Target:</T> <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setEngineer(false);setMetallurgist(false);setSimulated(false)}}>{targets.map(t=><option value={t.id} key={t.id}>{t.id} {t.name}</option>)}</select></label><div className="me-status"><CheckCircle2 size={18}/> GATE 3: {eligible?'READY FOR REVIEW':'REVIEW REQUIRED'}</div></div>
-  <div className="me-connections"><span><Activity size={16}/> MICROMINE ALASTRI</span><span>♧ DATAMINE STRATEGIC PLANNERS</span><span>⚙ GEOMETALLURGY QA/QC: <b>89% DCI</b><i/></span></div>
+  <div className="me-connections"><span><Activity size={16}/> ALASTRI EXPORT REGISTRY</span><span>♧ DATAMINE SOURCE REGISTRY</span><span>⚙ ENGINEERING EVIDENCE: <b>REVIEW REQUIRED</b><i/></span></div>
+  <EngineeringEvidencePanel targetId={target.id}/>
   <div className="me-workspace">
    <section className="me-section me-parameters">
     <h2><T>ECONOMIC INPUT PARAMETERS &amp; SLIDERS</T></h2>
