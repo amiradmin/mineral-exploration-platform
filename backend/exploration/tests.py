@@ -136,6 +136,18 @@ class ExplorationApiTests(APITestCase):
         self.assertEqual(response.status_code,200)
         self.assertTrue(DataScaleProfile.objects.get(target=target).verified)
 
+    def test_construction_budget_is_blocked_without_fid_support(self):
+        program=OperationProgram.objects.get(name="Central Porphyry")
+        url=f"/api/programs/{program.pk}/budget-authorizations/"
+        payload={"category":"construction","amount_usd":"1000000.00","rationale":"Initial mine development package"}
+        self.client.force_authenticate(user=self.user)
+        self.assertEqual(self.client.post(url,payload,format="json").status_code,403)
+        self.client.force_authenticate(user=self.approver)
+        response=self.client.post(url,payload,format="json")
+        self.assertEqual(response.status_code,409)
+        self.assertTrue(response.data["blockers"])
+        self.assertEqual(self.client.post(url,{**payload,"category":"exploration"},format="json").status_code,201)
+
     def test_source_details_without_connection_is_not_reported_as_live(self):
         response = self.client.get("/api/source-details/T-001/gis/")
         self.assertEqual(response.status_code, 200)
