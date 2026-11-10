@@ -452,6 +452,7 @@ class EngineeringEvidence(models.Model):
 
 class BudgetAuthorization(models.Model):
     """Immutable authorization record; construction spending requires FID evidence."""
+    id = models.BigAutoField(primary_key=True)
     CATEGORIES = [("exploration","Exploration / infill drilling"),("construction","Construction / development CAPEX")]
     program = models.ForeignKey(OperationProgram,on_delete=models.PROTECT,related_name="budget_authorizations")
     category = models.CharField(max_length=20,choices=CATEGORIES)
