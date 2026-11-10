@@ -38,9 +38,6 @@ def fid_blockers(program):
         blockers.append("qaqc_approval_required")
     if not record.competent_person_approved:
         blockers.append("competent_person_approval_required")
-    from .data_scale import evaluate
-    from .models import DataScaleProfile
-    profiles = DataScaleProfile.objects.filter(target__isnull=False)
     # Program-level FID requires a documented target-to-program association.
     # Until that association exists, no data-scale approval can be inferred.
     blockers.append("program_target_data_scale_link_missing")
