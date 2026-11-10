@@ -401,3 +401,21 @@ class ReserveReviewComment(models.Model):
 
     class Meta:
         ordering = ["created_at", "id"]
+
+
+class DataScaleProfile(models.Model):
+    """Per-target data support attestation; unverified by default."""
+    target = models.OneToOneField(Target, on_delete=models.CASCADE, primary_key=True, related_name="data_scale")
+    phase = models.CharField(max_length=20, choices=[("reconnaissance", "Reconnaissance"), ("general", "General"), ("detailed", "Detailed")])
+    map_scale_denominator = models.PositiveIntegerField()
+    sample_count = models.PositiveIntegerField(default=0)
+    lab_method = models.CharField(max_length=160, blank=True)
+    drillhole_count = models.PositiveIntegerField(default=0)
+    ddh_metres = models.FloatField(default=0)
+    rc_metres = models.FloatField(default=0)
+    grid_spacing_x = models.FloatField(null=True, blank=True)
+    grid_spacing_y = models.FloatField(null=True, blank=True)
+    core_recovery_pct = models.FloatField(null=True, blank=True)
+    rqd_pct = models.FloatField(null=True, blank=True)
+    verified = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
