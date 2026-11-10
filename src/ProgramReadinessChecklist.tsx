@@ -4,6 +4,7 @@ import './ProgramReadinessChecklist.css'
 type ReadinessRecord={exists:boolean;data_status:string;detailed_exploration:boolean;qaqc_approved:boolean;competent_person_approved:boolean}
 const names:Record<string,string>={
  evidence_snapshot_missing:'Create the program evidence-readiness record',
+ legal_contract_pending_review:'Obtain documented legal counsel review of the latest participation contract',
  evidence_unverified:'Complete QA/QC and competent-person verification',
  detailed_exploration_required:'Record completed detailed exploration',
  qaqc_approval_required:'Obtain QA/QC reviewer approval',
