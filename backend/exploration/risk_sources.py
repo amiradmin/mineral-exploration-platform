@@ -132,7 +132,9 @@ def risk_stress(request,target_id):
         iterations=int(request.data.get("iterations",2000))
         annual_ore_million=float(request.data.get("annual_ore_million",4))
         unit_opex=float(request.data.get("unit_opex",52))
-        if not 3<=mine_life<=30 or not 100<=iterations<=10000 or not 0<annual_ore_million<=100 or not 0<=unit_opex<=1e5:
+        grade_pct=float(request.data.get("grade_pct",0.84))
+        recovery_pct=float(request.data.get("recovery_pct",87))
+        if not 3<=mine_life<=30 or not 100<=iterations<=10000 or not 0<annual_ore_million<=100 or not 0<=unit_opex<=1e5 or not 0<grade_pct<=100 or not 0<recovery_pct<=100 or not all(math.isfinite(x) for x in (annual_ore_million,unit_opex,grade_pct,recovery_pct)):
             raise ValueError()
     except (TypeError,ValueError,OverflowError):
         return Response({"detail":"Invalid stress parameters"},status=400)
@@ -142,7 +144,8 @@ def risk_stress(request,target_id):
     copper=[r["price_usd_per_t"] for r in market if r["commodity"]=="copper"]
     if len(copper)<4:
         return Response({"detail":"At least four historical copper observations are required"},status=409)
-    volatility=stdev(copper)/sum(copper)*len(copper)
+    mean_price=sum(copper)/len(copper)
+    volatility=stdev(copper)/mean_price
     if not math.isfinite(volatility):
         return Response({"detail":"Invalid historical price volatility"},status=400)
     volatility=min(volatility,2)
@@ -158,14 +161,17 @@ def risk_stress(request,target_id):
     for _ in range(iterations):
         price_factor=max(0,rng.gauss(1,volatility))
         opex_factor=max(.05,rng.gauss(1,opex_spread))
-        outputs.append(annual_ore_million*(price_factor*100-opex_factor*unit_opex))
+        production_factor=max(0,1-downtime)
+        revenue=annual_ore_million*production_factor*(grade_pct/100)*(recovery_pct/100)*mean_price*price_factor
+        costs=annual_ore_million*unit_opex*opex_factor
+        outputs.append(revenue-costs)
     outputs.sort()
     def q(p):return round(outputs[min(len(outputs)-1,int(p*(len(outputs)-1)))],2)
     return Response({"model":"seeded-normal-stress-v1","illustrative":True,"iterations":iterations,
-        "inputs":{"market_coefficient_of_variation":round(volatility,4),"fleet_downtime_fraction":round(downtime,4),
+        "inputs":{"historical_copper_price_usd_per_t":round(mean_price,2),"grade_pct":grade_pct,"recovery_pct":recovery_pct,"market_coefficient_of_variation":round(volatility,4),"fleet_downtime_fraction":round(downtime,4),
                   "mean_haul_efficiency":round(average_efficiency,4),"assumed_opex_spread":round(opex_spread,4)},
         "geotech":{"minimum_seismic_fos":geotech_low,"maximum_seepage_index":seepage_high,
                    "note":"Site-specific acceptance criteria must be provided by a qualified geotechnical engineer."},
-        "distribution":{"p05":q(.05),"p50":q(.50),"p95":q(.95),"units":"illustrative contribution proxy, $M"},
+        "distribution":{"p05":q(.05),"p50":q(.50),"p95":q(.95),"units":"annual operating contribution proxy, $M"},
         "source_refs":{key:{"snapshot_id":row.id,"sha256":row.source_sha256} for key,row in current.items()},
         "warning":"Not a calibrated project cash-flow or true price-process forecast; validate commodity basis and stress model before investment reliance."})
