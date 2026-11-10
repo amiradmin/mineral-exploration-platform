@@ -50,4 +50,8 @@ def fid_blockers(program):
             blockers.append(f"{link.target_id}:{code}")
         for code in engineering_policy(link.target)["blockers"]:
             blockers.append(f"{link.target_id}:{code}")
+        from .models import LegalContract
+        latest_contract = LegalContract.objects.filter(target=link.target).first()
+        if latest_contract is not None and latest_contract.status != "reviewed":
+            blockers.append(f"{link.target_id}:legal_contract_pending_review")
     return blockers
