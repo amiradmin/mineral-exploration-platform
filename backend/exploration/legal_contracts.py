@@ -33,7 +33,7 @@ def permitted(user, target, write=False, reviewer=False):
     if not user.is_authenticated or not user.is_active:
         return False
     if user.is_superuser: return True
-    accepted=("cp","chair") if reviewer else (("expert","cp","chair","board") if write else ("expert","cp","chair","board","auditor"))
+    accepted=("legal",) if reviewer else (("expert","cp","chair","board","legal") if write else ("expert","cp","chair","board","auditor","legal"))
     return CommitteeMembership.objects.filter(target=target,user=user,active=True,role__in=accepted).exists()
 
 def extract_text(content, filename):
@@ -154,7 +154,7 @@ def contract_detail(request,target_id,contract_id):
 def contract_review(request,target_id,contract_id):
     target=get_object_or_404(Target,pk=target_id)
     if not permitted(request.user,target,reviewer=True):
-        return Response({"detail":"Competent person or chair membership required."},status=403)
+        return Response({"detail":"Target-specific legal counsel membership required."},status=403)
     rationale=request.data.get("rationale")
     if not isinstance(rationale,str) or len(rationale.strip())<20:
         return Response({"detail":"Legal review rationale (minimum 20 characters) required."},status=400)
@@ -167,5 +167,5 @@ def contract_review(request,target_id,contract_id):
         obj.save(update_fields=["status","reviewed_by","reviewed_at"])
         AuditEvent.objects.create(actor=request.user,action="contract_review",entity_type="LegalContract",
            entity_id=str(obj.id),details={"target_id":target_id,"rationale":rationale.strip(),
-                                           "reviewer_role":"technical_review_not_legal_advice"})
+                                           "reviewer_role":"designated_legal_counsel_review"})
     return Response(public_record(obj))
