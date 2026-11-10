@@ -302,7 +302,7 @@ class CommitteeMembership(models.Model):
     ROLES = [
         ("expert", "Technical expert"), ("cp", "Competent / qualified person"),
         ("chair", "Technical committee chair"), ("board", "Board decision maker"),
-        ("auditor", "Read-only auditor"),
+        ("auditor", "Read-only auditor"), ("legal", "Legal counsel / contract reviewer"),
     ]
     target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="committee_memberships")
     user = models.ForeignKey("auth.User", on_delete=models.PROTECT, related_name="committee_memberships")
