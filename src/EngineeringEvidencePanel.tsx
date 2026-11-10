@@ -56,7 +56,7 @@ export default function EngineeringEvidencePanel({targetId}:{targetId:string}){
     <label>File SHA-256<input value={hash} onChange={e=>setHash(e.target.value)} placeholder="64-character SHA-256"/></label>
     <label>Analysis date<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label>
     <label>Model version<input value={version} onChange={e=>setVersion(e.target.value)}/></label>
-    {specs[source].keys.map(key=><label key={key}>{key.replaceAll('_',' ')} {specs[source].required.some(k=>k===key)?'*':''}<input type="number" step="any" value={values[key]||''} onChange={e=>setValues(v=>({...v,[key]:e.target.value}))}/></label>)}
+    {specs[source].keys.map(key=><label key={key}>{key.replaceAll('_',' ')} {(specs[source].required as readonly string[]).includes(key)?'*':''}<input type="number" step="any" value={values[key]||''} onChange={e=>setValues(v=>({...v,[key]:e.target.value}))}/></label>)}
    </div><button type="button" onClick={()=>void submit()}>Register for expert review</button>
   </details>}
   <h3>Source history &amp; review</h3>
