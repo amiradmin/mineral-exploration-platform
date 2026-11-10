@@ -65,8 +65,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
     <div className="sg-art-bottom">{lower.map(card)}</div>
     <p className="sg-art-hint"><T>Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.</T></p>
    </section>
-   <DataScaleBadge targetId={context.targetId}/>
    <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
+   <DataScaleBadge targetId={context.targetId}/>
    <div className="sg-technical-reference" aria-label="Interactive stage-gate architecture and module map">
    <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared target and scenario across six analytical modules</T></span></div>
    <p className="sg-preview-warning"><strong>ILLUSTRATIVE WORKSPACE PREVIEW</strong> · The metrics and gate signals below use demonstration scenarios. They are not certified estimates, formal stage-gate approvals or investment recommendations.</p><div className="sg-summary">
