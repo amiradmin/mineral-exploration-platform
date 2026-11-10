@@ -69,3 +69,27 @@ class StrategicApiTests(APITestCase):
           "file":SimpleUploadedFile("market.csv",invalid.encode(),content_type="text/csv")},format="multipart")
         self.assertEqual(response.status_code,400)
         self.assertEqual(self.client.post("/api/targets/S-01/risk-stress/",{},format="json").status_code,409)
+
+    def test_risk_three_reviewed_sources_enable_repeatable_stress(self):
+        self.client.force_authenticate(user=self.steward)
+        specs={
+            "geotech":"scenario,static_fos,seismic_fos,seepage_index\nbase,1.45,1.22,0.5\n",
+            "pitram":"period,downtime_hours,scheduled_hours,mtbf_hours,mttr_hours,haul_efficiency_pct\n2026Q1,50,1000,100,5,85\n",
+            "market":"period,commodity,price_usd_per_t\n2026Q1,copper,9000\n2026Q2,copper,9500\n2026Q3,copper,9200\n2026Q4,copper,8800\n"
+        }
+        for source,text in specs.items():
+            res=self.client.post("/api/targets/S-01/risk-sources/",{"source":source,
+                "model_version":"scenario-1",
+                "file":SimpleUploadedFile(source+".csv",text.encode(),content_type="text/csv")},format="multipart")
+            self.assertEqual(res.status_code,201,res.data)
+            self.client.force_authenticate(user=self.cp)
+            review=self.client.post("/api/targets/S-01/risk-sources/"+str(res.data["id"])+"/review/",
+                {"decision":"approve","rationale":"Risk input reviewed and traced"},format="json")
+            self.assertEqual(review.status_code,200,review.data)
+            self.client.force_authenticate(user=self.steward)
+        url="/api/targets/S-01/risk-stress/"
+        a=self.client.post(url,{"iterations":200},format="json")
+        self.assertEqual(a.status_code,200,a.data)
+        b=self.client.post(url,{"iterations":200},format="json")
+        self.assertEqual(a.data["distribution"],b.data["distribution"])
+        self.assertGreater(a.data["inputs"]["historical_copper_price_usd_per_t"],8000)
