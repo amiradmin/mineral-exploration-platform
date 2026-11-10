@@ -64,5 +64,5 @@ def program_evidence_readiness(request,program_id):
         record.save()
         AuditEvent.objects.create(actor=request.user,action="program_evidence_"+action,
            entity_type="EvidenceReadiness",entity_id=str(program.pk),
-           details={"program_id":program.pk,"rationale":rationale.strip(),"state":snapshot(record)})
+           details={"program_id":program.pk,"rationale":rationale.strip(),"state":{**snapshot(record),"updated_at":record.updated_at.isoformat()}})
     return Response(snapshot(record))
