@@ -124,7 +124,8 @@ def contract_registry(request,target_id):
     if not file or file.size<10 or file.size>MAX_BYTES:
         return Response({"detail":"Provide a TXT or searchable PDF up to 2 MB."},status=400)
     try:
-        text=extract_text(file.read(),file.name)
+        raw=file.read()
+        text=extract_text(raw,file.name)
         if len(text)>MAX_TEXT or len(text.strip())<30:
             return Response({"detail":"No usable contract text detected. OCR is not supported."},status=400)
     except (UnicodeError,ValueError) as exc:
@@ -134,7 +135,7 @@ def contract_registry(request,target_id):
     checked,findings=screen_text(text,capacity=capacities)
     with transaction.atomic():
         obj=LegalContract.objects.create(target=target,filename=file.name[:240],
-            sha256=hashlib.sha256(file.read() if False else text.encode()).hexdigest(),
+            sha256=hashlib.sha256(raw).hexdigest(),
             extracted_text=text,findings=findings,clauses_checked=checked,created_by=request.user)
         AuditEvent.objects.create(actor=request.user,action="contract_uploaded",entity_type="LegalContract",
             entity_id=str(obj.id),details={"target_id":target_id,"sha256":obj.sha256,"finding_count":len(findings)})
