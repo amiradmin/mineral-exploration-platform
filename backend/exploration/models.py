@@ -423,6 +423,7 @@ class DataScaleProfile(models.Model):
 
 class ProgramTarget(models.Model):
     """Explicit program-to-target scope for investment gating."""
+    id = models.BigAutoField(primary_key=True)
     program = models.ForeignKey(OperationProgram, on_delete=models.CASCADE, related_name="target_links")
     target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="program_links")
     class Meta:
@@ -431,6 +432,7 @@ class ProgramTarget(models.Model):
 
 class EngineeringEvidence(models.Model):
     """Reviewed engineering result extracts, not live software connections."""
+    id = models.BigAutoField(primary_key=True)
     SOURCE_CHOICES = [("alastri","Alastri / Beyond"),("datamine","Datamine Strategic Planners"),("rocscience","Rocscience Slide2 / Slide3")]
     target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="engineering_evidence")
     source = models.CharField(max_length=24, choices=SOURCE_CHOICES)
