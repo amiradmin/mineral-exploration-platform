@@ -3,6 +3,7 @@ import React, {useMemo, useState} from 'react'
 import {useAuth} from './auth'
 import ReserveReviewComments from './ReserveReviewComments'
 import ReserveSourceWorkflow from './ReserveSourceWorkflow'
+import ReserveBlockViewer from './ReserveBlockViewer'
 import {ArrowRight, CheckCircle2, Database, RotateCcw, ZoomIn, ZoomOut, ShieldCheck, Lock, Box, SlidersHorizontal} from 'lucide-react'
 import {targets, drillholes} from './mockData'
 import type {DecisionContext, Scenario} from './decisionPipeline'
@@ -15,31 +16,6 @@ const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n))
 const fmt=(n:number)=>n.toFixed(2)
 const colors=['#60efb4','#66e6ef','#f1d078']
 
-function Orebody({holes,continuity,cutoff}:{holes:number;continuity:number;cutoff:number}){
- const [turn,setTurn]=useState(0)
- const [zoom,setZoom]=useState(1)
- const blocks=useMemo(()=>Array.from({length:240},(_,i)=>{
-  const x=i%12,y=Math.floor(i/12)%10,z=Math.floor(i/120)
-  const ridge=4.7+2*Math.sin(x*.56)+1.1*Math.cos(y*.7)
-  const grade=clamp(.62+.26*Math.sin(x*.92+y*.45)-Math.abs(y-ridge)*.075+continuity/600,0,1.5)
-  return {x,y,z,grade}
- }).filter(b=>b.grade>=cutoff),[continuity,cutoff])
- return <div className="rs-ore-scene">
-  <svg viewBox="0 0 520 360" className="rs-ore-svg" role="img" aria-label="Rotatable isometric block model; block visibility depends on cut-off grade">
-   <defs><linearGradient id="rs-ore-blue" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#4cbaff"/><stop offset="1" stopColor="#143f8e"/></linearGradient><linearGradient id="rs-ore-hot" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff29a"/><stop offset=".5" stopColor="#fd7945"/><stop offset="1" stopColor="#a82957"/></linearGradient></defs>
-   <g transform={`translate(260 182) scale(${zoom}) rotate(${turn}) translate(-260 -182)`}>
-    <g fill="none" stroke="#8ca5b2" strokeWidth="1" opacity=".6"><path d="M95 120 285 43 449 121 258 202Z M95 120V263L258 342 449 263V121 M258 202V342 M285 43V180"/></g>
-    {blocks.sort((a,b)=>a.x+a.y-b.x-b.y).map((b,i)=>{
-     const x=139+(b.x-b.y)*11.2,y=121+(b.x+b.y)*5.4-b.z*10
-     const fill=b.grade>.9?'url(#rs-ore-hot)':b.grade>.7?'#f08067':'url(#rs-ore-blue)'
-     return <g key={i} opacity=".79"><path d={`M${x} ${y}l11 -5 11 5 -11 5Z`} fill={fill} stroke="#6ac7ea" strokeOpacity=".14"/><path d={`M${x} ${y}l11 5v10l-11 -5Z`} fill={fill} opacity=".65"/><path d={`M${x+11} ${y+5}l11 -5v10l-11 5Z`} fill={fill} opacity=".45"/></g>
-    })}
-    {Array.from({length:Math.min(holes,40)},(_,i)=>{const x=140+(i*29)%235,y=75+(i*37)%125;return <g key={i}><path d={`M${x} ${y}l11 93`} stroke="#76ffec" strokeWidth="1.3" opacity=".8"/><circle cx={x} cy={y} r="2.3" fill="#84fbea"/></g>})}
-   </g>
-  </svg>
-  <div className="rs-viewer-controls"><button onClick={()=>setTurn(v=>v+15)}><RotateCcw size={13}/> <T>Rotate</T></button><button onClick={()=>setZoom(v=>clamp(v+.12,.7,1.55))}><ZoomIn size={13}/> <T>Zoom</T></button><button onClick={()=>setZoom(v=>clamp(v-.12,.7,1.55))}><ZoomOut size={13}/></button><span><T>Interactive blocks</T></span></div>
- </div>
-}
 function Distribution({values}:{values:number[]}){
  const low=values[0],mid=values[1],high=values[2],max=high*1.3
  const x=(v:number)=>34+v/max*365
@@ -110,7 +86,7 @@ export default function ReserveSimulator({context,onContext,onNavigate}:{context
   <div className="rs-sync-line"><div className="rs-sync"><strong>Illustrative geological scenario · not a verified resource estimate</strong></div><div className="rs-confidence"><div className="rs-ring" style={{background:`conic-gradient(#48ebc9 ${confidence}%,#233e46 0)`}}><i/></div><div><b>Illustrative confidence proxy: {confidence.toFixed(0)}% · not calibrated DCI</b></div></div></div>
   <div className="rs-kpis">{estimates.map((r,i)=><div key={r.label} className={'rs-reserve rs-reserve-'+i}><div className="rs-reserve-top"><strong>{['◕','◉','▲'][i]} {r.label} ({['Low case','Median case','High case'][i]})</strong><span>◇</span></div><div className="rs-volume">{fmt(r.volume)} Mm³</div><div className="rs-mass">({fmt(r.tonnes)} Mt @ {fmt(r.grade)}% Cu)</div><div className="rs-reserve-foot">{['Illustrative lower case','Illustrative central case','Illustrative upper case'][i]}</div></div>)}</div>
   <div className="rs-workspace"><section className="rs-panel rs-params"><div className="rs-panel-label"><T>DRILLHOLE PARAMETERS</T></div>{controls.map(c=><label className="rs-slider" key={c.key}><div>{c.label}<span>{Number(input[c.key].toFixed(2))}{c.unit}</span></div><input type="range" min={c.min} max={c.max} step={c.step} value={input[c.key]} onChange={e=>change(c.key,Number(e.target.value))}/></label>)}<div className="rs-quick-links"><button onClick={()=>onNavigate('drillholes')}><T>Drillhole Manager</T> <ArrowRight size={13}/></button><button onClick={()=>onNavigate('qaqc')}><T>QA/QC workspace</T> <ArrowRight size={13}/></button></div><small>{drillholes.length} drillhole records</small></section>
-   <section className="rs-panel rs-model"><div className="rs-panel-label"><T>CONCEPTUAL 3D BLOCK MODEL VIEWER · NOT IMPORTED SURPAC MODEL</T> <Box size={14}/></div><Orebody holes={input.holes} continuity={input.continuity} cutoff={input.cutoff}/></section>
+   <section className="rs-panel rs-model"><div className="rs-panel-label"><T>CONCEPTUAL 3D BLOCK MODEL VIEWER · NOT IMPORTED SURPAC MODEL</T> <Box size={14}/></div><ReserveBlockViewer holes={input.holes} continuity={input.continuity} cutoff={input.cutoff}/></section>
    <section className="rs-panel rs-analytics"><div className="rs-panel-label"><T>ILLUSTRATIVE SCENARIO DISTRIBUTION &amp; SENSITIVITY</T></div><Distribution values={estimates.map(x=>x.volume)}/><div className="rs-mini-grid"><MiniCurve mode="grade" cutoff={input.cutoff} variability={input.variability}/><MiniCurve mode="metal" cutoff={input.cutoff} variability={input.variability}/></div><div className="rs-analytics-note"><T>Illustrative model only · P95/P50/P10 labels are not statistically calibrated and do not represent classified Ore Reserves</T></div></section></div>
   <ReserveReviewComments targetId={target.id} draft={commentDraft} onDraftChange={setCommentDraft} onAccessChange={setCanComment} refreshKey={commentsRefresh}/>
   <div className="rs-bottom"><div className="rs-signoff"><strong>Local review acknowledgements (not digital signatures)</strong><label><input type="checkbox" checked={geoSigned} onChange={e=>{setGeoSigned(e.target.checked);setReviewNote('')}}/><span><T>Chief Geologist</T> <small>{geoSigned?'Acknowledged':'Awaiting review'}</small></span></label><label><input type="checkbox" checked={qaSigned} onChange={e=>{setQaSigned(e.target.checked);setReviewNote('')}}/><span><T>QA/QC Lead</T> <small>{qaSigned?'Acknowledged':'Awaiting review'}</small></span></label></div><button className="rs-approve" disabled={!pass||!canComment||commentBusy||commentDraft.trim().length<3} onClick={()=>void prepareGate3()} >{commentBusy?'[ Saving Review… ]':!pass?'[ Awaiting sign-offs ]':!canComment?'[ Reviewer Access Required ]':commentDraft.trim().length<3?'[ Comment Required ]':'[ Prepare Gate 3 Review ]'} <ArrowRight size={18}/></button></div>
