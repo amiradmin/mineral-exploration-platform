@@ -150,6 +150,8 @@ def commercial_comparison(request,target_id):
     serializer=CommercialInputs(data=request.data)
     serializer.is_valid(raise_exception=True)
     params=serializer.validated_data
+    if params["save_run"] and not permitted(request.user,target,write=True):
+        return Response({"detail":"Read-only committee role cannot persist scenario runs."},status=403)
     try:
         production,capex,refs=verified_sources(target,params) if params["use_reviewed_sources"] else illustrative_sources(params["mine_life"])
     except ValueError as exc:
