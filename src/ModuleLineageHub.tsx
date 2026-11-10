@@ -72,7 +72,6 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
    }
    if(module==='economics-engine'){
     const data=await request(root+'/engineering-evidence/')
-    const entries:Object=Object
     const states=mapRecords(Object.fromEntries(Object.entries(data.policy?.sources||{}).map(([key,value])=>[key,{status:(value as {status?:string}).status,snapshot_id:(value as {evidence_id?:number}).evidence_id}])),data.records||[])
     return states
    }
