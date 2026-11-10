@@ -161,7 +161,7 @@ def executive_brief(request,target_id):
                       "rationale":f.get("message","Requires legal review"),"gate":4,"module":"legal-commercial"} for index,f in enumerate(findings[:5])],
         "committee_memo":{"id":signed.id,"gate":signed.gate,"body":signed.body,
                           "signed_by_id":signed.signed_by_id,"signed_at":signed.signed_at,
-                          "signature_type":signed.signature_type} if signed else None,
+                          "signature_type":"authenticated_attestation"} if signed else None,
         "formal_gates":[{"gate":n,"outcome":d.outcome if d else "NOT_RECORDED",
                          "created_at":d.created_at if d else None,
                          "decision_id":d.id if d else None} for n in range(1,5) for d in [newest_by_gate.get(n)]],
