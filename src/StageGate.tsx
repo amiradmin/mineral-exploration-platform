@@ -1,4 +1,3 @@
-import {T} from './i18n'
 import React from 'react'
 import { Activity, ArrowRight, BarChart3, CircleDollarSign, Compass, FlaskConical, Globe2, ShieldAlert, TrendingUp, Pickaxe, Layers, CheckCircle2 } from 'lucide-react'
 import './StageGate.css'
