@@ -1,3 +1,6 @@
+from .financial_sources import financial_sources, review_financial_source
+from .risk_sources import risk_sources, risk_source_review, risk_stress
+from .strategic_scenarios import strategic_scenario
 from .program_readiness import program_evidence_readiness
 from .engineering_evidence import engineering_evidence, review_engineering_evidence, program_targets, investment_readiness, budget_authorizations, upload_engineering_export
 from .data_scale import data_scale_profile, verify_data_scale
@@ -20,6 +23,12 @@ router.register("qaqc-issues", QAQCIssueViewSet)
 router.register("tasks", WorkTaskViewSet)
 
 urlpatterns = [
+    path("strategic-scenarios/fleet/",strategic_scenario,name="strategic-scenarios-fleet"),
+    path("targets/<str:target_id>/financial-sources/",financial_sources,name="financial-sources"),
+    path("targets/<str:target_id>/financial-sources/<int:snapshot_id>/review/",review_financial_source,name="financial-source-review"),
+    path("targets/<str:target_id>/risk-sources/",risk_sources,name="risk-sources"),
+    path("targets/<str:target_id>/risk-sources/<int:snapshot_id>/review/",risk_source_review,name="risk-source-review"),
+    path("targets/<str:target_id>/risk-stress/",risk_stress,name="risk-stress"),
     path("targets/<str:target_id>/engineering-evidence/upload/",upload_engineering_export,name="engineering-export-upload"),
     path("programs/<int:program_id>/evidence-readiness/",program_evidence_readiness,name="program-evidence-readiness"),
     path("programs/<int:program_id>/budget-authorizations/",budget_authorizations,name="budget-authorizations"),
