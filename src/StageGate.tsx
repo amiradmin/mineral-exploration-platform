@@ -46,10 +46,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  </button>}
  return <div className="sg-wrap sg-reference">
    <div className="sg-heading"><div><span className="sg-eyebrow"><T>EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</T></span><h1><T>Stage-Gate Decision Center</T></h1><p><T>From raw geological evidence to boardroom-ready financial scenarios.</T></p></div></div>
-   <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
-   <div className="sg-technical-reference" aria-label="Interactive stage-gate architecture and module map">
    <section className="sg-architecture" aria-label="Four stage gates, six analytical modules and legal commercial governance">
-    <div className="sg-art-title"><h2><T>4 Gates · 6 Analytical Modules · Module 7 Governance</T></h2><p>Architecture and simulated analytical workspaces shown for navigation. Only the executive cockpit above uses formal stored gate decisions.</p></div>
+    <div className="sg-art-title"><h2><T>4 Gates · 6 Analytical Modules · Module 7 Governance</T></h2><p>Architecture and simulated analytical workspaces shown for navigation. The executive cockpit below uses formal stored gate decisions.</p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
     <div className="sg-art-flow">
       <div className="sg-art-raw"><span><T>Raw</T><br/><T>Geological</T><br/><T>Inputs</T></span></div>
@@ -66,6 +64,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
     <div className="sg-art-bottom">{lower.map(card)}</div>
     <p className="sg-art-hint"><T>Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.</T></p>
    </section>
+   <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
+   <div className="sg-technical-reference" aria-label="Interactive stage-gate architecture and module map">
    <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={t(context.scenario.charAt(0).toUpperCase()+context.scenario.slice(1))} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared target and scenario across six analytical modules</T></span></div>
    <p className="sg-preview-warning"><strong>ILLUSTRATIVE WORKSPACE PREVIEW</strong> · The metrics and gate signals below use demonstration scenarios. They are not certified estimates, formal stage-gate approvals or investment recommendations.</p><div className="sg-summary">
       <div><span><T>Decision modules</T></span><strong>06 + 01</strong><small>Six analytical modules + Legal Hub</small></div>
