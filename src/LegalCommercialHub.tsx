@@ -22,9 +22,10 @@ const fields:[keyof ScenarioParams,string,number,number,number][]=[
 const usd=(n:number)=>'$'+Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:2})+'M'
 const withSign=(n:number)=>(n<0?'−':'')+usd(n)
 const niceTime=(s:string)=>new Date(s).toLocaleString()
-export default function LegalCommercialHub({initialTargetId}:{initialTargetId:string}){
+export default function LegalCommercialHub({initialTargetId,onTargetChange}:{initialTargetId:string;onTargetChange?:(id:string)=>void}){
  const {apiFetch,user}=useAuth()
  const [targetId,setTargetId]=useState(initialTargetId)
+ useEffect(()=>setTargetId(initialTargetId),[initialTargetId])
  const [section,setSection]=useState<'contracts'|'partnership'>('contracts')
  const [documents,setDocuments]=useState<Contract[]>([])
  const [selectedContract,setSelectedContract]=useState<number|null>(null)
@@ -62,7 +63,7 @@ export default function LegalCommercialHub({initialTargetId}:{initialTargetId:st
  const active=documents.find(x=>x.id===selectedContract)
  return <div className="lc-hub">
   <div className="lc-head"><div><small>MODULE 7 · PROJECT GOVERNANCE</small><h1><Scale size={23}/> Legal &amp; Commercial AI Hub</h1><p>Contract risk screening and quantitative mineral partnership negotiations, grounded in reviewed evidence where available.</p></div><div className="lc-head-status"><ShieldAlert size={16}/> Advisory only · Legal counsel required</div></div>
-  <div className="lc-target"><label>Exploration target<select value={targetId} onChange={e=>setTargetId(e.target.value)}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><button onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button><span>{canRead?'Authorized target workspace':'Membership required for confidential legal data'}</span></div>
+  <div className="lc-target"><label>Exploration target<select value={targetId} onChange={e=>{setTargetId(e.target.value);onTargetChange?.(e.target.value)}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><button onClick={()=>setRefresh(v=>v+1)}><RefreshCw size={15}/> Refresh</button><span>{canRead?'Authorized target workspace':'Membership required for confidential legal data'}</span></div>
   {!canRead?<section className="lc-panel"><h2>Restricted legal records</h2><p>An administrator must grant you an active target-specific committee membership in User Access Management. Contract text and financial scenarios are not public project data.</p></section>:<>
    <div className="lc-tabs"><button className={section==='contracts'?'active':''} onClick={()=>setSection('contracts')}><FileText size={16}/> Contract Risk Audit</button><button className={section==='partnership'?'active':''} onClick={()=>setSection('partnership')}><Calculator size={16}/> Partnership Split Optimizer</button></div>
    {section==='contracts'&&<>
