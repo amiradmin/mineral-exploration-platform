@@ -44,9 +44,9 @@ def interpret(prompt):
     warnings = []
     # Parse only named quantities; never guess unspecified financial assumptions.
     matches = [
-        (r"(?:mine life|life of mine|عمر معدن)\\s*(?:of|=|:|را)?\\s*(\\d{1,2})", "mine_life", int, (3, 30)),
-        (r"(?:discount rate|wacc|نرخ تنزیل)\\s*(?:of|=|:|را)?\\s*(\\d+(?:\\.\\d+)?)\\s*%", "discount_rate", float, (0, 40)),
-        (r"(?:replacement every|replace every|تعویض هر|جایگزینی هر)\\s*(\\d{1,2})\\s*(?:years?|سال)", "rotation_years", int, (1, 15)),
+        (r"(?:mine life|life of mine|عمر معدن)\s*(?:of|=|:|را)?\s*(\d{1,2})", "mine_life", int, (3, 30)),
+        (r"(?:discount rate|wacc|نرخ تنزیل)\s*(?:of|=|:|را)?\s*(\d+(?:\.\d+)?)\s*%", "discount_rate", float, (0, 40)),
+        (r"(?:replacement every|replace every|تعویض هر|جایگزینی هر)\s*(\d{1,2})\s*(?:years?|سال)", "rotation_years", int, (1, 15)),
     ]
     for pattern, key, cast, limits in matches:
         match = re.search(pattern, normalized, flags=re.I)
