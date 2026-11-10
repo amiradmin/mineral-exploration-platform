@@ -39,8 +39,8 @@ export default function LegalCommercialHub({initialTargetId}:{initialTargetId:st
  const [refresh,setRefresh]=useState(0)
  const memberships=user?.memberships?.filter(m=>m.target_id===targetId).map(m=>m.role)??[]
  const canRead=Boolean(user?.is_superuser||memberships.length)
- const canWrite=Boolean(user?.is_superuser||memberships.some(role=>['expert','cp','chair','board'].includes(role)))
- const canReview=Boolean(user?.is_superuser||memberships.some(role=>['cp','chair'].includes(role)))
+ const canWrite=Boolean(user?.is_superuser||memberships.some(role=>['expert','cp','chair','board','legal'].includes(role)))
+ const canReview=Boolean(user?.is_superuser||memberships.some(role=>['legal'].includes(role)))
  const base='/api/targets/'+encodeURIComponent(targetId)
  useEffect(()=>{setSelectedContract(null);setDocuments([]);setSimulation(null);setError('');if(!canRead)return;let active=true;void apiFetch(base+'/legal-contracts/').then(async r=>{const data=await r.json();if(!r.ok)throw Error(data.detail||'Contracts unavailable');return data}).then(d=>{if(active)setDocuments(d.records)}).catch(e=>{if(active)setError(String(e))});return()=>{active=false}},[base,apiFetch,canRead,refresh])
  const upload=async()=>{if(!file)return;setBusy(true);setError('');setNotice('');try{
@@ -52,7 +52,7 @@ export default function LegalCommercialHub({initialTargetId}:{initialTargetId:st
  const review=async()=>{if(selectedContract===null)return;setBusy(true);setError('');try{
   const r=await apiFetch(base+'/legal-contracts/'+selectedContract+'/review/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rationale:reviewNote})});const d=await r.json()
   if(!r.ok)throw Error(d.detail||JSON.stringify(d))
-  setNotice('Technical review recorded; independent legal counsel review is still recommended.');setReviewNote('');setRefresh(n=>n+1)
+  setNotice('Designated legal reviewer sign-off recorded. Independent legal advice remains necessary for binding decisions.');setReviewNote('');setRefresh(n=>n+1)
  }catch(e){setError(String(e))}finally{setBusy(false)}}
  const simulate=async()=>{setBusy(true);setError('');setSimulation(null);try{
   const r=await apiFetch(base+'/commercial-scenarios/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params)});const d=await r.json()
@@ -68,9 +68,9 @@ export default function LegalCommercialHub({initialTargetId}:{initialTargetId:st
    {section==='contracts'&&<>
     <section className="lc-panel"><div className="lc-panel-head"><h2>Confidential document audit</h2><span>TXT / searchable PDF · max 2 MB · text screening v1</span></div><p>Flags possible take-or-pay, unilateral termination, unrecovered capital, FX, stripping delay and royalty provisions. Every match links to an excerpt from the uploaded document. Missing matches do not establish legal compliance.</p>
      {canWrite&&<div className="lc-upload"><label>Upload contract<input type="file" accept=".pdf,.txt" onChange={e=>setFile(e.target.files?.[0]??null)}/></label><button disabled={!file||busy} onClick={()=>void upload()}><UploadCloud size={15}/> {busy?'Screening…':'Upload and audit'}</button></div>}
-     <div className="lc-contract-grid"><aside>{documents.length?documents.map(doc=><button key={doc.id} className={selectedContract===doc.id?'active':''} onClick={()=>setSelectedContract(doc.id)}><strong>{doc.filename}</strong><small>{doc.status} · {niceTime(doc.created_at)}</small></button>):<p>No contracts registered for this target.</p>}</aside><div className="lc-findings">{active?<><div className="lc-contract-title"><h3>{active.filename}</h3><span>{active.status==='reviewed'?'Technical review recorded':'Pending expert review'}</span></div><p>SHA-256: <code>{active.sha256}</code></p>
+     <div className="lc-contract-grid"><aside>{documents.length?documents.map(doc=><button key={doc.id} className={selectedContract===doc.id?'active':''} onClick={()=>setSelectedContract(doc.id)}><strong>{doc.filename}</strong><small>{doc.status} · {niceTime(doc.created_at)}</small></button>):<p>No contracts registered for this target.</p>}</aside><div className="lc-findings">{active?<><div className="lc-contract-title"><h3>{active.filename}</h3><span>{active.status==='reviewed'?'Technical review recorded':'Pending legal review'}</span></div><p>SHA-256: <code>{active.sha256}</code></p>
        {active.findings.map((finding,index)=><article key={finding.code+index} className={'lc-finding lc-'+finding.severity}><div><strong>{finding.title}</strong><span>{finding.severity.toUpperCase()} · {finding.status.replaceAll('_',' ')}</span></div><p>{finding.message}</p>{finding.evidence?.map((ev,j)=><blockquote key={j}><small>Excerpt · paragraph {ev.paragraph}</small><p>{ev.excerpt}</p></blockquote>)}</article>)}
-       {canReview&&active.status!=='reviewed'&&<div className="lc-review"><label>Technical review rationale<textarea rows={3} value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="Provide legal-review references or technical findings (20+ characters)"/></label><button disabled={busy||reviewNote.trim().length<20} onClick={()=>void review()}><ShieldCheck size={15}/> Record review</button></div>}
+       {canReview&&active.status!=='reviewed'&&<div className="lc-review"><label>Legal review rationale<textarea rows={3} value={reviewNote} onChange={e=>setReviewNote(e.target.value)} placeholder="Provide legal-review references or technical findings (20+ characters)"/></label><button disabled={busy||reviewNote.trim().length<20} onClick={()=>void review()}><ShieldCheck size={15}/> Record review</button></div>}
       </>:<p>Select a contract to inspect risk flags and source excerpts.</p>}</div></div>
     </section>
    </>}
