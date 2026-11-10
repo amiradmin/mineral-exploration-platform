@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APITestCase
-from .models import Target, CommitteeMembership, LegalContract, FinancialSourceSnapshot, CommercialScenarioRun, AuditEvent
+from .models import Target, CommitteeMembership, LegalContract, FinancialSourceSnapshot, CommercialScenarioRun, AuditEvent, OperationProgram, ProgramTarget, EvidenceReadiness, DataScaleProfile, EngineeringEvidence
 from .legal_contracts import screen_text
 from .commercial_partnership import annual_model, evaluate, illustrative_sources
 
@@ -85,6 +85,40 @@ class LegalCommercialAPITests(APITestCase):
         self.assertTrue(CommercialScenarioRun.objects.filter(target=self.target).exists())
         blocked=self.client.post(url,{"use_reviewed_sources":True},format="json")
         self.assertEqual(blocked.status_code,409)
+    def test_pending_contract_blocks_linked_program_fid(self):
+        from django.utils import timezone
+        from .governance import fid_blockers
+        program=OperationProgram.objects.create(name="Legal Governance Mine",commodity="Cu",
+            rigs=1,planned_metres=100,actual_metres=100,logged_metres=100,
+            core_recovery=95,samples=5,pending_assays=0,budget_used=0,target_count=1)
+        ProgramTarget.objects.create(program=program,target=self.target)
+        EvidenceReadiness.objects.create(program=program,data_status="verified",
+            detailed_exploration=True,qaqc_approved=True,competent_person_approved=True)
+        DataScaleProfile.objects.create(target=self.target,phase="detailed",
+            map_scale_denominator=1000,sample_count=100,lab_method="ICP-MS",
+            drillhole_count=6,ddh_metres=600,rc_metres=0,grid_spacing_x=50,
+            grid_spacing_y=50,core_recovery_pct=95,rqd_pct=80,verified=True)
+        for source,metrics in [
+            ("alastri",{"stripping_ratio":2.1,"overall_pit_slope_deg":42}),
+            ("datamine",{"annual_ore_tonnes":4000000,"annual_plant_feed_tonnes":3800000}),
+            ("rocscience",{"static_fos":1.4}),
+        ]:
+            EngineeringEvidence.objects.create(target=self.target,source=source,
+                source_filename=source+".csv",source_format="csv",
+                source_sha256="b"*64,analysis_date=timezone.localdate(),
+                model_version="2026",metrics=metrics,verified=True,
+                reviewed_by=self.lawyer,reviewed_at=timezone.now())
+        self.assertEqual(fid_blockers(program),[])
+        self.client.force_authenticate(user=self.author)
+        uploaded=self.upload_contract()
+        self.assertEqual(uploaded.status_code,201,uploaded.data)
+        self.assertIn("LC-01:legal_contract_pending_review",fid_blockers(program))
+        self.client.force_authenticate(user=self.lawyer)
+        reviewed=self.client.post("/api/targets/LC-01/legal-contracts/"+str(uploaded.data["id"])+"/review/",
+            {"rationale":"Counsel reviewed material legal risks and obligations"},format="json")
+        self.assertEqual(reviewed.status_code,200)
+        self.assertNotIn("LC-01:legal_contract_pending_review",fid_blockers(program))
+
     def test_reviewed_mine_trust_and_epc_feed_exact_investment_model(self):
         self.client.force_authenticate(user=self.author)
         production=[{"year":year,"ore_tonnes":4000000,"grade_pct":0.84,"plant_feed_tonnes":3900000} for year in range(1,12)]
