@@ -419,3 +419,30 @@ class DataScaleProfile(models.Model):
     rqd_pct = models.FloatField(null=True, blank=True)
     verified = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class ProgramTarget(models.Model):
+    """Explicit program-to-target scope for investment gating."""
+    program = models.ForeignKey(OperationProgram, on_delete=models.CASCADE, related_name="target_links")
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="program_links")
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["program","target"], name="unique_program_target")]
+
+
+class EngineeringEvidence(models.Model):
+    """Reviewed engineering result extracts, not live software connections."""
+    SOURCE_CHOICES = [("alastri","Alastri / Beyond"),("datamine","Datamine Strategic Planners"),("rocscience","Rocscience Slide2 / Slide3")]
+    target = models.ForeignKey(Target, on_delete=models.PROTECT, related_name="engineering_evidence")
+    source = models.CharField(max_length=24, choices=SOURCE_CHOICES)
+    source_filename = models.CharField(max_length=240)
+    source_format = models.CharField(max_length=16, choices=[("csv","CSV"),("dxf","DXF"),("xml","XML"),("json","JSON"),("report","Report")])
+    source_sha256 = models.CharField(max_length=64, help_text="SHA-256 fingerprint of the originating file")
+    analysis_date = models.DateField()
+    model_version = models.CharField(max_length=100)
+    metrics = models.JSONField(default=dict)
+    verified = models.BooleanField(default=False)
+    reviewed_by = models.ForeignKey("auth.User",null=True,blank=True,on_delete=models.PROTECT,related_name="reviewed_engineering_evidence")
+    reviewed_at = models.DateTimeField(null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at","-id"]
