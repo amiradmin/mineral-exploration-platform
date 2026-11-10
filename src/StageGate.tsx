@@ -47,6 +47,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  return <div className="sg-wrap sg-reference">
    <div className="sg-heading"><div><span className="sg-eyebrow"><T>EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</T></span><h1><T>Stage-Gate Decision Center</T></h1><p><T>From raw geological evidence to boardroom-ready financial scenarios.</T></p></div></div>
    <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
+   <details className="sg-technical-reference"><summary>Technical architecture &amp; illustrative modules · Expand to explore specialist workspaces</summary>
    <section className="sg-architecture" aria-label="Four stage gates, six analytical modules and legal commercial governance">
     <div className="sg-art-title"><h2><T>4 Gates · 6 Analytical Modules · Module 7 Governance</T></h2><p>Architecture and simulated analytical workspaces shown for navigation. Only the executive cockpit above uses formal stored gate decisions.</p></div>
     <div className="sg-art-top">{upper.map(card)}</div>
@@ -88,6 +89,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
    </section>
    <div className="sg-section-title sg-modules-heading"><h2><T>Module quick access</T></h2><p><T>Detailed indicators and links to existing geoscience workspaces.</T></p></div>
    <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{t(m.gate)}</span></div><h3>{t(m.name)}</h3><p>{t(m.summary)}</p><div className="sg-mini-stats">{<><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.value}</strong><small>{t(snapshot.records.find(r=>r.stage===m.id)?.label??'')}</small></span><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.verdict}</strong><small>Illustrative scenario indicator</small></span></>}</div><span className="sg-open"><T>Open decision workspace</T> <ArrowRight size={15}/></span></button>})}</div>
+
+   </details>
 
  </div>
 }
