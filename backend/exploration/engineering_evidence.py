@@ -1,5 +1,6 @@
 """Engineering result registry. Extracted metrics are never treated as live vendor integrations."""
-import re, math
+import re, math, hashlib, csv, json, io
+from xml.etree import ElementTree
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -139,3 +140,57 @@ def budget_authorizations(request,program_id):
         record=BudgetAuthorization.objects.create(program=program,approver=user,**payload.validated_data)
         AuditEvent.objects.create(actor=user,action="budget_authorization",entity_type="BudgetAuthorization",entity_id=str(record.pk),details={"program_id":program.pk,"category":record.category,"amount_usd":str(record.amount_usd)})
     return Response({"id":record.pk,"category":record.category,"amount_usd":str(record.amount_usd)},status=201)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_engineering_export(request,target_id):
+    """Import a *flat exported metric summary*, never interpret arbitrary mine geometry."""
+    target=get_object_or_404(Target,pk=target_id)
+    if not is_editor(request.user):
+        return Response({"detail":"Data steward permission required"},status=403)
+    source=request.data.get("source")
+    uploaded=request.FILES.get("file")
+    if source not in METRICS or uploaded is None:
+        return Response({"detail":"Source and export file required"},status=400)
+    if uploaded.size>2_000_000:
+        return Response({"detail":"Maximum export size is 2 MB"},status=400)
+    ext=uploaded.name.rsplit(".",1)[-1].lower() if "." in uploaded.name else ""
+    if ext not in {"csv","json","xml"} or ext not in FORMATS[source]:
+        return Response({"detail":"Upload a supported CSV, JSON or XML metric-summary file. DXF geometry is not imported."},status=400)
+    content=uploaded.read()
+    try:
+        decoded=content.decode("utf-8-sig")
+        if ext=="json":
+            parsed=json.loads(decoded)
+            if not isinstance(parsed,dict): raise ValueError("Expected a flat JSON object.")
+        elif ext=="csv":
+            reader=csv.DictReader(io.StringIO(decoded),strict=True)
+            rows=list(reader)
+            if len(rows)!=1 or not reader.fieldnames or len(set(reader.fieldnames))!=len(reader.fieldnames):
+                raise ValueError("CSV must contain exactly one summary row with unique headers.")
+            parsed=rows[0]
+        else:
+            if "<!DOCTYPE" in decoded.upper() or "<!ENTITY" in decoded.upper():
+                raise ValueError("DTD and XML entities are forbidden.")
+            root=ElementTree.fromstring(decoded)
+            if len(list(root))>40 or any(len(list(child)) for child in root):
+                raise ValueError("Expected a flat XML summary.")
+            parsed={child.tag:child.text for child in root}
+        allowed=set(METRICS[source])|{"analysis_date","model_version"}
+        if set(parsed)-allowed:
+            raise ValueError("Unknown export fields: "+", ".join(sorted(set(parsed)-allowed)))
+        fields={"source":source,"source_filename":uploaded.name,"source_format":ext,
+            "source_sha256":hashlib.sha256(content).hexdigest(),
+            "analysis_date":parsed.get("analysis_date"),
+            "model_version":parsed.get("model_version"),
+            "metrics":{k:float(v) for k,v in parsed.items() if k in METRICS[source]}}
+    except (UnicodeError,ValueError,TypeError,KeyError,ElementTree.ParseError,csv.Error,OverflowError) as exc:
+        return Response({"detail":"Invalid metric-summary export: "+str(exc)[:240]},status=400)
+    serializer=EvidencePayload(data=fields)
+    serializer.is_valid(raise_exception=True)
+    with transaction.atomic():
+        row=EngineeringEvidence.objects.create(target=target,**serializer.validated_data)
+        AuditEvent.objects.create(actor=request.user,action="engineering_export_imported",
+            entity_type="EngineeringEvidence",entity_id=str(row.pk),
+            details={"target_id":target_id,"source":source,"file_sha256":row.source_sha256,"filename":row.source_filename})
+    return Response(serialize(row),status=201)
