@@ -69,7 +69,7 @@ def serialize(row):
 
 def selected_sources(target):
     data=list(RiskSourceSnapshot.objects.filter(target=target).order_by("-created_at","-id"))
-    return {source:next((row for row in data if row.source==source and row.reviewed_by_id),None) for source in FIELDS}
+    return {source:(lambda row: row if row and row.reviewed_by_id else None)(next((row for row in data if row.source==source),None)) for source in FIELDS}
 
 @api_view(["GET","POST"])
 @permission_classes([IsAuthenticated])
