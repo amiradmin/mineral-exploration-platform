@@ -110,8 +110,8 @@ export default function App(){
 
       {notice&&<div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
       {!['decision-center',...decisionModules.map(m=>m.id)].includes(page)&&<div style={{padding:'8px 0 14px'}}><button className="secondary" onClick={()=>setPage('decision-center')}>{language==="fa"?"← ":""}{t("Back to Dashboard")}</button></div>}
-      {page!=='decision-center'&&<DataScaleBadge targetId={decisionContext.targetId}/>}
-      {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ProjectStrategicFlags targetId={decisionContext.targetId} onOpenCommittee={()=>setPage('exploration-evaluator')}/>}
+      {page!=='decision-center'&&<DataScaleBadge targetId={decisionContext.targetId} workspace={page}/>}
+      {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ProjectStrategicFlags workspace={page} targetId={decisionContext.targetId} onOpenCommittee={()=>setPage('exploration-evaluator')}/>}
       {([...decisionModules.map(m=>m.id),'legal-commercial'] as string[]).includes(page)&&<ModuleLineageHub module={page as ModuleKey} targetId={decisionContext.targetId}/>}
       <div className="content" onClick={e=>{const btn=(e.target as HTMLElement).closest("button");if(btn?.dataset.action==="export")exportDemo();if(btn?.dataset.action==="brief")exportDemo(true)}}>
         {page==='admin-access'&&user?.is_superuser&&<UserAccessManagement/>}

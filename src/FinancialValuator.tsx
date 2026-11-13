@@ -2,7 +2,7 @@ import {T} from './i18n'
 import React,{useMemo,useState} from 'react'
 import {ArrowRight, CheckCircle2, Database, ShieldCheck, Radio} from 'lucide-react'
 import {targets} from './mockData'
-import type {DecisionContext,Scenario} from './decisionPipeline'
+import {fleetReviewCases,formatFleetNpv,type DecisionContext,type Scenario,type FleetCase} from './decisionPipeline'
 import './FinancialValuator.css'
 import StrategicScenarioCopilot from './StrategicScenarioCopilot'
 import SourceEvidencePanel from './SourceEvidencePanel'
@@ -69,9 +69,23 @@ export default function FinancialValuator({context,onContext,onNavigate}:{contex
  const exportReport=()=>{const blob=new Blob([JSON.stringify({target:target.id,inputs,scenario:context.scenario,projection},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='financial-gate4.json';a.click();URL.revokeObjectURL(url)}
  const controls=[{key:'capex' as const,label:'Setup CAPEX',min:100,max:1800,step:25,unit:'M'},{key:'opex' as const,label:'Annual OPEX',min:20,max:500,step:10,unit:'M'},{key:'wacc' as const,label:'Discount Rate',min:2,max:25,step:.5,unit:'%'},{key:'life' as const,label:'Mine Life',min:3,max:20,step:1,unit:' Years'}]
  const revenue=inputs.revenue*scenarioFactor[context.scenario]*target.aiScore/92
- const approved=signed.every(Boolean)
+ const fleetCase = context.fleetCase ?? 'hold'
+ const preview = target.id==='T-001' ? fleetReviewCases[fleetCase] : null
+ const approved = signed.every(Boolean) && (preview ? preview.npv > 0 : projection.npv > 0)
+ const selectFleetCase = (fleetCase: FleetCase) => {
+  onContext({...context,fleetCase})
+  setSigned([false,false,false])
+  setNotice('')
+ }
  return <div className="fv-financial fv-reference-layout">
  <header className="fv-refhead"><h1><span className="fv-title-accent">╏</span> <T>Module 5: Financial Valuator</T></h1><label>◎ Target: <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setSigned([false,false,false])}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} {t.name}</option>)}</select></label><div className="fv-fid-status"><T>FINANCIAL SCENARIO STATUS:</T> <b>{approved?'PRESENTATION CHECKLIST ACKNOWLEDGED':'SCENARIO REVIEW REQUIRED'}</b></div></header>
+ {preview&&<section className="fv-decision-note">
+  <h2>Fleet optimization scenarios</h2>
+  <div role="group" aria-label="Fleet scenario">
+   {(Object.keys(fleetReviewCases) as FleetCase[]).map(id=><button key={id} type="button" aria-pressed={fleetCase===id} onClick={()=>selectFleetCase(id)}>{fleetReviewCases[id].verdict} · {fleetReviewCases[id].label} · {formatFleetNpv(fleetReviewCases[id].npv)}</button>)}
+  </div>
+  <p aria-live="polite">Illustrative FID checklist · {preview.verdict} · {preview.npv<0?'Locked by negative NPV':approved?'Ready after three acknowledgements':'Awaiting CFO, CEO and Chairman acknowledgements'}</p>
+ </section>}
  <StrategicScenarioCopilot key={target.id} targetId={target.id}/>
  <SourceEvidencePanel key={'source-'+target.id} targetId={target.id} kind="financial"/>
  <div className="fv-content"><aside className="fv-sidebar"><div className="fv-sidebar-head"><T>Navigation</T></div>{['Executive KPI','Pillars','Annual Scores','Executive Report'].map(n=><button className={section===n?'active':''} onClick={()=>setSection(n)} key={n}>{n}</button>)}<div className="fv-side-controls"><h2><T>Financial Sliders</T></h2>{controls.map(c=><label key={c.key}><span>{c.label}: <b>{c.unit==='%'?inputs[c.key]+'%':c.unit===' Years'?inputs[c.key]+' Years':'$'+inputs[c.key].toLocaleString('en-US')+c.unit}</b></span><input aria-label={c.label} type="range" min={c.min} max={c.max} step={c.step} value={inputs[c.key]} onChange={e=>update(c.key,Number(e.target.value))}/></label>)}<label className="fv-scenario"><T>Scenario</T><select value={context.scenario} onChange={e=>{onContext({...context,scenario:e.target.value as Scenario});setSigned([false,false,false])}}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label></div></aside>

@@ -2,7 +2,7 @@ import {useCallback,useEffect,useState} from 'react'
 import {AlertTriangle,ArrowRight,BookOpen,CheckCircle2,Clock3,Download,FileText,Layers3,RefreshCw,Scale,ShieldAlert,ShieldCheck,TrendingUp} from 'lucide-react'
 import {useAuth} from './auth'
 import {targets} from './mockData'
-import type {DecisionContext} from './decisionPipeline'
+import {fleetReviewCases,formatFleetNpv,type DecisionContext,type FleetCase} from './decisionPipeline'
 import './ExecutiveDecisionDashboard.css'
 type ModuleRoute='exploration-evaluator'|'reserve-simulator'|'economics-engine'|'risk-scenarios'|'financial-valuator'|'esg-governance'|'legal-commercial'
 type Brief={
@@ -42,7 +42,9 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
  const [loading,setLoading]=useState(false)
  const [requestedProgram,setRequestedProgram]=useState<number|null>(null)
  const [revision,setRevision]=useState(0)
- const [showHistory,setShowHistory]=useState(false)
+ const [showHistory,setShowHistory]=useState(true)
+ const fleetCase = context.fleetCase ?? "hold"
+ const preview = fleetReviewCases[fleetCase]
  const targetId=context.targetId
  const load=useCallback(async(signal:AbortSignal)=>{
   const query=requestedProgram===null?'':'?program_id='+requestedProgram
@@ -91,6 +93,13 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
    <div><small>BOARD OF DIRECTORS · INVESTMENT COMMITTEE</small><h2>Executive Decision Cockpit</h2><p>Decision-first briefing using recorded evidence and governance actions—not presentation estimates.</p></div>
    <div className="ed-top-actions"><button onClick={()=>setRevision(n=>n+1)} disabled={loading}><RefreshCw size={15}/> Refresh</button><button disabled={!brief} onClick={exportBrief}><Download size={15}/> Export board brief</button></div>
   </div>
+  {targetId==='T-001'&&<section className="ed-card">
+   <div className="ed-section-title"><h3>Fleet optimization preview</h3><span>Illustrative scenario</span></div>
+   <div className="ed-selector" role="group" aria-label="Fleet scenario">
+    {(Object.keys(fleetReviewCases) as FleetCase[]).map(id=><button key={id} type="button" aria-pressed={fleetCase===id} onClick={()=>onContext({...context,fleetCase:id})}>{fleetReviewCases[id].verdict} · {fleetReviewCases[id].label}</button>)}
+    <strong aria-live="polite">{preview.verdict} · NPV {formatFleetNpv(preview.npv)}</strong>
+   </div>
+  </section>}
   <div className="ed-selector">
    <label>Project / target<select value={targetId} onChange={e=>{setRequestedProgram(null);onContext({...context,targetId:e.target.value})}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label>
    <label>Investment program<select disabled={!brief?.programs.length} value={brief?.selected_program_id??''} onChange={e=>setRequestedProgram(Number(e.target.value))}>{brief?.programs.length?brief.programs.map(p=><option key={p.id} value={p.id}>{p.name}</option>):<option value="">No linked program</option>}</select></label>

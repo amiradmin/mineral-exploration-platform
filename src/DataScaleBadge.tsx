@@ -4,7 +4,18 @@ import './DataScaleBadge.css'
 type Profile={phase:string;map_scale_denominator:number;sample_count:number;lab_method:string;drillhole_count:number;ddh_metres:number;rc_metres:number;grid_spacing_x:number|null;grid_spacing_y:number|null;core_recovery_pct:number|null;rqd_pct:number|null;verified:boolean}
 type Result={profile:Profile|null;policy:{fid_allowed:boolean;blockers:string[];permitted_budget_scope:string}}
 const empty:Profile={phase:'reconnaissance',map_scale_denominator:50000,sample_count:0,lab_method:'',drillhole_count:0,ddh_metres:0,rc_metres:0,grid_spacing_x:null,grid_spacing_y:null,core_recovery_pct:null,rqd_pct:null,verified:false}
-export default function DataScaleBadge({targetId}:{targetId:string}){
+const detailedReviewScale = { phase: 'Detailed Feasibility', holes: 48, metres: 9600, grid: 50 }
+const reviewScales: Record<string, { phase: string; holes: number; metres?: number; grid: number }> = {
+ 'decision-center': detailedReviewScale,
+ 'exploration-evaluator': { phase: 'Semi-Detailed', holes: 12, metres: 2400, grid: 100 },
+ 'reserve-simulator': { phase: 'Advanced Drilling', holes: 18, metres: 3600, grid: 100 },
+ 'economics-engine': { phase: 'Pre-Feasibility', holes: 24, metres: 4800, grid: 50 },
+ 'risk-scenarios': { phase: 'Risk Assessment', holes: 32, grid: 50 },
+ 'financial-valuator': detailedReviewScale,
+ 'esg-governance': detailedReviewScale,
+ 'legal-commercial': detailedReviewScale,
+}
+export default function DataScaleBadge({targetId,workspace='decision-center'}:{targetId:string;workspace?:string}){
  const {apiFetch,user}=useAuth()
  const [data,setData]=useState<Result|null>(null)
  const [error,setError]=useState('')
@@ -15,11 +26,17 @@ export default function DataScaleBadge({targetId}:{targetId:string}){
  useEffect(()=>{let active=true;setData(null);setError('');setEditing(false);void apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/data-scale/').then(async r=>{const body=await r.json();if(!r.ok)throw Error(body.detail||'Data scale unavailable');return body}).then(d=>{if(active){setData(d);setForm(d.profile??empty)}}).catch(e=>{if(active)setError(String(e))});return()=>{active=false}},[targetId,apiFetch,reload])
  const p=data?.profile
  const n=(v:number|null|undefined,suffix='')=>v===null||v===undefined?'—':v.toLocaleString()+suffix
+ const sample = targetId === "T-001" ? reviewScales[workspace] : undefined
  const set=(key:keyof Profile,value:any)=>setForm(old=>({...old,[key]:value}))
  const numeric=(key:keyof Profile,value:string)=>set(key,value.trim()===''?null:Number(value))
  const save=async()=>{try{setError('');const response=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/data-scale/',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,verified:false})});const body=await response.json();if(!response.ok)throw Error(JSON.stringify(body));setEditing(false);setReload(x=>x+1)}catch(e){setError(String(e))}}
  return <section className="ds-widget" aria-label="Data scale and sample support">
   <div className="ds-top"><strong>DATA SCALE & SAMPLE SUPPORT · {targetId}</strong><div className="ds-actions"><span className={'ds-status '+(data?.policy.fid_allowed?'ds-ready':'ds-blocked')}>{error?'Unavailable':!data?'Loading…':data.policy.fid_allowed?'Evidence eligible':'FID blocked'}</span>{canEdit&&<button type="button" onClick={()=>setEditing(v=>!v)}>{editing?'Close':'Edit evidence'}</button>}</div></div>
+  {sample&&<div className="ds-grid" aria-label="Illustrative review metadata">
+   <div><small>Review sample phase</small><b>{sample.phase}</b></div>
+   <div><small>Review sample drillholes</small><b>{sample.holes} DDH{sample.metres===undefined?'':' / '+n(sample.metres,' m')}</b></div>
+   <div><small>Review sample grid</small><b>{sample.grid} × {sample.grid} m</b></div>
+  </div>}
   <div className="ds-grid">
    <div><small>Exploration phase / scale</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):'Not verified'} · {p?'1:'+n(p.map_scale_denominator):'—'}</b></div>
    <div><small>Assayed samples / method</small><b>{n(p?.sample_count)} · {p?.lab_method||'Not verified'}</b></div>

@@ -33,6 +33,12 @@ function mapRecords(sources:Record<string,{status?:string;snapshot_id?:number|nu
  }
  return states
 }
+const reviewDemoSources: Partial<Record<ModuleKey, readonly string[]>> = {
+ 'exploration-evaluator': ['oasis', 'gcd'],
+ 'reserve-simulator': ['leapfrog-geo'],
+ 'economics-engine': ['alastri'],
+ 'risk-scenarios': ['geotech'],
+}
 export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;targetId:string}){
  const {apiFetch}=useAuth()
  const [open,setOpen]=useState(false)
@@ -97,7 +103,7 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
   void resolve().then(value=>{if(alive)setRows(value)}).catch(e=>{if(alive){setRows({});setError(e instanceof Error?e.message:String(e))}}).finally(()=>{if(alive)setLoading(false)})
   return()=>{alive=false}
  },[open,module,targetId,revision,apiFetch,architecture.sources])
- const badge=(status:string)=>status==='Reviewed evidence'||status==='Legal review recorded'?'reviewed':status==='Simulated source'?'demo':status==='Pending review'||status==='Pending legal review'?'pending':status.includes('Unavailable')?'unavailable':'neutral'
+ const badge=(status:string)=>status==='Reviewed evidence'||status==='Legal review recorded'?'reviewed':(status==='Simulated source'||status==='DEMO Connected')?'demo':status==='Pending review'||status==='Pending legal review'?'pending':status.includes('Unavailable')?'unavailable':'neutral'
  return <section className="mlh-panel" aria-label={architecture.name+' Data Lineage and Software Ingestion'}>
    <button type="button" className="mlh-trigger" onClick={()=>setOpen(v=>!v)} aria-expanded={open}>
     <span className="mlh-icon"><Database size={19}/></span>
@@ -110,7 +116,8 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
     <div className="mlh-scroll"><table><thead><tr><th>Source system</th><th>Format / protocol</th><th>Source data</th><th>Destination factor</th><th>Recorded state</th><th>Observed / imported</th></tr></thead><tbody>{architecture.sources.map(source=>{
      const row=rows[source.key]??unavailable
      const status=loading?'Checking…':row.status
-     return <tr key={source.key}><td><b>{source.name}</b>{row.reference&&<small>Record {row.reference}</small>}</td><td>{row.protocol||source.format}</td><td>{source.inputs}</td><td><strong>{source.output}</strong></td><td><span className={'mlh-status '+badge(status)}>{status}</span>{row.detail&&<small>{row.detail}</small>}</td><td><small>Observed: {nice(row.observed)}</small><small>Imported: {nice(row.received)}</small></td></tr>
+     const demoConnected = targetId==='T-001' && reviewDemoSources[module]?.includes(source.key)
+     return <tr key={source.key}><td><b>{source.name}</b>{row.reference&&<small>Record {row.reference}</small>}</td><td>{row.protocol||source.format}</td><td>{source.inputs}</td><td><strong>{source.output}</strong></td><td><span className={'mlh-status '+badge(status)}>{status}</span>{demoConnected&&<small><span className="mlh-status demo">DEMO Connected</span></small>}{row.detail&&<small>{row.detail}</small>}</td><td><small>Observed: {nice(row.observed)}</small><small>Imported: {nice(row.received)}</small></td></tr>
     })}</tbody></table></div>
     <p className="mlh-footnote">Catalog mappings describe intended provenance, not confirmed live vendor integrations. Only an actual stored snapshot or approved record establishes recorded evidence. A missing source timestamp is displayed as —. Unverified, simulated and absent data must not be treated as certification or FID clearance.</p>
    </div>}
