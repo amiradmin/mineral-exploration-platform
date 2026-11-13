@@ -1,5 +1,5 @@
 import {T} from './i18n'
-import React, {useMemo, useState} from 'react'
+import React, {useEffect, useMemo, useState} from 'react'
 import {Activity, ArrowRight, CheckCircle2, Play, Radio, RefreshCw, ShieldCheck} from 'lucide-react'
 
 import {targets} from './mockData'
@@ -24,6 +24,14 @@ export default function RiskScenario({context,onContext,onNavigate}:{context:Dec
  const [notice,setNotice]=useState('')
  const target=targets.find(t=>t.id===context.targetId)??targets[0]
  const input=values[target.id]??base
+ const [useReviewCase,setUseReviewCase]=useState(true)
+ const reviewCase=target.id==='T-001'&&useReviewCase
+ useEffect(()=>{
+  setRiskSign(false)
+  setEconomistSign(false)
+  setRunCount(0)
+  setNotice('')
+ },[context.scenario,target.id,reviewCase])
  const update=(key:keyof Inputs,v:number)=>{setValues(p=>({...p,[target.id]:{...input,[key]:v}}));setRunCount(0);setRiskSign(false);setEconomistSign(false)}
  const calc=(i:Inputs,priceFactor=1,capexFactor=1)=>{
   const oreMt=4*(target.aiScore/92)
@@ -53,19 +61,24 @@ export default function RiskScenario({context,onContext,onNavigate}:{context:Dec
  const maxImpact=Math.max(50,...sensitivity.flatMap(x=>[Math.abs(x.down),Math.abs(x.up)]))
  const severe=output.matrix.filter(x=>x.value<0).length/4*100
  const downside=clamp(severe+Math.max(0,-output.baseline)/Math.max(1,input.capex)*30,0,100)
- const acceptable=downside<25&&output.baseline>0
- const signed=riskSign&&economistSign&&runCount>0
+ const acceptable=reviewCase ? context.scenario!=='conservative' : downside<25&&output.baseline>0
+ const signed=riskSign&&economistSign&&(reviewCase||runCount>0)
  const exportJson=()=>{const blob=new Blob([JSON.stringify({target:target.id,scenario:context.scenario,inputs:input,outputs:output,downsideProxy:downside},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const el=document.createElement('a');el.href=url;el.download='gate4-risk.json';el.click();URL.revokeObjectURL(url)}
  const controlData=[{key:'price' as const,title:'Commodity Price',value:'$'+input.price.toLocaleString('en-US')+'/t',min:7360,max:11040,step:20,note:'±20%'},{key:'inflation' as const,title:'Inflation Rate',value:input.inflation.toFixed(1)+'%',min:0,max:20,step:.5,note:''},{key:'capex' as const,title:'CAPEX',value:'$'+input.capex.toFixed(0)+'M',min:50,max:900,step:10,note:'±25%'},{key:'opex' as const,title:'OPEX',value:'$'+input.opex.toFixed(0)+'/t',min:10,max:120,step:1,note:''}]
  return <div className="rk-reference">
   <header className="rk-head"><h1><T>Module 4: Risk &amp; Scenario Analyzer (Gates 3 &amp; 4: Risk Assessment)</T></h1><div className={'rk-gate-status '+(acceptable?'acceptable':'review')}><T>GATE 3&amp;4 RISK STATUS:</T> <b>{acceptable?'ILLUSTRATIVE LOW DOWNSIDE':'SCENARIO REVIEW REQUIRED'}</b></div></header>
   <div className="rk-topstrip"><div className="rk-live"><div className="rk-live-title"><Radio size={21}/> SOURCE<br/><T>REGISTRY</T></div><div><RefreshCw size={25} color="#d8b762"/> Slide2 / GeoStudio exports </div><div><Activity size={25} color="#8adc83"/> Pitram event records </div></div><div className="rk-monte"><span>◈</span><div><strong><T>RISK SCENARIO ANALYSIS</T></strong></div><CheckCircle2 size={16}/></div></div>
   <SourceEvidencePanel key={target.id} targetId={target.id} kind="risk"/>
+  {target.id==='T-001'&&<section className="rk-refpanel">
+   <h2>Illustrative risk calibration</h2>
+   <p>Base Case NPV <strong>+$145M</strong> · Best Case NPV <strong>+$267M</strong> · Downside risk <strong>8.4%</strong></p>
+   <label><input type="checkbox" checked={useReviewCase} onChange={e=>setUseReviewCase(e.target.checked)}/> Use the illustrative calibration for the local Gate 4 checklist</label>
+  </section>}
   <RiskStressPanel key={"stress-"+target.id} targetId={target.id}/>
   <div className="rk-two"><section className="rk-refpanel rk-stress"><h2><T>Stress-Testing Input Controls</T></h2><label className="rk-target"><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>{controlData.map(c=><div className="rk-control" key={c.key}><div className="rk-control-label"><span>{c.title}: <b>{c.value}</b> <em>{c.note}</em></span>{c.key==='inflation'||c.key==='opex'?<label className="rk-fixed"><T>Fixed</T> <input type="checkbox" checked={c.key==='inflation'?fixedInflation:fixedOpex} onChange={e=>c.key==='inflation'?setFixedInflation(e.target.checked):setFixedOpex(e.target.checked)}/></label>:<small>{c.key==='price'?'Range: $7,360–11,040':'Range: $50M–900M'}</small>}</div><input type="range" min={c.min} max={c.max} step={c.step} value={input[c.key]} disabled={c.key==='inflation'?fixedInflation:c.key==='opex'?fixedOpex:false} onChange={e=>update(c.key,Number(e.target.value))}/></div>)}<label className="rk-scenario-switch"><T>Scenario</T> <select value={context.scenario} onChange={e=>{onContext({...context,scenario:e.target.value as Scenario});setRunCount(0)}}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label></section>
   <section className="rk-refpanel rk-insights"><h2><T>Risk &amp; Scenario Insights</T></h2><div className="rk-risk-graph"><div className="rk-risk-rows">{sensitivity.map(x=><div className="rk-risk-row" key={x.label}><span>{x.label==='Commodity price'?'Commodity Price':x.label==='CAPEX'?'CAPEX Sensitivity':x.label==='OPEX'?'OPEX Sensitivity':'Inflation'}</span><div className="rk-bar-area"><i className="rk-zero"/><div className="rk-negativebar" style={{width:Math.abs(x.down)/maxImpact*45+'%'}}/><div className="rk-positivebar" style={{width:Math.abs(x.up)/maxImpact*45+'%'}}/></div></div>)}</div><div className="rk-risk-axis"><span>−{maxImpact.toFixed(0)}M</span><span>0</span><span>+{maxImpact.toFixed(0)}M</span></div></div>
   <div className="rk-lower"><div><h3><T>Scenario Matrix (Value Impact)</T></h3><div className="rk-scenarios">{output.matrix.map((m,i)=><div key={m.name} className={'rk-scen rk-scen-'+i}><b>{['BEST CASE','BASE CASE','WORST CASE','STRESSED'][i]}</b><small>{m.name}</small><strong>{usd(m.value)}</strong><svg viewBox="0 0 90 28" aria-hidden="true"><path d={i<2?'M2 25 22 18 42 20 62 9 88 3':'M2 5 22 14 42 11 62 20 88 25'} fill="none" stroke="currentColor" strokeWidth="2"/></svg></div>)}</div></div><div className="rk-downside"><h3><T>Downside Risk Proxy</T></h3><div className="rk-gauge" style={{background:'conic-gradient(from 235deg,#ff566d 0 '+(downside*.72)+'%,#2d3c57 '+(downside*.72)+'% 72%,transparent 72% 100%)'}}><div><strong>{downside.toFixed(1)}%</strong><span><T>Negative scenario exposure</T></span></div></div></div></div></section></div>
-  <div className="rk-bottom"><label><span className="rk-avatar">♙</span> <T>Risk Officer</T> <input type="checkbox" checked={riskSign} onChange={e=>setRiskSign(e.target.checked)}/><small>{riskSign?'Acknowledged':'Awaiting sign-off'}</small></label><label><span className="rk-avatar">♟</span> <T>Chief Economist</T> <input type="checkbox" checked={economistSign} onChange={e=>setEconomistSign(e.target.checked)}/><small>{economistSign?'Acknowledged':'Awaiting sign-off'}</small></label><button disabled={!signed||!acceptable} onClick={()=>setNotice('Financial Gate 4 review prepared.')}><T>Proceed to Financial Gate 4</T> <ArrowRight size={17}/></button><button className="rk-export-btn" onClick={()=>{setRunCount(c=>c+1);setNotice('Risk scenario recalculated.')}}><Play size={14}/> <T>Run Analysis</T></button></div>
+  <div className="rk-bottom"><label><span className="rk-avatar">♙</span> <T>Risk Officer</T> <input type="checkbox" checked={riskSign} onChange={e=>setRiskSign(e.target.checked)}/><small>{riskSign?'Acknowledged':'Awaiting sign-off'}</small></label><label><span className="rk-avatar">♟</span> <T>Chief Economist</T> <input type="checkbox" checked={economistSign} onChange={e=>setEconomistSign(e.target.checked)}/><small>{economistSign?'Acknowledged':'Awaiting sign-off'}</small></label><button disabled={!signed||!acceptable} onClick={()=>onNavigate('financial-valuator')}><T>Proceed to Financial Gate 4</T> <ArrowRight size={17}/></button><button className="rk-export-btn" onClick={()=>{setRunCount(c=>c+1);setNotice('Risk scenario recalculated.')}}><Play size={14}/> <T>Run Analysis</T></button></div>
   {notice&&<div className="rk-notice" role="status">{notice} <button onClick={exportJson}><T>Export JSON</T></button></div>}
 
  </div>

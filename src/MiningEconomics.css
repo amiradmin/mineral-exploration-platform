@@ -61,3 +61,5 @@
 .me-approval>button:not(:disabled){background:linear-gradient(100deg,#164733,#228453,#124d36)!important;text-shadow:0 0 5px #b8ffe0;box-shadow:0 0 21px #28f0a8aa,inset 0 0 9px #4df2ac66}
 @media(min-width:1300px){.me-charts{padding:12px 14px!important}.me-main-layout{min-width:0}.me-control{min-height:76px}.me-workspace{grid-template-columns:1.1fr 2.05fr 1fr!important}}
 @media(max-width:1000px){.me-legends{gap:8px!important}.me-reference-svg{min-width:0}.me-workspace{grid-template-columns:1fr!important}}
+
+.me-approval button:enabled{outline:2px solid #64efad;outline-offset:2px}

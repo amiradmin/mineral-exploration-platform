@@ -691,6 +691,12 @@ class CommitteeWorkflowTests(APITestCase):
             "evidence_sha256":"a"*64,
         },format="json")
         self.assertEqual(proposal.status_code,201,proposal.data)
+        self.sign_in(self.chair)
+        denied = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
+            "decision":"approved",
+            "note":"I verified the laboratory reference and documented the geological rationale."
+        },format="json")
+        self.assertEqual(denied.status_code,403,denied.data)
         self.sign_in(self.cp)
         reviewed = self.client.post(self.url(f"overrides/{proposal.data['id']}/review/"),{
             "decision":"approved",

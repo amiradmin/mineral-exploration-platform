@@ -205,6 +205,10 @@ def review_override(request, target_id, override_id):
     if denied:
         return denied
     decision = request.data.get("decision")
+    if decision == "approved":
+        denied = require_role(request, target, {"cp"})
+        if denied:
+            return denied
     note = request.data.get("note")
     if decision not in ("approved", "rejected") or not clean_explanation(note):
         return Response({"detail": "Decision approved/rejected and review note (20+ chars) are required."}, status=400)

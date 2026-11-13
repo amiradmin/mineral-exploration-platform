@@ -67,6 +67,13 @@ export default function LegalCommercialHub({initialTargetId,onTargetChange}:{ini
   {!canRead?<section className="lc-panel"><h2>Restricted legal records</h2><p>An administrator must grant you an active target-specific committee membership in User Access Management. Contract text and financial scenarios are not public project data.</p></section>:<>
    <div className="lc-tabs"><button className={section==='contracts'?'active':''} onClick={()=>setSection('contracts')}><FileText size={16}/> Contract Risk Audit</button><button className={section==='partnership'?'active':''} onClick={()=>setSection('partnership')}><Calculator size={16}/> Partnership Split Optimizer</button></div>
    {section==='contracts'&&<>
+    {targetId==='T-001'&&!documents.some(doc=>doc.filename==='Sarcheshmeh_North_JV_Draft.pdf')&&<section className="lc-panel">
+     <div className="lc-panel-head"><h2>Sarcheshmeh_North_JV_Draft.pdf</h2><span>Illustrative contract preview</span></div>
+     <div className="lc-findings">
+      <article className="lc-finding lc-high"><strong>Take-or-pay exposure</strong><p>Minimum annual payment may apply when actual offtake falls below the contracted volume.</p></article>
+      <article className="lc-finding lc-high"><strong>Unilateral termination</strong><p>Termination terms should address unrecovered capital and notice periods.</p></article>
+     </div>
+    </section>}
     <section className="lc-panel"><div className="lc-panel-head"><h2>Confidential document audit</h2><span>TXT / searchable PDF · max 2 MB · text screening v1</span></div><p>Flags possible take-or-pay, unilateral termination, unrecovered capital, FX, stripping delay and royalty provisions. Every match links to an excerpt from the uploaded document. Missing matches do not establish legal compliance.</p>
      {canWrite&&<div className="lc-upload"><label>Upload contract<input type="file" accept=".pdf,.txt" onChange={e=>setFile(e.target.files?.[0]??null)}/></label><button disabled={!file||busy} onClick={()=>void upload()}><UploadCloud size={15}/> {busy?'Screening…':'Upload and audit'}</button></div>}
      <div className="lc-contract-grid"><aside>{documents.length?documents.map(doc=><button key={doc.id} className={selectedContract===doc.id?'active':''} onClick={()=>setSelectedContract(doc.id)}><strong>{doc.filename}</strong><small>{doc.status} · {niceTime(doc.created_at)}</small></button>):<p>No contracts registered for this target.</p>}</aside><div className="lc-findings">{active?<><div className="lc-contract-title"><h3>{active.filename}</h3><span>{active.status==='reviewed'?'Technical review recorded':'Pending legal review'}</span></div><p>SHA-256: <code>{active.sha256}</code></p>
@@ -78,6 +85,7 @@ export default function LegalCommercialHub({initialTargetId,onTargetChange}:{ini
    {section==='partnership'&&<>
     <section className="lc-panel"><div className="lc-panel-head"><h2>Partnership Split Optimizer</h2><span>Deterministic DCF · Python backend</span></div>
      <p>Owner share is modeled as recovered metal value. Contract-specific exemptions, royalties, financing fees and reserve classifications require independent review. The 15–18% negotiation range is evaluated, not assumed to be optimal.</p>
+     {targetId==='T-001'&&<p>Illustrative investor NPV break-even owner share <strong>18.5%</strong>.</p>}
      <SourceEvidencePanel targetId={targetId} kind="financial" onChanged={()=>setSimulation(null)}/>
      <div className="lc-assumptions">{fields.map(([key,label,min,max,step])=><label key={key}>{label}<input type="number" min={min} max={max} step={step} value={params[key] as number} onChange={e=>{setParams(old=>({...old,[key]:Number(e.target.value)}));setSimulation(null)}}/></label>)}</div>
      <label className="lc-toggle"><input type="checkbox" checked={params.use_reviewed_sources} onChange={e=>{setParams(p=>({...p,use_reviewed_sources:e.target.checked}));setSimulation(null)}}/> Require reviewed MineTrust LOM production and ERP/EPC setup CAPEX</label>

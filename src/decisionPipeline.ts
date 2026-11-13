@@ -2,8 +2,16 @@ import { targets } from './mockData'
 
 /** Shared, deterministic presentation scenario. No server, resource classification, or live economics. */
 export type Scenario = 'conservative' | 'base' | 'optimistic'
+export type FleetCase = 'hold' | 'go'
+export const fleetReviewCases = {
+ hold: { verdict: 'HOLD', label: 'Original fleet', npv: -100.7 },
+ go: { verdict: 'GO', label: 'Optimized fleet', npv: 45 },
+} as const
+export const formatFleetNpv = (value: number) =>
+ (value < 0 ? '−' : '+') + '$' + Math.abs(value).toString() + 'M'
+
 export type GateVerdict = 'GO' | 'HOLD' | 'REVIEW'
-export interface DecisionContext { targetId: string; scenario: Scenario }
+export interface DecisionContext { targetId: string; scenario: Scenario; fleetCase?: FleetCase }
 export interface StageRecord { stage: string; label: string; value: string; note: string; verdict: GateVerdict }
 export interface DecisionSnapshot { context: DecisionContext; targetName: string; commodity: string; records: StageRecord[]; risk: number; npv: number; irR: number; esg: number }
 

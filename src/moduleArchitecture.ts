@@ -37,6 +37,7 @@ export const moduleArchitecture:Record<ModuleKey,{number:number;name:string;gate
  'esg-governance':{number:6,name:'ESG & Governance Tracker',gate:'Cross-gate',function:'Environmental & Social Assurance',summary:'Continuous ESG indicators; external source integrations are not configured in this phase.',sources:[
   {key:'tailings',name:'Slide2 / RS2 Tailings',format:'Dam stability model export',inputs:'Tailings dam FOS and liquefaction',output:'Tailings governance'},
   {key:'gis-esg',name:'ArcGIS Pro / QGIS',format:'Spatial boundaries',inputs:'Protected habitats, water sources, pastures',output:'SLO / legal compliance'},
+  {key:'iot',name:'Environmental IoT sensors',format:'Live telemetry',inputs:'Water, energy and environmental sensor readings',output:'Environmental monitoring'},
   {key:'pitram-safety',name:'Micromine Pitram Safety',format:'Safety shift logs',inputs:'Safety hours, LTI, near misses',output:'TRIFR'},
   {key:'sustainability',name:'Datamine Sustainability',format:'Environmental IoT exports',inputs:'Recycled water, energy meters',output:'Water & carbon intensity'}
  ]},
