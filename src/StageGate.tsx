@@ -81,7 +81,7 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
        <button onClick={()=>onOpen('exploration-evaluator')}><b>01 · Data lineage</b><span>Expand the per-module ingestion console; source, protocol, timestamp and destination factor</span></button>
        <button onClick={()=>onOpen('exploration-evaluator')}><b>02 · Expert committee</b><span>Evidence-backed overrides, strategic flags and formal committee memos</span></button>
        <button onClick={()=>onOpen('reserve-simulator')}><b>03 · Data scale support</b><span>Sampling density, drill quality and FID protection across modules</span></button>
-       <button onClick={()=>onOpen('financial-valuator')}><b>04 · Strategic co-pilot</b><span>Natural-language fleet scenarios with deterministic Python DCF</span></button>
+       <button onClick={()=>onOpen('financial-valuator')}><b>04 · Data Mine LLM</b><span>Natural-language fleet scenarios with deterministic Python DCF</span></button>
        <button onClick={()=>onOpen('legal-commercial')}><b>05 · Legal & commercial</b><span>Contract clause screening and investment partnership optimization</span></button>
       </div>
    </section>
