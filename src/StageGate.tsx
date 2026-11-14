@@ -1,3 +1,5 @@
+import DashboardPanelLayout from './DashboardPanelLayout'
+import {useAuth} from './auth'
 import DashboardDisclosure from './DashboardDisclosure'
 import React from 'react'
 import { Activity, ArrowRight, BarChart3, CircleDollarSign, Compass, FlaskConical, Globe2, ShieldAlert, TrendingUp, Pickaxe, Layers, CheckCircle2 } from 'lucide-react'
@@ -38,6 +40,7 @@ function ModuleArtwork({id}:{id:DecisionModuleId}){
 }
 export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:DecisionModuleId|'legal-commercial')=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
  const {t}=useI18n()
+ const {user}=useAuth()
  const snapshot=createDecisionSnapshot(context)
  const upper=decisionModules.slice(0,3)
  const lower=decisionModules.slice(3)
@@ -48,6 +51,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
  </button>}
  return <div className="sg-wrap sg-reference">
    <div className="sg-heading"><div><span className="sg-eyebrow"><T>EXPLORATION TO INVESTMENT · DECISION INTELLIGENCE</T></span><h1><T>Stage-Gate Decision Center</T></h1><p><T>From raw geological evidence to boardroom-ready financial scenarios.</T></p></div></div>
+   <DashboardPanelLayout key={user?.id??'guest'} storageKey={'investment-dashboard-layout:'+ (user?.id??'guest')} panels={[
+   {id:'modules', label:"Integrated modules", content:<>
    <section className="sg-architecture" aria-label="Four stage gates, six analytical modules and legal commercial governance">
 <DashboardDisclosure label="Integrated modules" heading={<>
     <div className="sg-art-title"><h2><T>7 Integrated Modules (6 Analytical + 1 Legal AI Hub)</T></h2><p>Architecture and simulated analytical workspaces shown for navigation. The executive cockpit below uses formal stored gate decisions.</p></div>
@@ -69,8 +74,14 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
     <p className="sg-art-hint"><T>Select a module to open its workspace. ESG, expert review, data quality and legal governance extend across all four gates.</T></p>
 </DashboardDisclosure>
    </section>
+   </>},
+   {id:'cockpit', label:"Executive Decision Cockpit", content:<>
    <ExecutiveDecisionDashboard context={context} onContext={onContext} onNavigate={onOpen}/>
+   </>},
+   {id:'scale', label:"Data Scale & Sample Support", content:<>
    <DataScaleBadge targetId={context.targetId}/>
+   </>},
+   {id:'preview', label:"Workspace preview", content:<>
    <div className="sg-technical-reference" aria-label="Interactive stage-gate architecture and module map">
    <div className="sg-context"><label><T>Target</T> <select value={context.targetId} onChange={e=>onContext({...context,targetId:e.target.value})}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label><label><T>Scenario</T> <select value={context.scenario} onChange={e=>onContext({...context,scenario:e.target.value as Scenario})}><option value="conservative"><T>Conservative</T></option><option value="base"><T>Base</T></option><option value="optimistic"><T>Optimistic</T></option></select></label><span><T>Shared target and scenario across six analytical modules</T></span></div>
    <p className="sg-preview-warning"><strong>ILLUSTRATIVE WORKSPACE PREVIEW</strong> · The metrics and gate signals below use demonstration scenarios. They are not certified estimates, formal stage-gate approvals or investment recommendations.</p><div className="sg-summary">
@@ -79,6 +90,9 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
       <div><span><T>Portfolio targets</T></span><strong>{targets.length.toString().padStart(2,"0")}</strong><small>Targets currently represented in the UI</small></div>
       <div><span><T>Governance scope</T></span><strong><T>All gates</T></strong><small><T>Continuous oversight</T></small></div>
    </div>
+   </div>
+   </>},
+   {id:'governance', label:"Strategic governance upgrades", content:<>
    <section className="sg-strategy-upgrades" aria-label="Five platform-wide strategic capabilities">
 <DashboardDisclosure label="Strategic governance upgrades" heading={<>
       <div><strong>Five strategic governance upgrades</strong><small>Shared capabilities extend the existing stage-gate analysis; they are not extra investment gates.</small></div>
@@ -92,6 +106,8 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
       </div>
 </DashboardDisclosure>
    </section>
+   </>},
+   {id:'legal', label:"Legal & Commercial AI Hub", content:<>
    <section className="sg-extension">
 <DashboardDisclosure label="Legal and commercial AI hub" heading={<>
       <div><small>CROSS-GATE GOVERNANCE · MODULE 7</small><h2>Legal &amp; Commercial AI Hub</h2><p>Audit mining contracts and compare royalty structures with reviewed MineTrust and ERP/EPC inputs. Contract review does not replace legal counsel.</p></div>
@@ -99,14 +115,15 @@ export function StageGateDashboard({onOpen,context,onContext}:{onOpen:(id:Decisi
       <button type="button" onClick={()=>onOpen('legal-commercial')}>Open Module 7 <ArrowRight size={17}/></button>
 </DashboardDisclosure>
    </section>
+   </>},
+   {id:'quick-access', label:"Module quick access", content:<>
 <DashboardDisclosure label="Module quick access" heading={<>
    <div className="sg-section-title sg-modules-heading"><h2><T>Module quick access</T></h2><p><T>Detailed indicators and links to existing geoscience workspaces.</T></p></div>
 </>}>
    <div className="sg-grid">{decisionModules.map(m=>{const Icon=m.icon;return <button key={m.id} className="sg-module" onClick={()=>onOpen(m.id)}><div className="sg-module-top"><span className="sg-module-icon"><Icon size={22}/></span><span className="sg-gate-tag">{t(m.gate)}</span></div><h3>{t(m.name)}</h3><p>{t(m.summary)}</p><div className="sg-mini-stats">{<><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.value}</strong><small>{t(snapshot.records.find(r=>r.stage===m.id)?.label??'')}</small></span><span><strong>{snapshot.records.find(r=>r.stage===m.id)?.verdict}</strong><small>Illustrative scenario indicator</small></span></>}</div><span className="sg-open"><T>Open decision workspace</T> <ArrowRight size={15}/></span></button>})}</div>
 </DashboardDisclosure>
-
-   </div>
-
+   </>},
+   ]}/>
  </div>
 }
 export function DecisionModulePage({id,onBack,onNavigate,context,onContext}:{id:DecisionModuleId,onBack:()=>void,onNavigate:(page:string)=>void;context:DecisionContext;onContext:(context:DecisionContext)=>void}){
