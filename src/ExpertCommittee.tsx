@@ -1,3 +1,4 @@
+import {carbonateReplacementFlag} from './committeeReviewSamples'
 import {useCallback,useEffect,useState} from 'react'
 import {ClipboardCheck,Flag,FileSignature,ShieldAlert,Users,RefreshCw} from 'lucide-react'
 import {useI18n} from './i18n'
@@ -107,6 +108,13 @@ export default function ExpertCommittee({targetId}:{targetId:string}){
        <label>{t('Rationale')}<textarea required minLength={20} value={flagReason} onChange={e=>setFlagReason(e.target.value)}/></label>
        <button disabled={busy} type="submit">{t('Create strategic flag')}</button>
       </form>}
+      {targetId==='T-001'&&<div className="committee-records">
+       <div className="committee-record committee-catalyst">
+        <strong>{carbonateReplacementFlag.title}</strong>
+        <small>Illustrative review flag · {t('Gate')} {carbonateReplacementFlag.gate}</small>
+        <p>{carbonateReplacementFlag.rationale}</p>
+       </div>
+      </div>}
       <div className="committee-records">{committee.flags.map(f=><div key={f.id} className={'committee-record committee-'+f.kind}><strong>{t(f.kind)} · {f.title}</strong><small>{t(f.status)} · {t('Gate')} {f.gate}</small><p>{f.rationale}</p><small>{f.evidence_reference}</small>{canReview&&f.status==='open'&&<button type="button" disabled={busy} onClick={()=>void act('flags/'+f.id+'/resolve/',{note:reviewNote})}>{t('Resolve with review note')}</button>}</div>)}{committee.flags.length===0&&<p>{t('No project flags')}</p>}</div>
      </article>
      <article className="committee-card committee-memo">

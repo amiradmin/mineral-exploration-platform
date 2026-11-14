@@ -1,10 +1,11 @@
 import {useEffect,useState} from 'react'
 import {AlertOctagon,Flag,ShieldAlert,CheckCircle2} from 'lucide-react'
 import {useAuth} from './auth'
+import {carbonateReplacementFlag} from './committeeReviewSamples'
 import './ProjectStrategicFlags.css'
 type ProjectFlag={id:number;kind:'catalyst'|'fatal_flaw'|'prerequisite';title:string;rationale:string;evidence_reference:string;gate:number;status:string}
 const sampleFlags: Record<string, Pick<ProjectFlag,'kind'|'title'|'rationale'>> = {
- 'exploration-evaluator': {kind:'catalyst',title:'Carbonate Replacement Zone',rationale:'Illustrative +10% PoS opportunity.'},
+ 'exploration-evaluator': carbonateReplacementFlag,
  'reserve-simulator': {kind:'prerequisite',title:'Geostatistical Anisotropy Confirmed in Block 2',rationale:'Illustrative geostatistical review finding.'},
  'economics-engine': {kind:'fatal_flaw',title:'Metallurgical recovery drops to 82%',rationale:'Illustrative metallurgical downside warning.'},
 }
