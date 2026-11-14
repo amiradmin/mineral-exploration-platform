@@ -34,11 +34,8 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
  const save=async()=>{try{setError('');const response=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/data-scale/',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,verified:false})});const body=await response.json();if(!response.ok)throw Error(JSON.stringify(body));setEditing(false);setReload(x=>x+1)}catch(e){setError(String(e))}}
  return <section className="ds-widget" aria-label="Data scale and sample support">
   <div className="ds-top"><strong>DATA SCALE & SAMPLE SUPPORT · {targetId}</strong><div className="ds-actions"><span className={'ds-status '+(data?.policy.fid_allowed?'ds-ready':'ds-blocked')}>{error?'Unavailable':!data?'Loading…':data.policy.fid_allowed?'Evidence eligible':'FID blocked'}</span>{canEdit&&<button type="button" onClick={()=>setEditing(v=>!v)}>{editing?'Close':'Edit evidence'}</button>}</div></div>
-  {sample&&<div className="ds-grid" aria-label="Illustrative review metadata">
-   <div><small>Review sample phase</small><b>{sample.phase}</b></div>
-  </div>}
   <div className="ds-grid">
-   <div><small>Exploration phase / scale</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):'Not verified'} · {p?'1:'+n(p.map_scale_denominator):'—'}</b></div>
+   <div><small>Exploration phase / scale{sampleDrilling?' (sample phase)':''}</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):sampleDrilling?.phase??'Not verified'} · {p?'1:'+n(p.map_scale_denominator):'—'}</b></div>
    <div><small>Assayed samples / method</small><b>{n(p?.sample_count)} · {p?.lab_method||'Not verified'}</b></div>
    <div><small>Drillholes / DDH / RC{sampleDrilling?' (sample)':''}</small><b>{sampleDrilling? n(sampleDrilling.holes)+' · '+n(sampleDrilling.metres,' m')+' / 0 m' : n(p?.drillhole_count)+' · '+n(p?.ddh_metres,' m')+' / '+n(p?.rc_metres,' m')}</b></div>
    <div><small>Drill grid{sampleGrid?' (sample)':''}</small><b>{n(sampleGrid?.grid??p?.grid_spacing_x)} × {n(sampleGrid?.grid??p?.grid_spacing_y)} m</b></div>
