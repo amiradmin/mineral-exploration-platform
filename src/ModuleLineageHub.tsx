@@ -115,9 +115,9 @@ export default function ModuleLineageHub({module,targetId}:{module:ModuleKey;tar
     {error&&<p className="mlh-error" role="alert"><ShieldAlert size={15}/>{error}</p>}
     <div className="mlh-scroll"><table><thead><tr><th>Source system</th><th>Format / protocol</th><th>Source data</th><th>Destination factor</th><th>Recorded state</th><th>Observed / imported</th></tr></thead><tbody>{architecture.sources.map(source=>{
      const row=rows[source.key]??unavailable
-     const status=loading?'Checking…':row.status
      const demoConnected = targetId==='T-001' && reviewDemoSources[module]?.includes(source.key)
-     return <tr key={source.key}><td><b>{source.name}</b>{row.reference&&<small>Record {row.reference}</small>}</td><td>{row.protocol||source.format}</td><td>{source.inputs}</td><td><strong>{source.output}</strong></td><td><span className={'mlh-status '+badge(status)}>{status}</span>{demoConnected&&<small><span className="mlh-status demo">DEMO Connected</span></small>}{row.detail&&<small>{row.detail}</small>}</td><td><small>Observed: {nice(row.observed)}</small><small>Imported: {nice(row.received)}</small></td></tr>
+     const status=loading?'Checking…':demoConnected && row.status==='Not configured'?'DEMO Connected':row.status
+     return <tr key={source.key}><td><b>{source.name}</b>{row.reference&&<small>Record {row.reference}</small>}</td><td>{row.protocol||source.format}</td><td>{source.inputs}</td><td><strong>{source.output}</strong></td><td><span className={'mlh-status '+badge(status)}>{status}</span>{row.detail&&<small>{row.detail}</small>}</td><td><small>Observed: {nice(row.observed)}</small><small>Imported: {nice(row.received)}</small></td></tr>
     })}</tbody></table></div>
     <p className="mlh-footnote">Catalog mappings describe intended provenance, not confirmed live vendor integrations. Only an actual stored snapshot or approved record establishes recorded evidence. A missing source timestamp is displayed as —. Unverified, simulated and absent data must not be treated as certification or FID clearance.</p>
    </div>}

@@ -59,6 +59,9 @@ const iconFor=(id:string)=>{
 }
 const dateLabel=(value:string|null|undefined,locale='en-US')=>value?new Date(value).toLocaleString(locale):'—'
 
+const isReviewDemo = (targetId:string,source:Source) =>
+  targetId==='T-001' && !source.configured && (source.id==='oasis'||source.id==='gcd')
+
 function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targetId:string;targetName:string;onClose:()=>void}){
   const {t,locale}=useI18n()
   const {apiFetch}=useAuth()
@@ -144,7 +147,7 @@ function SourceDetails({source,targetId,targetName,onClose}:{source:Source;targe
           <div className="ee-source-detail-panel">
             <h3><Network size={16}/> <T>Connection protocol</T></h3>
             <div className="ee-source-meta"><span><T>Configured protocol</T></span><strong>{loading?'Loading…':detail?.protocol||'Not configured'}</strong></div>
-            <div className="ee-source-meta"><span><T>Connection state</T></span><strong className={detail?.status==='connected'?'ee-source-connected':''}>{loading?'Loading…':detail?.status?.replaceAll('_',' ')||'Not available'}</strong></div>
+            <div className="ee-source-meta"><span><T>Connection state</T></span><strong className={detail?.status==='connected'?'ee-source-connected':''}>{isReviewDemo(targetId,source)?'DEMO Connected':loading?'Loading…':detail?.status?.replaceAll('_',' ')||'Not available'}</strong></div>
             <div className="ee-source-meta"><span><T>Data format</T></span><strong>{detail?.format||'Not configured'}</strong></div>
             <div className="ee-source-meta"><span><T>Last checked</T></span><strong>{dateLabel(detail?.last_checked_at,locale)}</strong></div>
             <div className="ee-source-meta"><span><T>Last successful import</T></span><strong>{dateLabel(detail?.last_success_at,locale)}</strong></div>
@@ -222,7 +225,7 @@ export default function ExplorationDataLineage({targetId,targetName}:{targetId:s
                 <span className="ee-lineage-node-icon">{iconFor(source.id)}</span>
                 <span className="ee-lineage-source-copy"><strong>{t(source.name)}</strong><small>{t(source.format)}</small></span>
               </button>
-              <span className={'ee-lineage-status'+(source.configured?' ee-lineage-registered':'')}>{source.configured?(source.isDemo?'DEMO ': '')+source.status?.replaceAll('_',' '):'NOT SET'}</span>
+              <span className={'ee-lineage-status'+(source.configured||isReviewDemo(targetId,source)?' ee-lineage-registered':'')}>{isReviewDemo(targetId,source)?'DEMO Connected':source.configured?(source.isDemo?'DEMO ': '')+source.status?.replaceAll('_',' '):'NOT SET'}</span>
               <button type="button" className="ee-lineage-info-button" title={'View latest data and protocol for '+source.name} aria-label={'View details for '+source.name} onClick={()=>setDetailsFor(source.id)}><Info size={18}/></button>
             </div>)}
           </div>
