@@ -4,6 +4,7 @@ import './DataScaleBadge.css'
 type Profile={phase:string;map_scale_denominator:number;sample_count:number;lab_method:string;drillhole_count:number;ddh_metres:number;rc_metres:number;grid_spacing_x:number|null;grid_spacing_y:number|null;core_recovery_pct:number|null;rqd_pct:number|null;verified:boolean}
 type Result={profile:Profile|null;policy:{fid_allowed:boolean;blockers:string[];permitted_budget_scope:string}}
 const empty:Profile={phase:'reconnaissance',map_scale_denominator:50000,sample_count:0,lab_method:'',drillhole_count:0,ddh_metres:0,rc_metres:0,grid_spacing_x:null,grid_spacing_y:null,core_recovery_pct:null,rqd_pct:null,verified:false}
+const reviewSampleDetails = { mapScale: 10000, assayCount: 480, labMethod: 'ICP-OES', coreRecovery: 95, rqd: 78 }
 const detailedReviewScale = { phase: 'Detailed Feasibility', holes: 48, metres: 9600, grid: 50 }
 const reviewScales: Record<string, { phase: string; holes: number; metres: number; grid: number }> = {
  'decision-center': detailedReviewScale,
@@ -26,11 +27,9 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
  useEffect(()=>{let active=true;setData(null);setError('');setEditing(false);void apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/data-scale/').then(async r=>{const body=await r.json();if(!r.ok)throw Error(body.detail||'Data scale unavailable');return body}).then(d=>{if(active){setData(d);setForm(d.profile??empty)}}).catch(e=>{if(active)setError(String(e))});return()=>{active=false}},[targetId,apiFetch,reload])
  const p=data?.profile
  const n=(v:number|null|undefined,suffix='')=>v===null||v===undefined?'—':v.toLocaleString()+suffix
- const sample = targetId === "T-001" ? reviewScales[workspace] : undefined
+ const sample = targetId === "T-001" ? (reviewScales[workspace] ?? detailedReviewScale) : undefined
  const sampleDrilling = data && !p ? sample : undefined
- const sampleDetails = sampleDrilling && workspace === 'exploration-evaluator'
-  ? { mapScale: 10000, assayCount: 480, labMethod: 'ICP-OES', coreRecovery: 95, rqd: 78 }
-  : undefined
+ const sampleDetails = sampleDrilling ? reviewSampleDetails : undefined
  const sampleGrid = data && p?.grid_spacing_x == null && p?.grid_spacing_y == null ? sample : undefined
  const set=(key:keyof Profile,value:any)=>setForm(old=>({...old,[key]:value}))
  const numeric=(key:keyof Profile,value:string)=>set(key,value.trim()===''?null:Number(value))
