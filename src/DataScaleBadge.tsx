@@ -28,6 +28,9 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
  const n=(v:number|null|undefined,suffix='')=>v===null||v===undefined?'—':v.toLocaleString()+suffix
  const sample = targetId === "T-001" ? reviewScales[workspace] : undefined
  const sampleDrilling = data && !p ? sample : undefined
+ const sampleDetails = sampleDrilling && workspace === 'exploration-evaluator'
+  ? { mapScale: 10000, assayCount: 480, labMethod: 'ICP-OES', coreRecovery: 95, rqd: 78 }
+  : undefined
  const sampleGrid = data && p?.grid_spacing_x == null && p?.grid_spacing_y == null ? sample : undefined
  const set=(key:keyof Profile,value:any)=>setForm(old=>({...old,[key]:value}))
  const numeric=(key:keyof Profile,value:string)=>set(key,value.trim()===''?null:Number(value))
@@ -35,11 +38,11 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
  return <section className="ds-widget" aria-label="Data scale and sample support">
   <div className="ds-top"><strong>DATA SCALE & SAMPLE SUPPORT · {targetId}</strong><div className="ds-actions"><span className={'ds-status '+(data?.policy.fid_allowed?'ds-ready':'ds-blocked')}>{error?'Unavailable':!data?'Loading…':data.policy.fid_allowed?'Evidence eligible':'FID blocked'}</span>{canEdit&&<button type="button" onClick={()=>setEditing(v=>!v)}>{editing?'Close':'Edit evidence'}</button>}</div></div>
   <div className="ds-grid">
-   <div><small>Exploration phase / scale{sampleDrilling?' (sample phase)':''}</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):sampleDrilling?.phase??'Not verified'} · {p?'1:'+n(p.map_scale_denominator):'—'}</b></div>
-   <div><small>Assayed samples / method</small><b>{n(p?.sample_count)} · {p?.lab_method||'Not verified'}</b></div>
+   <div><small>Exploration phase / scale{sampleDrilling?' (sample)':''}</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):sampleDrilling?.phase??'Not verified'} · {p||sampleDetails?'1:'+n(p?.map_scale_denominator??sampleDetails?.mapScale):'—'}</b></div>
+   <div><small>Assayed samples / method{sampleDetails?' (sample)':''}</small><b>{n(p?.sample_count??sampleDetails?.assayCount)} · {p?.lab_method||sampleDetails?.labMethod||'Not verified'}</b></div>
    <div><small>Drillholes / DDH / RC{sampleDrilling?' (sample)':''}</small><b>{sampleDrilling? n(sampleDrilling.holes)+' · '+n(sampleDrilling.metres,' m')+' / 0 m' : n(p?.drillhole_count)+' · '+n(p?.ddh_metres,' m')+' / '+n(p?.rc_metres,' m')}</b></div>
    <div><small>Drill grid{sampleGrid?' (sample)':''}</small><b>{n(sampleGrid?.grid??p?.grid_spacing_x)} × {n(sampleGrid?.grid??p?.grid_spacing_y)} m</b></div>
-   <div><small>Core recovery / RQD</small><b>{n(p?.core_recovery_pct,'%')} / {n(p?.rqd_pct,'%')}</b></div>
+   <div><small>Core recovery / RQD{sampleDetails?' (sample)':''}</small><b>{n(p?.core_recovery_pct??sampleDetails?.coreRecovery,'%')} / {n(p?.rqd_pct??sampleDetails?.rqd,'%')}</b></div>
   </div>
   {data&&!data.policy.fid_allowed&&<p className="ds-warning">Investment approval restricted · {data.policy.blockers.join(', ')||'Unverified evidence'}. Budget scope: {data.policy.permitted_budget_scope.replaceAll('_',' ')}.</p>}
   {error&&<p role="alert" className="ds-warning">{error}</p>}
