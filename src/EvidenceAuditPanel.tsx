@@ -77,7 +77,10 @@ export default function EvidenceAuditPanel({targetId}:{targetId:string}){
   return <section className="ee-panel ee-audit" aria-label="Evidence calculation and audit trail">
     <div className="ee-audit-title">
       <div><GitBranch size={18}/><div><strong><T>EVIDENCE → FACTOR CALCULATION & AUDIT</T></strong><small><T>Server-owned results · frozen rules · source snapshot provenance</T></small></div></div>
-      <div><button type="button" onClick={()=>setExpanded(v=>!v)}>{t(expanded?'Collapse':'Expand')}</button></div>
+      <div>
+        {expanded&&shown&&shown.provenance.length>0&&<button type="button" onClick={()=>setShowRaw(v=>!v)}>{t(showRaw?'Hide Raw JSON':'Show Raw JSON')}</button>}
+        <button type="button" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{t(expanded?'Collapse':'Expand')}</button>
+      </div>
     </div>
     {expanded&&<>
       <div className="ee-audit-actions">
@@ -101,7 +104,6 @@ export default function EvidenceAuditPanel({targetId}:{targetId:string}){
           <div className="ee-audit-info">Missing factors: {shown.parameters.missing_factors.join(', ')||'None'} · Missing rule inputs: {shown.parameters.missing_inputs.length} · Aggregation: {shown.parameters.aggregate}</div>
           <div className="ee-audit-lineage">
             <strong><T>Recorded source → evidence → factor links</T></strong>
-            {shown.provenance.length>0&&<button type="button" onClick={()=>setShowRaw(v=>!v)}><T>{showRaw?'Hide Raw JSON':'Show Raw JSON'}</T></button>}
             {shown.provenance.length===0?<p><T>No valid numeric rule inputs were found.</T></p>:<div className="ee-audit-scroll"><table><thead><tr><th><T>Source</T></th><th><T>Snapshot</T></th><th><T>Input metric</T></th><th><T>Value</T></th><th><T>Rule / version</T></th><th><T>Factor</T></th><th><T>Score</T></th>{showRaw&&<th><T>Frozen parameters</T></th>}</tr></thead><tbody>{shown.provenance.map(item=><tr key={item.rule_id}><td>{item.software_key}</td><td>#{item.snapshot_id} <small>{item.dataset}</small></td><td>{item.metric}</td><td>{item.observed_value}</td><td>#{item.rule_id} / v{item.rule_version}</td><td>{item.factor}</td><td>{item.normalized_score.toFixed(2)}</td>{showRaw&&<td><code>{JSON.stringify(item.frozen_rule)}</code></td>}</tr>)}</tbody></table></div>}
           </div>
           <div className="ee-audit-footer">
