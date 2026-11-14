@@ -1,3 +1,4 @@
+import DashboardDisclosure from './DashboardDisclosure'
 import {useCallback,useEffect,useState} from 'react'
 import {AlertTriangle,ArrowRight,BookOpen,CheckCircle2,Clock3,Download,FileText,Layers3,RefreshCw,Scale,ShieldAlert,ShieldCheck,TrendingUp} from 'lucide-react'
 import {useAuth} from './auth'
@@ -43,7 +44,6 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
  const [loading,setLoading]=useState(false)
  const [requestedProgram,setRequestedProgram]=useState<number|null>(null)
  const [revision,setRevision]=useState(0)
- const [showHistory,setShowHistory]=useState(true)
  const fleetCase = context.fleetCase ?? "hold"
  const targetId=context.targetId
  const load=useCallback(async(signal:AbortSignal)=>{
@@ -93,13 +93,16 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
   const link=document.createElement('a');link.href=url;link.download='board-decision-'+targetId+'.md';link.click();URL.revokeObjectURL(url)
  }
  return <section className="ed-board" aria-label="Executive investment decision dashboard">
-  <div className="ed-heading">
+  <DashboardDisclosure label="Executive Decision Cockpit" heading={<div className="ed-heading">
    <div><small>BOARD OF DIRECTORS · INVESTMENT COMMITTEE</small><h2>Executive Decision Cockpit</h2><p>Decision-first briefing using recorded evidence and governance actions—not presentation estimates.</p></div>
    <div className="ed-top-actions"><button onClick={()=>setRevision(n=>n+1)} disabled={loading}><RefreshCw size={15}/> Refresh</button><button disabled={!brief} onClick={exportBrief}><Download size={15}/> Export board brief</button></div>
-  </div>
+  </div>}>
   {targetId==='T-001'&&<section className="ed-card">
+<DashboardDisclosure label="Fleet optimization preview" heading={<>
    <div className="ed-section-title"><h3>Fleet optimization preview</h3><span>Illustrative scenario</span></div>
+</>}>
    <FleetScenarioToggle value={fleetCase} onChange={fleetCase=>onContext({...context,fleetCase})}/>
+</DashboardDisclosure>
   </section>}
   <div className="ed-selector">
    <label>Project / target<select value={targetId} onChange={e=>{setRequestedProgram(null);onContext({...context,targetId:e.target.value})}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label>
@@ -120,42 +123,61 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
     <article><small>Validated financial NPV / IRR</small><strong>Not available</strong><span>Scenario values are not board-certified project economics</span></article>
    </div>
    <div className="ed-flow">
+<DashboardDisclosure label="Four-gate decision track" heading={<>
     <div className="ed-section-title"><h3>Four-gate decision track</h3><span>Formal program approvals, not hypothetical UI decisions</span></div>
+</>}>
     <div className="ed-gates">{brief.formal_gates.map(g=><article key={g.gate} className={g.outcome==='GO'?'ed-gate-go':g.outcome==='HOLD'?'ed-gate-hold':'ed-gate-neutral'}>
      <small>GATE {g.gate}</small><strong>{['Screening','Drilling & resource','Pre-feasibility','FID'][g.gate-1]}</strong><b>{g.outcome==='NOT_RECORDED'?'Not recorded':g.outcome}</b><span>{g.created_at?time(g.created_at):'Awaiting formal decision'}</span>
     </article>)}</div>
+</DashboardDisclosure>
    </div>
    <div className="ed-duo">
     <section className="ed-card ed-blockers">
+<DashboardDisclosure label="Investment blockers" heading={<>
      <div className="ed-section-title"><h3><AlertTriangle size={17}/> Investment blockers &amp; required actions</h3><span>{brief.blockers.length} items</span></div>
+</>}>
      {brief.blockers.length? <div className="ed-blocker-list">{brief.blockers.slice(0,12).map((b,i)=><div key={b.code+'-'+i}><span className="ed-blocker-mark"><ShieldAlert size={16}/></span><div><strong>{b.message}</strong><small>{moduleName[b.module]}{b.target_id?' · '+b.target_id:''}</small></div><button onClick={()=>onNavigate(b.module)}>Resolve <ArrowRight size={13}/></button></div>)}</div>:<div className="ed-empty"><CheckCircle2 size={18}/> No blockers in the currently implemented FID policy. Independent board and legal review may still be required.</div>}
      {brief.blockers.length>12&&<small>Additional blockers: {brief.blockers.length-12}; review the Mining Economics readiness checklist.</small>}
+</DashboardDisclosure>
     </section>
     <section className="ed-card">
+<DashboardDisclosure label="Critical risks and opportunities" heading={<>
      <div className="ed-section-title"><h3><ShieldAlert size={17}/> Critical risks &amp; opportunities</h3><span>{brief.key_risks.length} recorded</span></div>
+</>}>
      {brief.key_risks.length?<div className="ed-risk-list">{brief.key_risks.slice(0,6).map((risk,i)=><article key={risk.id+'-'+i} className={risk.type==='catalyst'?'ed-catalyst':'ed-critical'}>
       <div><small>{risk.type.replaceAll('_',' ').toUpperCase()} · Gate {risk.gate}</small><button onClick={()=>onNavigate(risk.module)}>Inspect <ArrowRight size={13}/></button></div><strong>{risk.title}</strong><p>{risk.rationale}</p>
      </article>)}</div>:<div className="ed-empty">No open expert flags or recognized high/medium contract findings. This is not a declaration of zero project risk.</div>}
+</DashboardDisclosure>
     </section>
    </div>
    <div className="ed-duo">
     <section className="ed-card">
+<DashboardDisclosure label="Technical evidence readiness" heading={<>
      <div className="ed-section-title"><h3><Layers3 size={17}/> Technical evidence readiness</h3><span>Source metadata and reviewer status</span></div>
+</>}>
      <div className="ed-source-grid">{categories.map(group=><div key={group.key} className="ed-source-group"><div className="ed-source-head"><b>{group.name}</b><button onClick={()=>onNavigate(group.route)}>Open <ArrowRight size={13}/></button></div>{group.entries.map(([key,label])=>{const entry=brief.evidence[group.key][key];return <div key={key} className="ed-source-row"><span>{label}</span><span className={'ed-source-state ed-state-'+(entry?.state||'missing')}>{status(entry?.state||'missing')}</span></div>})}</div>)}</div>
      <div className="ed-legal"><Scale size={17}/><div><strong>Legal contract review</strong><small>{status(brief.evidence.legal.state)} · {brief.evidence.legal.risk_count} flagged clauses</small></div><button onClick={()=>onNavigate('legal-commercial')}>Open hub <ArrowRight size={13}/></button></div>
+</DashboardDisclosure>
     </section>
     <section className="ed-card">
+<DashboardDisclosure label="Executive committee memorandum" heading={<>
      <div className="ed-section-title"><h3><BookOpen size={17}/> Executive committee memorandum</h3><span>{brief.committee_memo?'Signed record':'Awaiting signed record'}</span></div>
+</>}>
      {brief.committee_memo?<div className="ed-memo"><p>{brief.committee_memo.body}</p><small>Gate {brief.committee_memo.gate} · Signed {time(brief.committee_memo.signed_at)} · Authenticated attestation (not a PKI signature)</small></div>:<div className="ed-empty">No signed executive committee memo is recorded for this target. The technical committee should prepare and review one before the investment meeting.</div>}
      <button className="ed-link" onClick={()=>onNavigate('exploration-evaluator')}><FileText size={16}/> Open Expert Committee &amp; Peer Review <ArrowRight size={14}/></button>
      <div className="ed-next"><small>RECOMMENDED NEXT ACTION</small><p>{brief.next_action}</p></div>
+</DashboardDisclosure>
     </section>
    </div>
    <section className="ed-card ed-history">
-    <div className="ed-section-title"><h3><Clock3 size={17}/> Board Decision History</h3><button type="button" aria-expanded={showHistory} onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Hide':'Show'} audit history</button></div>
-    {showHistory&&(history.length?<div className="ed-history-rows">{history.map(d=><article key={d.source+'-'+d.id}><time dateTime={d.created_at}>{time(d.created_at)}</time><div><b>Gate {d.gate} · {d.outcome}</b><br/><span>{d.source}</span></div><span>{d.actor??'Actor unavailable'}</span><p>{d.rationale??'Rationale unavailable'}</p></article>)}</div>:<p>No gate decisions have been recorded for this target or selected program.</p>)}
+<DashboardDisclosure label="Board Decision History" heading={<>
+    <div className="ed-section-title"><h3><Clock3 size={17}/> Board Decision History</h3></div>
+</>}>
+    {history.length?<div className="ed-history-rows">{history.map(d=><article key={d.source+'-'+d.id}><time dateTime={d.created_at}>{time(d.created_at)}</time><div><b>Gate {d.gate} · {d.outcome}</b><br/><span>{d.source}</span></div><span>{d.actor??'Actor unavailable'}</span><p>{d.rationale??'Rationale unavailable'}</p></article>)}</div>:<p>No gate decisions have been recorded for this target or selected program.</p>}
+</DashboardDisclosure>
    </section>
    <div className="ed-disclaimer"><ShieldCheck size={16}/><div><b>Decision assurance</b><p>{brief.limitations.join(' ')}</p></div></div>
   </>}
+  </DashboardDisclosure>
  </section>
 }

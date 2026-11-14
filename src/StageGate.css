@@ -29,7 +29,7 @@
 .sg-context{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:15px 18px;background:linear-gradient(110deg,#183344,#1c2932);border:1px solid #47667c;border-radius:13px;color:#d6e5ef}.sg-context label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#a4c3d7;font-weight:700}.sg-context select{background:#0f2635;color:#f5f9fd;border:1px solid #5a829b;border-radius:8px;padding:9px;min-width:190px;font:inherit;font-size:13px}.sg-context span{font-size:12px;color:#c2d0d9}.sg-context strong{color:#e9bb88}.sg-summary small{line-height:1.5;overflow-wrap:anywhere}.sg-summary strong{overflow-wrap:anywhere}
 
 .sg-strategy-upgrades{padding:16px;border:1px solid #2d5976;background:#122841;border-radius:11px;display:flex;flex-direction:column;gap:12px}
-.sg-strategy-upgrades>div:first-child{display:flex;gap:8px;flex-direction:column}
+.sg-strategy-upgrades .dashboard-disclosure-heading > div > div{display:flex;gap:8px;flex-direction:column}
 .sg-strategy-upgrades strong{font-size:15px;color:#c8edfa}
 .sg-strategy-upgrades small{font-size:11px;color:#a2bed0}
 .sg-upgrade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}

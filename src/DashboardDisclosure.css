@@ -1,0 +1,26 @@
+.dashboard-disclosure-heading {
+ display: flex;
+ align-items: flex-start;
+ gap: 8px;
+}
+.dashboard-disclosure-heading > div {
+ flex: 1;
+ min-width: 0;
+}
+.dashboard-disclosure-heading > button.dashboard-disclosure-toggle {
+ display: grid;
+ place-items: center;
+ flex: 0 0 32px;
+ width: 32px;
+ height: 32px;
+ padding: 0;
+ border: 1px solid #50718a;
+ border-radius: 7px;
+ background: #18354a;
+ color: #dceefb;
+ cursor: pointer;
+}
+.dashboard-disclosure-toggle:focus-visible {
+ outline: 2px solid #a3ddff;
+ outline-offset: 2px;
+}

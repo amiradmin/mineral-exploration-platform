@@ -1,3 +1,4 @@
+import DashboardDisclosure from './DashboardDisclosure'
 import React,{useEffect,useState} from 'react'
 import {useAuth} from './auth'
 import './DataScaleBadge.css'
@@ -35,7 +36,9 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
  const numeric=(key:keyof Profile,value:string)=>set(key,value.trim()===''?null:Number(value))
  const save=async()=>{try{setError('');const response=await apiFetch('/api/targets/'+encodeURIComponent(targetId)+'/data-scale/',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,verified:false})});const body=await response.json();if(!response.ok)throw Error(JSON.stringify(body));setEditing(false);setReload(x=>x+1)}catch(e){setError(String(e))}}
  return <section className="ds-widget" aria-label="Data scale and sample support">
+<DashboardDisclosure label="Data scale and sample support" heading={<>
   <div className="ds-top"><strong>DATA SCALE & SAMPLE SUPPORT · {targetId}</strong><div className="ds-actions"><span className={'ds-status '+(data?.policy.fid_allowed?'ds-ready':'ds-blocked')}>{error?'Unavailable':!data?'Loading…':data.policy.fid_allowed?'Evidence eligible':'FID blocked'}</span>{canEdit&&<button type="button" onClick={()=>setEditing(v=>!v)}>{editing?'Close':'Edit evidence'}</button>}</div></div>
+</>}>
   <div className="ds-grid">
    <div><small>Exploration phase / scale{sampleDrilling?' (sample)':''}</small><b>{p?p.phase.replace(/^./,x=>x.toUpperCase()):sampleDrilling?.phase??'Not verified'} · {p||sampleDetails?'1:'+n(p?.map_scale_denominator??sampleDetails?.mapScale):'—'}</b></div>
    <div><small>Assayed samples / method{sampleDetails?' (sample)':''}</small><b>{n(p?.sample_count??sampleDetails?.assayCount)} · {p?.lab_method||sampleDetails?.labMethod||'Not verified'}</b></div>
@@ -58,5 +61,6 @@ export default function DataScaleBadge({targetId,workspace='decision-center'}:{t
    <label>Core recovery (%)<input type="number" min="0" max="100" value={form.core_recovery_pct??''} onChange={e=>numeric('core_recovery_pct',e.target.value)}/></label>
    <label>RQD (%)<input type="number" min="0" max="100" value={form.rqd_pct??''} onChange={e=>numeric('rqd_pct',e.target.value)}/></label>
   </div><button type="button" onClick={()=>void save()}>Save unverified evidence</button></div>}
+</DashboardDisclosure>
  </section>
 }
