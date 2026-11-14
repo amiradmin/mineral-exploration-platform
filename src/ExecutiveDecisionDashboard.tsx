@@ -2,7 +2,8 @@ import {useCallback,useEffect,useState} from 'react'
 import {AlertTriangle,ArrowRight,BookOpen,CheckCircle2,Clock3,Download,FileText,Layers3,RefreshCw,Scale,ShieldAlert,ShieldCheck,TrendingUp} from 'lucide-react'
 import {useAuth} from './auth'
 import {targets} from './mockData'
-import {fleetReviewCases,formatFleetNpv,type DecisionContext,type FleetCase} from './decisionPipeline'
+import {type DecisionContext} from './decisionPipeline'
+import FleetScenarioToggle from './FleetScenarioToggle'
 import './ExecutiveDecisionDashboard.css'
 type ModuleRoute='exploration-evaluator'|'reserve-simulator'|'economics-engine'|'risk-scenarios'|'financial-valuator'|'esg-governance'|'legal-commercial'
 type Brief={
@@ -44,7 +45,6 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
  const [revision,setRevision]=useState(0)
  const [showHistory,setShowHistory]=useState(true)
  const fleetCase = context.fleetCase ?? "hold"
- const preview = fleetReviewCases[fleetCase]
  const targetId=context.targetId
  const load=useCallback(async(signal:AbortSignal)=>{
   const query=requestedProgram===null?'':'?program_id='+requestedProgram
@@ -99,10 +99,7 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
   </div>
   {targetId==='T-001'&&<section className="ed-card">
    <div className="ed-section-title"><h3>Fleet optimization preview</h3><span>Illustrative scenario</span></div>
-   <div className="ed-selector" role="group" aria-label="Fleet scenario">
-    {(Object.keys(fleetReviewCases) as FleetCase[]).map(id=><button key={id} type="button" aria-pressed={fleetCase===id} onClick={()=>onContext({...context,fleetCase:id})}>{fleetReviewCases[id].verdict} · {fleetReviewCases[id].label}</button>)}
-    <strong aria-live="polite">{preview.verdict} · NPV {formatFleetNpv(preview.npv)}</strong>
-   </div>
+   <FleetScenarioToggle value={fleetCase} onChange={fleetCase=>onContext({...context,fleetCase})}/>
   </section>}
   <div className="ed-selector">
    <label>Project / target<select value={targetId} onChange={e=>{setRequestedProgram(null);onContext({...context,targetId:e.target.value})}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} · {t.name}</option>)}</select></label>

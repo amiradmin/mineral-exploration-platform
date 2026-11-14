@@ -3,6 +3,7 @@ import React,{useMemo,useState} from 'react'
 import {ArrowRight, CheckCircle2, Database, ShieldCheck, Radio} from 'lucide-react'
 import {targets} from './mockData'
 import {fleetReviewCases,formatFleetNpv,type DecisionContext,type Scenario,type FleetCase} from './decisionPipeline'
+import FleetScenarioToggle from './FleetScenarioToggle'
 import './FinancialValuator.css'
 import StrategicScenarioCopilot from './StrategicScenarioCopilot'
 import SourceEvidencePanel from './SourceEvidencePanel'
@@ -81,9 +82,7 @@ export default function FinancialValuator({context,onContext,onNavigate}:{contex
  <header className="fv-refhead"><h1><span className="fv-title-accent">╏</span> <T>Module 5: Financial Valuator</T></h1><label>◎ Target: <select value={context.targetId} onChange={e=>{onContext({...context,targetId:e.target.value});setSigned([false,false,false])}}>{targets.map(t=><option key={t.id} value={t.id}>{t.id} {t.name}</option>)}</select></label><div className="fv-fid-status"><T>FINANCIAL SCENARIO STATUS:</T> <b>{approved?'PRESENTATION CHECKLIST ACKNOWLEDGED':'SCENARIO REVIEW REQUIRED'}</b></div></header>
  {preview&&<section className="fv-decision-note">
   <h2>Fleet optimization scenarios</h2>
-  <div role="group" aria-label="Fleet scenario">
-   {(Object.keys(fleetReviewCases) as FleetCase[]).map(id=><button key={id} type="button" aria-pressed={fleetCase===id} onClick={()=>selectFleetCase(id)}>{fleetReviewCases[id].verdict} · {fleetReviewCases[id].label} · {formatFleetNpv(fleetReviewCases[id].npv)}</button>)}
-  </div>
+  <FleetScenarioToggle value={fleetCase} onChange={selectFleetCase}/>
   <p aria-live="polite">Illustrative FID checklist · {preview.verdict} · {preview.npv<0?'Locked by negative NPV':approved?'Ready after three acknowledgements':'Awaiting CFO, CEO and Chairman acknowledgements'}</p>
  </section>}
  <StrategicScenarioCopilot key={target.id} targetId={target.id}/>
