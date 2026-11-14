@@ -167,6 +167,7 @@ def executive_brief(request,target_id):
                          "decision_id":d.id if d else None} for n in range(1,5) for d in [newest_by_gate.get(n)]],
         "decision_history":decisions,
         "committee_decisions":[{"id":d.id,"gate":d.gate,"outcome":d.outcome,
+                               "rationale":d.rationale,"actor":d.decided_by.get_username(),
                                "created_at":d.created_at} for d in committee],
         "next_action":"Complete documented prerequisites and seek a board FID decision through the governed workflow." if blockers else
                       "Review the evidence package, legal concerns and professional memo before issuing a new board FID decision.",

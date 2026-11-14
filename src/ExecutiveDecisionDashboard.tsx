@@ -19,7 +19,7 @@ type Brief={
  committee_memo:{id:number;gate:number;body:string;signed_by_id:number|null;signed_at:string|null;signature_type:string|null}|null
  formal_gates:{gate:number;outcome:string;created_at:string|null;decision_id:number|null}[]
  decision_history:{id:number;gate:number;outcome:string;rationale:string;actor:string;created_at:string;policy_version:string}[]
- committee_decisions:{id:number;gate:number;outcome:string;created_at:string}[]
+ committee_decisions:{id:number;gate:number;outcome:string;created_at:string;actor?:string;rationale?:string}[]
  next_action:string;limitations:string[]
 }
 const status=(value:string)=>value==='reviewed'||value==='verified'?'Reviewed':value==='pending'||value==='draft'?'Pending review':value==='missing'?'Not recorded':value.replaceAll('_',' ')
@@ -59,6 +59,10 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
   void load(controller.signal).catch(e=>{if(!controller.signal.aborted)setError(String(e))}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
   return()=>controller.abort()
  },[load,revision])
+ const history=brief?[
+  ...brief.decision_history.map(d=>({...d,source:'Program gate decision'})),
+  ...brief.committee_decisions.map(d=>({...d,source:'Board decision via committee'})),
+ ].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)):[]
  const recommendation=brief?.recommendation
  const severity=recommendation==='GO_RECORDED'?'go':recommendation==='REVIEW'?'review':'hold'
  const exportBrief=()=>{
@@ -78,7 +82,7 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
    '',
    '## Financial assurance',brief.financial_summary.status,
    '',
-   '## Formal decisions',...brief.decision_history.map(d=>'- Gate '+d.gate+' '+d.outcome+'; '+d.created_at+'; '+d.actor+': '+d.rationale),
+   '## Board decision history',...history.map(d=>'- Gate '+d.gate+' '+d.outcome+' ('+d.source+'); '+d.created_at+'; '+(d.actor??'Actor unavailable')+': '+(d.rationale??'Rationale unavailable')),
    '',
    '## Committee memo',brief.committee_memo?.body||'No signed committee memo recorded.',
    '',
@@ -110,7 +114,7 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
   {brief&&<>
    <div className={'ed-decision ed-'+severity}>
     <div className="ed-decision-copy"><small>RECOMMENDATION TO THE BOARD</small><div className="ed-verdict">{recommendation==='GO_RECORDED'?'GO — RECORDED':recommendation==='HOLD'?'HOLD':'REVIEW'}</div><p>{brief.recommendation_rationale}</p><span>{brief.decision_is_formal?'Formal recorded decision; evidence must remain current':'Advisory status — not an investment authorization'}</span></div>
-    <div className="ed-decision-side"><div><strong>{brief.blockers.length}</strong><span>Unmet FID checks</span></div><div><strong>{brief.key_risks.length}</strong><span>Open flags / legal risks</span></div><div><strong>{brief.decision_history.length}</strong><span>Recent recorded decisions</span></div></div>
+    <div className="ed-decision-side"><div><strong>{brief.blockers.length}</strong><span>Unmet FID checks</span></div><div><strong>{brief.key_risks.length}</strong><span>Open flags / legal risks</span></div><div><strong>{history.length}</strong><span>Recent recorded decisions</span></div></div>
    </div>
    <div className="ed-kpis">
     <article><small>Exploration maturity</small><strong>{brief.evidence.phase.replaceAll('_',' ')}</strong><span>Map: {brief.evidence.map_scale||'Not recorded'}</span></article>
@@ -151,8 +155,8 @@ export default function ExecutiveDecisionDashboard({context,onContext,onNavigate
     </section>
    </div>
    <section className="ed-card ed-history">
-    <div className="ed-section-title"><h3><Clock3 size={17}/> Board decision history</h3><button onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Hide':'Show'} audit history</button></div>
-    {showHistory&&(brief.decision_history.length?<div className="ed-history-rows">{brief.decision_history.map(d=><article key={d.id}><span>{time(d.created_at)}</span><b>Gate {d.gate} · {d.outcome}</b><span>{d.actor}</span><p>{d.rationale}</p></article>)}</div>:<p>No formal program gate decisions have been recorded.</p>)}
+    <div className="ed-section-title"><h3><Clock3 size={17}/> Board Decision History</h3><button type="button" aria-expanded={showHistory} onClick={()=>setShowHistory(v=>!v)}>{showHistory?'Hide':'Show'} audit history</button></div>
+    {showHistory&&(history.length?<div className="ed-history-rows">{history.map(d=><article key={d.source+'-'+d.id}><time dateTime={d.created_at}>{time(d.created_at)}</time><div><b>Gate {d.gate} · {d.outcome}</b><br/><span>{d.source}</span></div><span>{d.actor??'Actor unavailable'}</span><p>{d.rationale??'Rationale unavailable'}</p></article>)}</div>:<p>No gate decisions have been recorded for this target or selected program.</p>)}
    </section>
    <div className="ed-disclaimer"><ShieldCheck size={16}/><div><b>Decision assurance</b><p>{brief.limitations.join(' ')}</p></div></div>
   </>}
